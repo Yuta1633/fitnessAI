@@ -71,8 +71,81 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'メッセージが大きすぎます' });
   }
 
+  // ストリーミングモード判定
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const isStream = url.searchParams.get('stream') === 'true';
+
   const models = ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'];
 
+  // ストリーミングモード
+  if (isStream) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    for (const model of models) {
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 1000,
+            messages,
+            stream: true
+          })
+        });
+
+        if (!response.ok) {
+          if (response.status === 429 || response.status === 529) continue;
+          continue;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.slice(6);
+              if (jsonStr === '[DONE]') continue;
+              try {
+                const event = JSON.parse(jsonStr);
+                if (event.type === 'content_block_delta' && event.delta?.text) {
+                  res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`);
+                }
+              } catch {}
+            }
+          }
+        }
+
+        res.write('data: [DONE]\n\n');
+        res.end();
+        return;
+      } catch (err) {
+        console.error(`Stream ${model} failed:`, err.message);
+        continue;
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ error: 'AIが混雑しています。しばらくしてから再度お試しください。' })}\n\n`);
+    res.end();
+    return;
+  }
+
+  // 通常モード（フォールバック）
   for (const model of models) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {

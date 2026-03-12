@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#c8f135">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
   <title>フィットネスAIコーチ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +17,51 @@
 <body>
 
   <div class="bg-grid"></div>
+
+  <!-- ======================================================
+       オンボーディングモーダル
+       ====================================================== -->
+  <div id="onboarding-modal" class="onboarding-backdrop" style="display:none;">
+    <div class="onboarding-card">
+      <div class="onboarding-step active" data-onboarding="1">
+        <div class="onboarding-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <h3 class="onboarding-title">ようこそ</h3>
+        <p class="onboarding-desc">フィットネスAIコーチは、科学的根拠に基づいた<br>あなた専用のプランを生成します。</p>
+      </div>
+      <div class="onboarding-step" data-onboarding="2">
+        <div class="onboarding-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.418 0 8-3.582 8-8 0-6-8-14-8-14S4 8 4 14c0 4.418 3.582 8 8 8z"/></svg>
+        </div>
+        <h3 class="onboarding-title">3ステップで完結</h3>
+        <p class="onboarding-desc">目的 → 手段 → 状況を選ぶだけで<br>AIがパーソナルプランを即座に提案します。</p>
+      </div>
+      <div class="onboarding-step" data-onboarding="3">
+        <div class="onboarding-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
+        </div>
+        <h3 class="onboarding-title">継続で機能が開放</h3>
+        <p class="onboarding-desc">利用を続けるとパーソナル分析や<br>ボディメイク診断が開放されます。</p>
+      </div>
+      <div class="onboarding-dots">
+        <div class="onboarding-dot active" data-dot="1"></div>
+        <div class="onboarding-dot" data-dot="2"></div>
+        <div class="onboarding-dot" data-dot="3"></div>
+      </div>
+      <button class="onboarding-btn" id="onboarding-next-btn">次へ</button>
+      <button class="onboarding-skip" id="onboarding-skip-btn">スキップ</button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       通知許可バナー
+       ====================================================== -->
+  <div id="notification-banner" class="notification-banner">
+    <span class="notification-banner-text">通知をオンにすると、コーチからのリマインドを受け取れます</span>
+    <button class="notification-banner-btn" id="notification-enable-btn">オンにする</button>
+    <button class="notification-banner-close" id="notification-close-btn">&times;</button>
+  </div>
 
   <!-- ======================================================
        ツールiframeオーバーレイ
@@ -252,6 +301,29 @@
       <button id="reset-btn" class="reset-btn hidden">最初からやり直す</button>
     </section>
 
+    <!-- スケルトンローディング -->
+    <div id="dashboard-skeleton" style="margin-top: 40px; display:none;">
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line medium"></div>
+        <div style="display:flex; gap:16px; margin-top:16px;">
+          <div style="flex:1;" class="skeleton" style="height:80px; border-radius:14px;"><div style="height:80px;"></div></div>
+          <div style="flex:1;" class="skeleton" style="height:80px; border-radius:14px;"><div style="height:80px;"></div></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line long"></div>
+        <div class="skeleton skeleton-line medium"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line long"></div>
+        <div class="skeleton skeleton-line medium"></div>
+        <div class="skeleton skeleton-line long"></div>
+      </div>
+    </div>
+
     <div id="dashboard" style="margin-top: 40px;">
       <div class="card visible" style="margin-bottom: 16px;">
         <p class="section-tag">STREAK</p>
@@ -284,6 +356,27 @@
         <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;">
           <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
         </div>
+      </div>
+
+      <!-- 進捗グラフ -->
+      <div class="card visible" id="chart-card" style="margin-bottom: 16px; display:none;">
+        <p class="section-tag">PROGRESS</p>
+        <p class="section-title">進捗<strong>グラフ</strong></p>
+        <div class="chart-tabs">
+          <button class="chart-tab active" data-chart="weight" onclick="switchChart('weight')">体重</button>
+          <button class="chart-tab" data-chart="bodyFat" onclick="switchChart('bodyFat')">体脂肪率</button>
+          <button class="chart-tab" data-chart="usage" onclick="switchChart('usage')">利用頻度</button>
+        </div>
+        <div class="chart-container">
+          <canvas id="progress-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- チャット履歴 -->
+      <div class="card visible" id="history-card" style="margin-bottom: 16px; display:none;">
+        <p class="section-tag">HISTORY</p>
+        <p class="section-title">過去の<strong>相談</strong></p>
+        <div id="chat-history-list" class="history-list"></div>
       </div>
 
       <!-- AIパーソナル分析（7日連続で開放） -->
@@ -564,6 +657,13 @@ window.addEventListener('message', function(e) {
     switchTab('home');
   }
 });
+
+// PWA Service Worker登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

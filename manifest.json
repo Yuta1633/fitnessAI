@@ -1,0 +1,24 @@
+{
+  "name": "フィットネスAIコーチ",
+  "short_name": "FitAI",
+  "description": "科学的根拠に基づいたAIフィットネスコーチ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050507",
+  "theme_color": "#c8f135",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23050507'/%3E%3Cpath d='M56 96h80M96 56v80M66 66l60 60M66 126l60-60' stroke='%23c8f135' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23050507'/%3E%3Cpath d='M156 256h200M256 156v200M176 176l160 160M176 336l160-160' stroke='%23c8f135' stroke-width='16' stroke-linecap='round' fill='none'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

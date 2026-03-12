@@ -367,10 +367,25 @@ async function showQuestionStep(questions) {
         conversationHistory[0].content += `\n\n${pastInfo}\n\n上記を踏まえて今回は違うアプローチで提案してください。`;
       }
 
-      const text = await callAPI(conversationHistory);
-      conversationHistory.push({ role: 'assistant', content: text });
+      // ストリーミング対応
       loadingIndicator.classList.add('hidden');
-      addMessage('assistant', text);
+      const streamDiv = addStreamingMessage();
+      try {
+        const text = await callAPIStream(conversationHistory, (partial) => {
+          updateStreamingMessage(streamDiv, partial);
+        });
+        finalizeStreamingMessage(streamDiv, text);
+        conversationHistory.push({ role: 'assistant', content: text });
+      } catch (streamErr) {
+        // ストリーミング失敗時はフォールバック
+        console.warn('ストリーミング失敗、通常モードにフォールバック:', streamErr);
+        streamDiv.remove();
+        loadingIndicator.classList.remove('hidden');
+        const text = await callAPI(conversationHistory);
+        conversationHistory.push({ role: 'assistant', content: text });
+        loadingIndicator.classList.add('hidden');
+        addMessage('assistant', text);
+      }
       chatInputArea.classList.remove('hidden');
 
       const messagesToSave = conversationHistory.slice(1);
@@ -604,10 +619,24 @@ async function callAIWithAnswers(questions, answers) {
       conversationHistory[0].content += `\n\n${pastInfo}\n\n上記を踏まえて今回は違うアプローチで提案してください。`;
     }
 
-    const text = await callAPI(conversationHistory);
-    conversationHistory.push({ role: 'assistant', content: text });
+    // ストリーミング対応
     loadingIndicator.classList.add('hidden');
-    addMessage('assistant', text);
+    const streamDiv = addStreamingMessage();
+    try {
+      const text = await callAPIStream(conversationHistory, (partial) => {
+        updateStreamingMessage(streamDiv, partial);
+      });
+      finalizeStreamingMessage(streamDiv, text);
+      conversationHistory.push({ role: 'assistant', content: text });
+    } catch (streamErr) {
+      console.warn('ストリーミング失敗、フォールバック:', streamErr);
+      streamDiv.remove();
+      loadingIndicator.classList.remove('hidden');
+      const text = await callAPI(conversationHistory);
+      conversationHistory.push({ role: 'assistant', content: text });
+      loadingIndicator.classList.add('hidden');
+      addMessage('assistant', text);
+    }
     chatInputArea.classList.remove('hidden');
 
     const messagesToSave = conversationHistory.slice(1);
@@ -1052,10 +1081,24 @@ async function sendUserMessage() {
   loadingIndicator.classList.remove('hidden');
   chatSendBtn.disabled = true;
   try {
-    const text = await callAPI(conversationHistory);
-    conversationHistory.push({ role: 'assistant', content: text });
+    // ストリーミング対応
     loadingIndicator.classList.add('hidden');
-    addMessage('assistant', text);
+    const streamDiv = addStreamingMessage();
+    let text;
+    try {
+      text = await callAPIStream(conversationHistory, (partial) => {
+        updateStreamingMessage(streamDiv, partial);
+      });
+      finalizeStreamingMessage(streamDiv, text);
+    } catch (streamErr) {
+      console.warn('ストリーミング失敗、フォールバック:', streamErr);
+      streamDiv.remove();
+      loadingIndicator.classList.remove('hidden');
+      text = await callAPI(conversationHistory);
+      loadingIndicator.classList.add('hidden');
+      addMessage('assistant', text);
+    }
+    conversationHistory.push({ role: 'assistant', content: text });
 
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
@@ -2112,3 +2155,418 @@ function showNameInputModal(userId) {
   submitBtn.onclick = handleSubmit;
   input.onkeydown = (e) => { if (e.key === 'Enter') handleSubmit(); };
 }
+
+// ============================================================
+// オンボーディング
+// ============================================================
+(function initOnboarding() {
+  const modal = document.getElementById('onboarding-modal');
+  const nextBtn = document.getElementById('onboarding-next-btn');
+  const skipBtn = document.getElementById('onboarding-skip-btn');
+  if (!modal || !nextBtn) return;
+
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  function showStep(step) {
+    modal.querySelectorAll('.onboarding-step').forEach(el => el.classList.remove('active'));
+    modal.querySelectorAll('.onboarding-dot').forEach(el => el.classList.remove('active'));
+    const stepEl = modal.querySelector(`[data-onboarding="${step}"]`);
+    const dotEl = modal.querySelector(`[data-dot="${step}"]`);
+    if (stepEl) stepEl.classList.add('active');
+    if (dotEl) dotEl.classList.add('active');
+    nextBtn.textContent = step === totalSteps ? 'はじめる' : '次へ';
+  }
+
+  function closeOnboarding() {
+    modal.style.display = 'none';
+    localStorage.setItem('fitai_onboarding_done', '1');
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (currentStep < totalSteps) {
+      currentStep++;
+      showStep(currentStep);
+    } else {
+      closeOnboarding();
+    }
+  });
+
+  skipBtn.addEventListener('click', closeOnboarding);
+
+  // ログイン後に初回のみ表示
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session && !localStorage.getItem('fitai_onboarding_done')) {
+      modal.style.display = 'flex';
+    }
+  });
+})();
+
+// ============================================================
+// スケルトンローディング
+// ============================================================
+function showDashboardSkeleton() {
+  const skeleton = document.getElementById('dashboard-skeleton');
+  const dashboard = document.getElementById('dashboard');
+  if (skeleton) skeleton.style.display = 'block';
+  if (dashboard) dashboard.style.display = 'none';
+}
+
+function hideDashboardSkeleton() {
+  const skeleton = document.getElementById('dashboard-skeleton');
+  const dashboard = document.getElementById('dashboard');
+  if (skeleton) skeleton.style.display = 'none';
+  if (dashboard) dashboard.style.display = 'block';
+}
+
+// loadDashboardの先頭でスケルトン表示するようにパッチ
+const _originalLoadDashboard = loadDashboard;
+loadDashboard = async function() {
+  showDashboardSkeleton();
+  try {
+    await _originalLoadDashboard();
+  } finally {
+    hideDashboardSkeleton();
+  }
+};
+
+// ============================================================
+// チャット履歴表示
+// ============================================================
+async function loadChatHistoryList() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const historyCard = document.getElementById('history-card');
+  const historyList = document.getElementById('chat-history-list');
+  if (!historyCard || !historyList) return;
+
+  const { data: chats } = await supabase
+    .from('chat_history')
+    .select('id, goal, method, sub, messages, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!chats || chats.length === 0) {
+    historyCard.style.display = 'none';
+    return;
+  }
+
+  historyCard.style.display = 'block';
+
+  const goalLabel = { '1': '脂肪を落とす', '2': '筋肉をつける', '3': '体力を上げる', '4': '不調を改善', '5': '体型を整える' };
+  const methodLabel = { nutrition: '栄養', training: 'トレーニング', recovery: '回復' };
+
+  historyList.innerHTML = chats.map(chat => {
+    const date = new Date(chat.created_at);
+    const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+    const aiMsg = chat.messages?.find(m => m.role === 'assistant');
+    const preview = aiMsg?.content ? aiMsg.content.slice(0, 60) + '...' : '';
+    return `
+      <div class="history-item" onclick="showHistoryDetail('${chat.id}')">
+        <span class="history-item-method">${methodLabel[chat.method] || chat.method}</span>
+        <div class="history-item-date">${dateStr} - ${goalLabel[chat.goal] || ''} / ${chat.sub || ''}</div>
+        <div class="history-item-preview">${escapeHtml(preview)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// チャット履歴の詳細表示
+window.showHistoryDetail = async function(chatId) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: chat } = await supabase
+    .from('chat_history')
+    .select('messages, goal, method, sub, created_at')
+    .eq('id', chatId)
+    .single();
+
+  if (!chat || !chat.messages) return;
+
+  const goalLabel = { '1': '脂肪を落とす', '2': '筋肉をつける', '3': '体力を上げる', '4': '不調を改善', '5': '体型を整える' };
+  const methodLabel = { nutrition: '栄養', training: 'トレーニング', recovery: '回復' };
+  const date = new Date(chat.created_at);
+  const dateStr = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+  let modal = document.getElementById('history-detail-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'history-detail-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);z-index:10000;overflow-y:auto;padding:20px;animation:fadeIn 0.3s ease;';
+    document.body.appendChild(modal);
+  }
+
+  const msgs = chat.messages
+    .filter(m => m.role !== 'system')
+    .map(m => `<div class="chat-message ${m.role}" style="margin-bottom:12px;"><div style="font-size:13px;color:var(--white);line-height:1.8;white-space:pre-wrap;">${escapeHtml(typeof m.content === 'string' ? m.content : '').replace(/\n/g, '<br>')}</div></div>`)
+    .join('');
+
+  modal.innerHTML = `
+    <div style="max-width:640px;margin:0 auto;">
+      <button onclick="document.getElementById('history-detail-modal').style.display='none'" style="display:flex;align-items:center;gap:8px;padding:12px 20px;margin-bottom:16px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        戻る
+      </button>
+      <div style="margin-bottom:16px;">
+        <p style="font-size:11px;color:var(--accent-muted);letter-spacing:0.2em;margin-bottom:8px;">HISTORY</p>
+        <p style="font-size:16px;color:var(--white);font-weight:700;">${goalLabel[chat.goal] || ''} / ${methodLabel[chat.method] || ''}</p>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;">${dateStr} - ${chat.sub || ''}</p>
+      </div>
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;">
+        ${msgs}
+      </div>
+    </div>
+  `;
+  modal.style.display = 'block';
+};
+
+// ============================================================
+// 進捗グラフ (Chart.js)
+// ============================================================
+let progressChart = null;
+let chartData = { weight: [], bodyFat: [], usage: [] };
+
+async function loadProgressChart() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const chartCard = document.getElementById('chart-card');
+  if (!chartCard) return;
+
+  // 体重・体脂肪率データ
+  const { data: bodyRecords } = await supabase
+    .from('body_records')
+    .select('weight, body_fat, recorded_at, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: true })
+    .limit(90);
+
+  // 利用頻度データ
+  const { data: usageData } = await supabase
+    .from('usage_limits')
+    .select('date, count')
+    .eq('user_id', session.user.id)
+    .order('date', { ascending: true })
+    .limit(30);
+
+  chartData.weight = (bodyRecords || []).filter(r => r.weight != null).map(r => ({
+    x: r.recorded_at || r.created_at?.split('T')[0],
+    y: r.weight
+  }));
+
+  chartData.bodyFat = (bodyRecords || []).filter(r => r.body_fat != null).map(r => ({
+    x: r.recorded_at || r.created_at?.split('T')[0],
+    y: r.body_fat
+  }));
+
+  chartData.usage = (usageData || []).map(r => ({
+    x: r.date,
+    y: r.count
+  }));
+
+  const hasData = chartData.weight.length > 0 || chartData.bodyFat.length > 0 || chartData.usage.length > 0;
+  chartCard.style.display = hasData ? 'block' : 'none';
+
+  if (hasData) {
+    renderChart('weight');
+  }
+}
+
+function renderChart(type) {
+  const canvas = document.getElementById('progress-chart');
+  if (!canvas) return;
+
+  if (progressChart) {
+    progressChart.destroy();
+  }
+
+  const data = chartData[type] || [];
+  if (data.length === 0) return;
+
+  const labels = { weight: '体重 (kg)', bodyFat: '体脂肪率 (%)', usage: '利用回数' };
+  const colors = { weight: '#c8f135', bodyFat: '#4fc3f7', usage: '#f59e0b' };
+  const bgColors = { weight: 'rgba(200,241,53,0.1)', bodyFat: 'rgba(79,195,247,0.1)', usage: 'rgba(245,158,11,0.1)' };
+
+  progressChart = new Chart(canvas, {
+    type: type === 'usage' ? 'bar' : 'line',
+    data: {
+      labels: data.map(d => d.x),
+      datasets: [{
+        label: labels[type],
+        data: data.map(d => d.y),
+        borderColor: colors[type],
+        backgroundColor: type === 'usage' ? colors[type] + '80' : bgColors[type],
+        fill: type !== 'usage',
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: colors[type],
+        borderWidth: 2,
+        barThickness: type === 'usage' ? 12 : undefined,
+        borderRadius: type === 'usage' ? 4 : undefined,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#55555f', font: { size: 10 }, maxTicksLimit: 8 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#55555f', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+window.switchChart = function(type) {
+  document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector(`[data-chart="${type}"]`);
+  if (tab) tab.classList.add('active');
+  renderChart(type);
+};
+
+// ============================================================
+// ストリーミングレスポンス対応
+// ============================================================
+async function callAPIStream(messages, onChunk) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch('/api/chat?stream=true', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ messages })
+  });
+
+  if (!response.ok) throw new Error(`APIエラー: ${response.status}`);
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const jsonStr = line.slice(6);
+        if (jsonStr === '[DONE]') continue;
+        try {
+          const data = JSON.parse(jsonStr);
+          if (data.error) throw new Error(data.error);
+          if (data.text) {
+            fullText += data.text;
+            onChunk(fullText);
+          }
+        } catch (e) {
+          if (e.message && !e.message.includes('JSON')) throw e;
+        }
+      }
+    }
+  }
+
+  await incrementOnSuccess();
+  return fullText;
+}
+
+function addStreamingMessage() {
+  const div = document.createElement('div');
+  div.className = 'chat-message assistant streaming-cursor';
+  div.innerHTML = '';
+  chatHistory.appendChild(div);
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+  return div;
+}
+
+function updateStreamingMessage(div, text) {
+  const { cleanText, options } = parseOptions(text);
+  div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function finalizeStreamingMessage(div, text) {
+  div.classList.remove('streaming-cursor');
+  const { cleanText, options } = parseOptions(text);
+  div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
+
+  if (options.length > 0) {
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'option-buttons';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.className = 'option-btn';
+      btn.textContent = `${opt.number}. ${opt.label}`;
+      btn.addEventListener('click', () => {
+        chatInput.value = `${opt.number}. ${opt.label}`;
+        sendUserMessage();
+      });
+      btnGroup.appendChild(btn);
+    });
+    div.appendChild(btnGroup);
+  }
+  chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+// ============================================================
+// 通知バナー
+// ============================================================
+(function initNotificationBanner() {
+  const banner = document.getElementById('notification-banner');
+  const enableBtn = document.getElementById('notification-enable-btn');
+  const closeBtn = document.getElementById('notification-close-btn');
+  if (!banner || !enableBtn || !closeBtn) return;
+
+  // PWA対応 + 通知未許可 + まだ閉じていない場合に表示
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session && 'Notification' in window && Notification.permission === 'default' && !localStorage.getItem('fitai_notif_dismissed')) {
+      setTimeout(() => banner.classList.add('show'), 3000);
+    }
+  });
+
+  enableBtn.addEventListener('click', async () => {
+    const permission = await Notification.requestPermission();
+    banner.classList.remove('show');
+    if (permission === 'granted') {
+      localStorage.setItem('fitai_notif_enabled', '1');
+      new Notification('フィットネスAIコーチ', {
+        body: '通知が有効になりました。コーチからのリマインドを受け取れます。',
+        icon: '/manifest.json'
+      });
+    }
+  });
+
+  closeBtn.addEventListener('click', () => {
+    banner.classList.remove('show');
+    localStorage.setItem('fitai_notif_dismissed', '1');
+  });
+})();
+
+// ============================================================
+// loadDashboardにチャット履歴・グラフ読み込みを追加
+// ============================================================
+const _originalLoadDashboard2 = loadDashboard;
+loadDashboard = async function() {
+  await _originalLoadDashboard2();
+  // 非同期で追加データを読み込み
+  loadChatHistoryList().catch(console.error);
+  loadProgressChart().catch(console.error);
+};
