@@ -189,12 +189,14 @@ async function updateUI(session) {
         } else {
           userNameEl.textContent = `${profile.name}（${session.user.email}）`;
           mainContent.style.display = 'block';
+          loadDashboard();
         }
       } catch (e) {
         // プロフィール取得失敗時はそのままメインを表示
         console.warn('checkProfile失敗:', e);
         userNameEl.textContent = session.user.email;
         mainContent.style.display = 'block';
+        loadDashboard();
       }
     } else {
       mainContent.style.display = 'none';
