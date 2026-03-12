@@ -198,20 +198,22 @@ async function generateDailyTasks() {
 
   const taskPrompt = `${ctx}
 
-上記のユーザー情報を元に、今日やるべきタスクを3〜5個生成してください。
+上記のユーザー情報を元に、今日やるべき行動指針を3〜5個生成してください。
 
-【重要ルール】
-・ユーザーの「今の目的」と「今日の重点」を最優先で反映すること
-・目的が「脂肪を落としたい」なら消費カロリー＞摂取カロリーになるタスク構成にする
-・目的が「筋肉をつけたい」ならタンパク質摂取量とトレーニング種目を具体化する
-・「今日の重点」が指定されていればその領域のタスクを厚くする（「おまかせ」なら今週のバランスで判断）
-・体調が悪い日は負荷を下げる、睡眠不足なら回復を優先するなど柔軟に対応
-・過去のフィードバックで「きつい」「できなかった」があれば難易度を下げる
-・過去のフィードバックで「楽にできた」があれば負荷を上げる
-・過去にフィードバックで具体的な問題（膝が痛い等）があればそれを避ける
-・各タスクは具体的で実行可能なもの（「水を2L飲む」「スクワット3セット×15回」など）
-・曖昧な指示は禁止（「運動する」「気をつける」はNG）
-・体重/体脂肪/目標/期限があれば逆算して日割りペースを意識する
+【最重要ルール】
+・具体的なトレーニングメニュー（種目名・セット数・回数）は絶対に出さないこと
+・具体的な食事メニュー（料理名・食材・グラム数）は絶対に出さないこと
+・具体的なストレッチ/ケアの手順は絶対に出さないこと
+・上記の詳細メニューはAIコーチが生成するので、タスクはそこへの「誘導」にすること
+
+【タスクの書き方】
+・「何をすべきか」の方向性 + 「AIコーチでどの選択をすればいいか」を示す
+・例: 「AIコーチで『脂肪を落としたい → 栄養 → ちゃんと管理したい』を実行して、今日の食事プランを作る」
+・例: 「AIコーチで『筋肉をつけたい → トレーニング → ジムに通っている』を実行して、今日のメニューを組む」
+・例: 「水を2L以上飲む」「体重を記録する」「23時までに寝る」のような生活習慣タスクはOK
+・ユーザーの目的・重点・体調・フィードバックに応じて最適なAIコーチの選択肢を推奨すること
+・過去のフィードバックで「きつい」があれば「回復」系を推奨、「楽」なら強度アップの選択肢を推奨
+・体調不良なら回復優先のパスを推奨
 
 【出力形式】※この形式を厳守すること
 <task>タスク内容</task>
@@ -1327,7 +1329,8 @@ async function generateResponse() {
   const pastInfo = pastSummary
     ? `\n\n${pastSummary}\n\n上記の過去の提案と被らないよう、新しい内容を提案してください。`
     : '';
-  const userCtx = cachedUserContext || await buildUserContext();
+  let userCtx = cachedUserContext || '';
+  try { if (!userCtx) userCtx = await buildUserContext(); } catch (e) { console.warn('コンテキスト構築失敗:', e); }
   const finalPrompt = `${userCtx}\n${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
   conversationHistory.push({ role: 'user', content: finalPrompt });
 
@@ -1705,11 +1708,21 @@ async function loadDashboard() {
 }
 
 async function loadGoal(userId) {
-  const { data } = await supabase
+  // target_dateカラムがない環境にも対応
+  let { data, error } = await supabase
     .from('user_goals')
     .select('goal_weight, goal_body_fat, target_date')
     .eq('user_id', userId)
     .maybeSingle();
+  if (error) {
+    // target_dateカラムがなければフォールバック
+    const res = await supabase
+      .from('user_goals')
+      .select('goal_weight, goal_body_fat')
+      .eq('user_id', userId)
+      .maybeSingle();
+    data = res.data;
+  }
   return data || null;
 }
 
