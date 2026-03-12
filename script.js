@@ -2868,12 +2868,68 @@ function showAfterCheckin() {
     mainContent.style.display = 'block';
     loadDashboard();
     generateAIRecommendation();
+    renderCheckinSummary(existing);
   } else {
     // 未チェックイン → ゲート表示
     mainContent.style.display = 'none';
     if (checkinGate) checkinGate.style.display = 'flex';
   }
 }
+
+function renderCheckinSummary(checkin) {
+  const card = document.getElementById('checkin-summary-card');
+  const content = document.getElementById('checkin-summary-content');
+  if (!card || !content || !checkin) return;
+
+  const tags = [];
+  if (checkin.focus) tags.push({ label: '目的', value: checkin.focus });
+  if (checkin.priority) tags.push({ label: '重点', value: checkin.priority });
+  if (checkin.condition) tags.push({ label: '体調', value: checkin.condition });
+  if (checkin.sleep) tags.push({ label: '睡眠', value: checkin.sleep });
+  if (checkin.note) tags.push({ label: 'メモ', value: checkin.note });
+
+  content.innerHTML = tags.map(t =>
+    `<span style="display:inline-flex; align-items:center; gap:4px; padding:5px 10px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:6px; font-size:12px;">
+      <span style="color:var(--muted);">${escapeHtml(t.label)}:</span>
+      <span style="color:var(--white); font-weight:600;">${escapeHtml(t.value)}</span>
+    </span>`
+  ).join('');
+
+  card.style.display = '';
+}
+
+function openCheckinForEdit() {
+  const checkinGate = document.getElementById('checkin-gate');
+  if (!checkinGate) return;
+
+  // 既存の値をラジオボタンに復元
+  const existing = getTodayCheckin();
+  if (existing) {
+    if (existing.focus) {
+      const el = document.querySelector(`input[name="focus"][value="${existing.focus}"]`);
+      if (el) el.checked = true;
+    }
+    if (existing.priority) {
+      const el = document.querySelector(`input[name="priority"][value="${existing.priority}"]`);
+      if (el) el.checked = true;
+    }
+    if (existing.condition) {
+      const el = document.querySelector(`input[name="condition"][value="${existing.condition}"]`);
+      if (el) el.checked = true;
+    }
+    if (existing.sleep) {
+      const el = document.querySelector(`input[name="sleep"][value="${existing.sleep}"]`);
+      if (el) el.checked = true;
+    }
+    const noteEl = document.getElementById('checkin-note');
+    if (noteEl && existing.note) noteEl.value = existing.note;
+  }
+
+  mainContent.style.display = 'none';
+  checkinGate.style.display = 'flex';
+}
+
+document.getElementById('checkin-edit-btn')?.addEventListener('click', openCheckinForEdit);
 
 document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   const focus = document.querySelector('input[name="focus"]:checked')?.value || '';
@@ -2885,7 +2941,8 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   if (!focus) { alert('目的を選択してください'); return; }
   if (!condition) { alert('体調を選択してください'); return; }
 
-  saveTodayCheckin({ focus, priority, condition, sleep, note });
+  const checkinData = { focus, priority, condition, sleep, note };
+  saveTodayCheckin(checkinData);
   cachedUserContext = null;
 
   // ゲートを閉じてメインを表示
@@ -2893,8 +2950,9 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   if (checkinGate) checkinGate.style.display = 'none';
   mainContent.style.display = 'block';
   loadDashboard();
+  renderCheckinSummary(checkinData);
 
-  // タスク生成
+  // タスク再生成
   const todayStr = new Date().toISOString().split('T')[0];
   localStorage.removeItem(userKey(`daily_tasks_${todayStr}`));
   generateDailyTasks().catch(console.error);
