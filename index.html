@@ -850,11 +850,15 @@ function switchTab(tab) {
   const navHome = document.getElementById('nav-home');
   const navTools = document.getElementById('nav-tools');
 
+  // ツールオーバーレイが開いていたら閉じる
+  closeToolOverlay();
+
   if (tab === 'home') {
     mainPanel.style.display = 'block';
     toolsPanel.classList.remove('open');
     navHome.classList.add('active');
     navTools.classList.remove('active');
+    document.body.style.overflow = '';
   } else {
     mainPanel.style.display = 'none';
     toolsPanel.classList.add('open');
@@ -891,7 +895,5 @@ function closeToolOverlay() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeToolOverlay();
 });
-</script>
-<script src="contact.js"></script>
 </script>
 </body>
