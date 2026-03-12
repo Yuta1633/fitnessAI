@@ -1069,8 +1069,9 @@ body {
     font-size: 11px;
   }
 
-  /* Tools panel */
-  #tools-panel {
+  /* Tools & Record panel */
+  #tools-panel,
+  #record-panel {
     padding: 20px 14px;
   }
 
@@ -1653,7 +1654,8 @@ body {
 /* ============================================================
    Tools Panel
    ============================================================ */
-#tools-panel {
+#tools-panel,
+#record-panel {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -1665,8 +1667,14 @@ body {
   animation: fadeUp 0.3s ease both;
 }
 
-#tools-panel.open {
+#tools-panel.open,
+#record-panel.open {
   display: block;
+}
+
+.record-panel-content {
+  max-width: 640px;
+  margin: 0 auto;
 }
 
 .tools-back-btn {
