@@ -14,6 +14,10 @@
     /* ============================================================
        Bottom Nav Bar
        ============================================================ */
+    :root {
+      --nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+
     .bottom-nav {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -78,12 +82,11 @@
       top: 0;
       left: 0;
       right: 0;
-      bottom: 64px;
+      bottom: var(--nav-height);
       z-index: 900;
       background: #0a0a0a;
       overflow-y: auto;
       padding: 32px 20px 32px;
-      padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
       animation: slideUp 0.3s ease both;
     }
 
@@ -234,7 +237,7 @@
       top: 0;
       left: 0;
       right: 0;
-      bottom: 64px;
+      bottom: var(--nav-height);
       z-index: 950;
       flex-direction: column;
       background: #08080A;
@@ -377,7 +380,7 @@
   <!-- ======================================================
        既存コンテンツ（変更なし）
        ====================================================== -->
-  <div id="main-panel">
+  <div id="main-panel" style="padding-bottom: var(--nav-height);">
     <div class="container">
       <!-- ログインエリア -->
 <div id="auth-area" style="text-align:center; padding: 20px 0 40px;">
