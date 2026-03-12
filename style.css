@@ -301,9 +301,14 @@ body {
 }
 
 .btn-icon {
-  font-size: 18px;
-  opacity: 0.8;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
+  opacity: 0.7;
+}
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .btn-text {
@@ -838,7 +843,11 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
-  font-size: 28px;
+  color: var(--accent-muted);
+}
+.locked-icon svg {
+  width: 28px;
+  height: 28px;
 }
 
 .badge-card {
@@ -1116,10 +1125,14 @@ body {
   flex-shrink: 0;
 }
 
-.tool-icon.red    { background: rgba(255,59,92,0.12); }
-.tool-icon.purple { background: rgba(139,92,246,0.12); }
-.tool-icon.teal   { background: rgba(6,182,212,0.12); }
-.tool-icon.orange { background: rgba(249,115,22,0.12); }
+.tool-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.tool-icon.red    { background: rgba(255,59,92,0.12); color: #ff3b5c; }
+.tool-icon.purple { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+.tool-icon.teal   { background: rgba(6,182,212,0.12); color: #06b6d4; }
+.tool-icon.orange { background: rgba(249,115,22,0.12); color: #f97316; }
 
 .tool-info {
   flex: 1;
