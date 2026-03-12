@@ -227,8 +227,72 @@
   </div>
 </div>
 
+<!-- デイリーチェックイン（ゲート） -->
+<div id="checkin-gate" class="checkin-gate" style="display:none;">
+  <div class="checkin-gate-inner">
+    <p class="section-tag" style="margin-bottom:8px;">DAILY CHECK-IN</p>
+    <h2 class="checkin-gate-title">今日のコンディションを教えてください</h2>
+    <p class="checkin-gate-sub">あなたの状況に合わせてタスクとAIコーチを最適化します</p>
+
+    <div class="checkin-group">
+      <p class="checkin-label">今のいちばんの目的は？</p>
+      <div class="checkin-options">
+        <label class="checkin-option"><input type="radio" name="focus" value="脂肪を落としたい"><span>脂肪を落とす</span></label>
+        <label class="checkin-option"><input type="radio" name="focus" value="筋肉をつけたい"><span>筋肉をつける</span></label>
+        <label class="checkin-option"><input type="radio" name="focus" value="体力を上げたい"><span>体力を上げる</span></label>
+        <label class="checkin-option"><input type="radio" name="focus" value="不調を改善したい"><span>不調を改善</span></label>
+        <label class="checkin-option"><input type="radio" name="focus" value="体型を整えたい"><span>体型を整える</span></label>
+      </div>
+    </div>
+    <div class="checkin-group">
+      <p class="checkin-label">今日は何を重点的にやりたい？</p>
+      <div class="checkin-options">
+        <label class="checkin-option"><input type="radio" name="priority" value="栄養管理"><span>栄養管理</span></label>
+        <label class="checkin-option"><input type="radio" name="priority" value="トレーニング"><span>トレーニング</span></label>
+        <label class="checkin-option"><input type="radio" name="priority" value="回復・休養"><span>回復・休養</span></label>
+        <label class="checkin-option"><input type="radio" name="priority" value="おまかせ"><span>おまかせ</span></label>
+      </div>
+    </div>
+    <div class="checkin-group">
+      <p class="checkin-label">体調</p>
+      <div class="checkin-options">
+        <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
+        <label class="checkin-option"><input type="radio" name="condition" value="普通"><span>普通</span></label>
+        <label class="checkin-option"><input type="radio" name="condition" value="やや疲れ"><span>やや疲れ</span></label>
+        <label class="checkin-option"><input type="radio" name="condition" value="体調不良"><span>体調不良</span></label>
+      </div>
+    </div>
+    <div class="checkin-group">
+      <p class="checkin-label">昨晩の睡眠</p>
+      <div class="checkin-options">
+        <label class="checkin-option"><input type="radio" name="sleep" value="よく眠れた"><span>よく眠れた</span></label>
+        <label class="checkin-option"><input type="radio" name="sleep" value="普通"><span>普通</span></label>
+        <label class="checkin-option"><input type="radio" name="sleep" value="あまり眠れなかった"><span>あまり眠れず</span></label>
+      </div>
+    </div>
+    <div class="checkin-group">
+      <p class="checkin-label">メモ（任意）</p>
+      <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛、膝が少し痛い" class="checkin-input" style="width:100%;">
+    </div>
+    <button id="checkin-save-btn" class="checkin-submit" style="margin-top:8px;">チェックインしてはじめる</button>
+  </div>
+</div>
+
 <!-- メインコンテンツ -->
 <div id="main-content" style="display:none;">
+
+    <!-- AIおすすめバナー -->
+    <div id="ai-recommendation" class="card visible ai-rec-card" style="display:none; margin-bottom:20px;">
+      <div style="display:flex; align-items:flex-start; gap:14px;">
+        <div class="coaching-banner-icon" style="background:linear-gradient(135deg,rgba(200,241,53,0.12),rgba(200,241,53,0.04)); border-color:rgba(200,241,53,0.15); color:var(--accent);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div style="flex:1; min-width:0;">
+          <p style="font-size:10px; font-weight:600; letter-spacing:0.3em; color:var(--accent); margin-bottom:4px;">TODAY'S RECOMMENDATION</p>
+          <p id="ai-rec-text" style="font-size:13px; color:var(--white); line-height:1.6;"></p>
+        </div>
+      </div>
+    </div>
 
     <!-- ヘッダー -->
     <header class="site-header">
@@ -329,53 +393,6 @@
     </div>
 
     <div id="dashboard" style="margin-top: 40px;">
-
-      <!-- デイリーチェックイン -->
-      <div class="card visible" id="checkin-card" style="margin-bottom: 16px; display:none;">
-        <p class="section-tag">TODAY'S CHECK-IN</p>
-        <p class="section-title">今日の<strong>コンディション</strong></p>
-        <div class="checkin-group">
-          <p class="checkin-label">今のいちばんの目的は？</p>
-          <div class="checkin-options">
-            <label class="checkin-option"><input type="radio" name="focus" value="脂肪を落としたい"><span>脂肪を落とす</span></label>
-            <label class="checkin-option"><input type="radio" name="focus" value="筋肉をつけたい"><span>筋肉をつける</span></label>
-            <label class="checkin-option"><input type="radio" name="focus" value="体力を上げたい"><span>体力を上げる</span></label>
-            <label class="checkin-option"><input type="radio" name="focus" value="不調を改善したい"><span>不調を改善</span></label>
-            <label class="checkin-option"><input type="radio" name="focus" value="体型を整えたい"><span>体型を整える</span></label>
-          </div>
-        </div>
-        <div class="checkin-group">
-          <p class="checkin-label">今日は何を重点的にやりたい？</p>
-          <div class="checkin-options">
-            <label class="checkin-option"><input type="radio" name="priority" value="栄養管理"><span>栄養管理</span></label>
-            <label class="checkin-option"><input type="radio" name="priority" value="トレーニング"><span>トレーニング</span></label>
-            <label class="checkin-option"><input type="radio" name="priority" value="回復・休養"><span>回復・休養</span></label>
-            <label class="checkin-option"><input type="radio" name="priority" value="おまかせ"><span>おまかせ</span></label>
-          </div>
-        </div>
-        <div class="checkin-group">
-          <p class="checkin-label">体調</p>
-          <div class="checkin-options">
-            <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
-            <label class="checkin-option"><input type="radio" name="condition" value="普通"><span>普通</span></label>
-            <label class="checkin-option"><input type="radio" name="condition" value="やや疲れ"><span>やや疲れ</span></label>
-            <label class="checkin-option"><input type="radio" name="condition" value="体調不良"><span>体調不良</span></label>
-          </div>
-        </div>
-        <div class="checkin-group">
-          <p class="checkin-label">昨晩の睡眠</p>
-          <div class="checkin-options">
-            <label class="checkin-option"><input type="radio" name="sleep" value="よく眠れた"><span>よく眠れた</span></label>
-            <label class="checkin-option"><input type="radio" name="sleep" value="普通"><span>普通</span></label>
-            <label class="checkin-option"><input type="radio" name="sleep" value="あまり眠れなかった"><span>あまり眠れず</span></label>
-          </div>
-        </div>
-        <div class="checkin-group">
-          <p class="checkin-label">メモ（任意）</p>
-          <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛、膝が少し痛い" class="checkin-input">
-        </div>
-        <button id="checkin-save-btn" class="checkin-submit">チェックインしてタスクを生成</button>
-      </div>
 
       <!-- デイリータスク -->
       <div class="card visible" id="daily-task-card" style="margin-bottom: 16px; display:none;">
@@ -772,7 +789,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=7').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=8').then(reg => {
       reg.update();
     }).catch(() => {});
   });

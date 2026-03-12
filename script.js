@@ -333,8 +333,7 @@ consentAgreeBtn.addEventListener('click', async () => {
   if (!profileAfterConsent || !profileAfterConsent.name) {
     showNameInputModal(session.user.id);
   } else {
-    mainContent.style.display = 'block';
-    loadDashboard();
+    showAfterCheckin();
   }
 });
 
@@ -454,15 +453,13 @@ async function updateUI(session) {
           showNameInputModal(session.user.id);
         } else {
           userNameEl.textContent = `${profile.name}（${session.user.email}）`;
-          mainContent.style.display = 'block';
-          loadDashboard();
+          showAfterCheckin();
         }
       } catch (e) {
         // プロフィール取得失敗時はそのままメインを表示
         console.warn('checkProfile失敗:', e);
         userNameEl.textContent = session.user.email;
-        mainContent.style.display = 'block';
-        loadDashboard();
+        showAfterCheckin();
       }
     } else {
       mainContent.style.display = 'none';
@@ -2422,8 +2419,7 @@ function showNameInputModal(userId) {
 
     modal.style.display = 'none';
     userNameEl.textContent = `${name}（${window.__currentUserEmail__ || ''}）`;
-    mainContent.style.display = 'block';
-    loadDashboard();
+    showAfterCheckin();
   };
 
   submitBtn.onclick = handleSubmit;
@@ -2843,25 +2839,29 @@ loadDashboard = async function() {
   // 非同期で追加データを読み込み
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
-  initDailyCheckin();
   generateDailyTasks().catch(console.error);
   // ユーザーコンテキストをプリロード
   buildUserContext().catch(console.error);
 };
 
 // ============================================================
-// デイリーチェックインUI
+// チェックインゲート
 // ============================================================
-function initDailyCheckin() {
-  const checkinCard = document.getElementById('checkin-card');
-  if (!checkinCard) return;
-
+function showAfterCheckin() {
   const existing = getTodayCheckin();
+  const checkinGate = document.getElementById('checkin-gate');
+
   if (existing) {
-    checkinCard.style.display = 'none';
-    return;
+    // 今日チェックイン済み → そのままメイン表示
+    if (checkinGate) checkinGate.style.display = 'none';
+    mainContent.style.display = 'block';
+    loadDashboard();
+    generateAIRecommendation();
+  } else {
+    // 未チェックイン → ゲート表示
+    mainContent.style.display = 'none';
+    if (checkinGate) checkinGate.style.display = 'flex';
   }
-  checkinCard.style.display = '';
 }
 
 document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
@@ -2877,14 +2877,91 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   saveTodayCheckin({ focus, priority, condition, sleep, note });
   cachedUserContext = null;
 
-  const checkinCard = document.getElementById('checkin-card');
-  if (checkinCard) checkinCard.style.display = 'none';
+  // ゲートを閉じてメインを表示
+  const checkinGate = document.getElementById('checkin-gate');
+  if (checkinGate) checkinGate.style.display = 'none';
+  mainContent.style.display = 'block';
+  loadDashboard();
 
-  // タスク再生成（チェックイン情報で最適化）
+  // タスク生成
   const todayStr = new Date().toISOString().split('T')[0];
   localStorage.removeItem(`daily_tasks_${todayStr}`);
   generateDailyTasks().catch(console.error);
+  generateAIRecommendation();
 });
+
+// ============================================================
+// AIおすすめ（フィードバック→今日のコーチ推奨）
+// ============================================================
+async function generateAIRecommendation() {
+  const recEl = document.getElementById('ai-recommendation');
+  const recText = document.getElementById('ai-rec-text');
+  if (!recEl || !recText) return;
+
+  const checkin = getTodayCheckin();
+  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+
+  // フィードバックがなければ簡易メッセージ
+  if (feedbackHistory.length === 0 && checkin) {
+    const focusMap = {
+      '脂肪を落としたい': { goal: '1', method: 'nutrition', label: '「脂肪を落としたい → 栄養」でカロリー管理の具体プランを作成できます' },
+      '筋肉をつけたい': { goal: '2', method: 'training', label: '「筋肉をつけたい → トレーニング」で今日のメニューを生成できます' },
+      '体力を上げたい': { goal: '3', method: 'training', label: '「体力を上げたい → トレーニング」で持久力強化メニューを生成できます' },
+      '不調を改善したい': { goal: '4', method: 'recovery', label: '「不調を改善 → 回復」で改善プランを生成できます' },
+      '体型を整えたい': { goal: '5', method: 'training', label: '「体型を整える → トレーニング」でボディメイクメニューを生成できます' },
+    };
+    const rec = focusMap[checkin.focus];
+    if (rec) {
+      recText.innerHTML = `今日の目的に合わせて、AIコーチの<strong style="color:var(--accent);">${rec.label}</strong>`;
+      recEl.style.display = '';
+    }
+    return;
+  }
+
+  if (feedbackHistory.length === 0) return;
+
+  // フィードバックに基づくおすすめ生成
+  const lastFb = feedbackHistory[0];
+  const checkinInfo = checkin || {};
+
+  let recMessage = '';
+
+  // フィードバック分析してコーチの選択肢を推奨
+  if (lastFb.feeling === 'きつかった' || lastFb.feeling === 'できなかった') {
+    if (checkinInfo.focus === '脂肪を落としたい') {
+      recMessage = `昨日は負荷が高かったようです。今日はAIコーチの<strong style="color:var(--accent);">「脂肪を落としたい → 栄養 → ざっくりでいい」</strong>で無理のない食事管理から始めましょう`;
+    } else if (checkinInfo.focus === '筋肉をつけたい') {
+      recMessage = `昨日きつかった分、今日はAIコーチの<strong style="color:var(--accent);">「筋肉をつけたい → 回復」</strong>で筋肉の回復を優先するのがおすすめです`;
+    } else {
+      recMessage = `昨日のフィードバックから、今日はAIコーチの<strong style="color:var(--accent);">「回復・休養」</strong>メニューで体を整えるのが効果的です`;
+    }
+  } else if (lastFb.feeling === '楽にできた') {
+    if (checkinInfo.focus === '脂肪を落としたい') {
+      recMessage = `順調です！負荷を上げてAIコーチの<strong style="color:var(--accent);">「脂肪を落としたい → トレーニング」</strong>で消費カロリーを増やしましょう`;
+    } else if (checkinInfo.focus === '筋肉をつけたい') {
+      recMessage = `いい調子！AIコーチの<strong style="color:var(--accent);">「筋肉をつけたい → トレーニング → ジムに通っている」</strong>で負荷を上げたメニューを試しましょう`;
+    } else {
+      recMessage = `昨日は余裕があったので、今日はAIコーチで<strong style="color:var(--accent);">少し強度を上げたメニュー</strong>に挑戦してみましょう`;
+    }
+  } else {
+    // ちょうどよかった
+    const priorityMap = {
+      '栄養管理': '栄養',
+      'トレーニング': 'トレーニング',
+      '回復・休養': '回復',
+    };
+    const methodLabel = priorityMap[checkinInfo.priority] || '栄養';
+    recMessage = `いいペースです。今日の重点「${checkinInfo.priority || 'おまかせ'}」に合わせて、AIコーチの<strong style="color:var(--accent);">「${checkinInfo.focus || ''} → ${methodLabel}」</strong>で今日のプランを作りましょう`;
+  }
+
+  // フィードバックに具体的なメモがあれば追記
+  if (lastFb.note) {
+    recMessage += `<br><span style="font-size:12px; color:var(--muted);">昨日のメモ「${escapeHtml(lastFb.note)}」も考慮してAIが提案します</span>`;
+  }
+
+  recText.innerHTML = recMessage;
+  recEl.style.display = '';
+}
 
 // タスクフィードバック保存
 document.getElementById('task-feedback-btn')?.addEventListener('click', () => {
