@@ -999,19 +999,28 @@ function highlightButton(section, selectedBtn) {
 function parseOptions(text) {
   const lines = text.split('\n');
   const pattern = /^(\d+)[.\)）]\s*(.+)$/;
-  const options = [];
 
   // 末尾の空行をスキップ
   let i = lines.length - 1;
   while (i >= 0 && lines[i].trim() === '') i--;
 
-  // 末尾から連続する番号行のみを選択肢として収集
+  // 末尾から連続する番号行を収集
   const optionIndices = [];
   while (i >= 0 && pattern.test(lines[i].trim())) {
     optionIndices.unshift(i);
     i--;
   }
 
+  // 全行が短い（選択肢らしい）場合のみオプション扱い
+  // 長い行が1つでもあればコンテンツ（レシピ手順等）とみなす
+  const MAX_OPTION_LENGTH = 40;
+  const allShort = optionIndices.every(idx => lines[idx].trim().length <= MAX_OPTION_LENGTH);
+
+  if (!allShort || optionIndices.length === 0) {
+    return { cleanText: text.trim(), options: [] };
+  }
+
+  const options = [];
   for (const idx of optionIndices) {
     const match = lines[idx].trim().match(pattern);
     if (match) {
