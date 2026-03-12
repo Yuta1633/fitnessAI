@@ -132,25 +132,6 @@ async function buildUserContext() {
     if (checkin.note) ctx += `メモ: ${checkin.note}\n`;
   }
 
-  // 過去のタスクフィードバック
-  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
-  if (feedbackHistory.length > 0) {
-    ctx += `\n【直近のタスクフィードバック】\n`;
-    feedbackHistory.slice(0, 3).forEach(fb => {
-      ctx += `${fb.date}: ${fb.completedCount}/${fb.totalTasks}完了 / 感想:${fb.feeling}`;
-      if (fb.note) ctx += ` / ${fb.note}`;
-      ctx += '\n';
-    });
-    // フィードバック傾向を明示
-    const recentFeelings = feedbackHistory.slice(0, 3).map(f => f.feeling);
-    if (recentFeelings.includes('きつかった') || recentFeelings.includes('できなかった')) {
-      ctx += '→ 直近で「きつい」「できなかった」のフィードバックあり。負荷を下げるか内容を変える必要がある。\n';
-    }
-    if (recentFeelings.includes('楽にできた')) {
-      ctx += '→ 直近で「楽にできた」のフィードバックあり。負荷を上げてもよい。\n';
-    }
-  }
-
   ctx += '\n上記のユーザー情報を全て考慮し、この人の現在の状況・目的・体調・過去のフィードバックに最適化した具体的な提案をしてください。体重・体脂肪率・目標・期限がある場合は、そこから逆算した提案をすること。\n';
 
   cachedUserContext = ctx;
@@ -168,130 +149,6 @@ function getTodayCheckin() {
 function saveTodayCheckin(data) {
   const todayStr = new Date().toISOString().split('T')[0];
   localStorage.setItem(userKey(`checkin_${todayStr}`), JSON.stringify(data));
-}
-
-// ============================================================
-// デイリータスク
-// ============================================================
-async function generateDailyTasks() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const taskCard = document.getElementById('daily-task-card');
-  const taskContent = document.getElementById('daily-task-content');
-  if (!taskCard || !taskContent) return;
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem(userKey(`daily_tasks_${todayStr}`));
-  if (cached) {
-    taskContent.innerHTML = cached;
-    taskCard.style.display = '';
-    attachTaskCheckboxes();
-    return;
-  }
-
-  const ctx = await buildUserContext();
-  if (!ctx) return;
-
-  taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクを生成中...</p>';
-  taskCard.style.display = '';
-
-  const taskPrompt = `${ctx}
-
-上記のユーザー情報を元に、今日やるべき行動指針を3〜5個生成してください。
-
-【最重要ルール】
-・具体的なトレーニングメニュー（種目名・セット数・回数）は絶対に出さないこと
-・具体的な食事メニュー（料理名・食材・グラム数）は絶対に出さないこと
-・具体的なストレッチ/ケアの手順は絶対に出さないこと
-・上記の詳細メニューはAIコーチが生成するので、タスクはそこへの「誘導」にすること
-
-【タスクの書き方】
-・「何をすべきか」の方向性 + 「AIコーチでどの選択をすればいいか」を示す
-・例: 「AIコーチで『脂肪を落としたい → 栄養 → ちゃんと管理したい』を実行して、今日の食事プランを作る」
-・例: 「AIコーチで『筋肉をつけたい → トレーニング → ジムに通っている』を実行して、今日のメニューを組む」
-・例: 「水を2L以上飲む」「体重を記録する」「23時までに寝る」のような生活習慣タスクはOK
-・ユーザーの目的・重点・体調・フィードバックに応じて最適なAIコーチの選択肢を推奨すること
-・過去のフィードバックで「きつい」があれば「回復」系を推奨、「楽」なら強度アップの選択肢を推奨
-・体調不良なら回復優先のパスを推奨
-
-【出力形式】※この形式を厳守すること
-<task>タスク内容</task>
-<task>タスク内容</task>
-<task>タスク内容</task>
-
-タスクのみ出力し、他の説明は不要。`;
-
-  try {
-    const messages = [{ role: 'user', content: taskPrompt }];
-    const text = await callAPI(messages);
-    const tasks = [...text.matchAll(/<task>(.*?)<\/task>/gs)].map(m => m[1].trim());
-
-    if (tasks.length === 0) {
-      taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクの生成に失敗しました。</p>';
-      return;
-    }
-
-    const html = tasks.map((t, i) => `
-      <label class="daily-task-item" data-index="${i}">
-        <input type="checkbox" class="daily-task-check" data-index="${i}">
-        <span class="daily-task-text">${escapeHtml(t)}</span>
-      </label>
-    `).join('');
-
-    taskContent.innerHTML = html;
-    localStorage.setItem(userKey(`daily_tasks_${todayStr}`), html);
-    attachTaskCheckboxes();
-  } catch (err) {
-    console.error('デイリータスク生成エラー:', err);
-    taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクの生成に失敗しました。リロードしてお試しください。</p>';
-  }
-}
-
-function attachTaskCheckboxes() {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const completed = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
-  document.querySelectorAll('.daily-task-check').forEach(cb => {
-    const idx = parseInt(cb.dataset.index);
-    cb.checked = completed.includes(idx);
-    if (cb.checked) cb.closest('.daily-task-item').classList.add('done');
-    cb.addEventListener('change', () => {
-      const done = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
-      if (cb.checked) {
-        if (!done.includes(idx)) done.push(idx);
-        cb.closest('.daily-task-item').classList.add('done');
-      } else {
-        const i = done.indexOf(idx);
-        if (i !== -1) done.splice(i, 1);
-        cb.closest('.daily-task-item').classList.remove('done');
-      }
-      localStorage.setItem(userKey(`tasks_done_${todayStr}`), JSON.stringify(done));
-      updateTaskProgress();
-    });
-  });
-  updateTaskProgress();
-}
-
-function updateTaskProgress() {
-  const total = document.querySelectorAll('.daily-task-check').length;
-  const done = document.querySelectorAll('.daily-task-check:checked').length;
-  const progressEl = document.getElementById('task-progress');
-  if (progressEl) {
-    progressEl.textContent = `${done}/${total} 完了`;
-    progressEl.style.color = done === total && total > 0 ? 'var(--accent)' : 'var(--muted)';
-  }
-  const barEl = document.getElementById('task-progress-bar');
-  if (barEl) {
-    barEl.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
-  }
-  // 1つでもチェックしたらフィードバック欄を表示
-  const feedbackArea = document.getElementById('task-feedback-area');
-  const todayStr = new Date().toISOString().split('T')[0];
-  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
-  const alreadySubmitted = feedbackHistory.some(f => f.date === todayStr);
-  if (feedbackArea && done > 0 && !alreadySubmitted) {
-    feedbackArea.style.display = '';
-  }
 }
 
 // ============================================================
@@ -2863,7 +2720,6 @@ loadDashboard = async function() {
   // 非同期で追加データを読み込み
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
-  generateDailyTasks().catch(console.error);
   // ユーザーコンテキストをプリロード
   buildUserContext().catch(console.error);
 };
@@ -2964,11 +2820,6 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   mainContent.style.display = 'block';
   loadDashboard();
   renderCheckinSummary(checkinData);
-
-  // タスク再生成
-  const todayStr = new Date().toISOString().split('T')[0];
-  localStorage.removeItem(userKey(`daily_tasks_${todayStr}`));
-  generateDailyTasks().catch(console.error);
   generateAIRecommendation();
 });
 
@@ -2981,99 +2832,34 @@ async function generateAIRecommendation() {
   if (!recEl || !recText) return;
 
   const checkin = getTodayCheckin();
-  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
+  if (!checkin) return;
 
-  // フィードバックがなければ簡易メッセージ
-  if (feedbackHistory.length === 0 && checkin) {
-    const focusMap = {
-      '脂肪を落としたい': { goal: '1', method: 'nutrition', label: '「脂肪を落としたい → 栄養」でカロリー管理の具体プランを作成できます' },
-      '筋肉をつけたい': { goal: '2', method: 'training', label: '「筋肉をつけたい → トレーニング」で今日のメニューを生成できます' },
-      '体力を上げたい': { goal: '3', method: 'training', label: '「体力を上げたい → トレーニング」で持久力強化メニューを生成できます' },
-      '不調を改善したい': { goal: '4', method: 'recovery', label: '「不調を改善 → 回復」で改善プランを生成できます' },
-      '体型を整えたい': { goal: '5', method: 'training', label: '「体型を整える → トレーニング」でボディメイクメニューを生成できます' },
-    };
-    const rec = focusMap[checkin.focus];
-    if (rec) {
-      recText.innerHTML = `今日の目的に合わせて、AIコーチの<strong style="color:var(--accent);">${rec.label}</strong>`;
-      recEl.style.display = '';
-    }
-    return;
-  }
-
-  if (feedbackHistory.length === 0) return;
-
-  // フィードバックに基づくおすすめ生成
-  const lastFb = feedbackHistory[0];
-  const checkinInfo = checkin || {};
-
-  let recMessage = '';
-
-  // フィードバック分析してコーチの選択肢を推奨
-  if (lastFb.feeling === 'きつかった' || lastFb.feeling === 'できなかった') {
-    if (checkinInfo.focus === '脂肪を落としたい') {
-      recMessage = `昨日は負荷が高かったようです。今日はAIコーチの<strong style="color:var(--accent);">「脂肪を落としたい → 栄養 → ざっくりでいい」</strong>で無理のない食事管理から始めましょう`;
-    } else if (checkinInfo.focus === '筋肉をつけたい') {
-      recMessage = `昨日きつかった分、今日はAIコーチの<strong style="color:var(--accent);">「筋肉をつけたい → 回復」</strong>で筋肉の回復を優先するのがおすすめです`;
-    } else {
-      recMessage = `昨日のフィードバックから、今日はAIコーチの<strong style="color:var(--accent);">「回復・休養」</strong>メニューで体を整えるのが効果的です`;
-    }
-  } else if (lastFb.feeling === '楽にできた') {
-    if (checkinInfo.focus === '脂肪を落としたい') {
-      recMessage = `順調です！負荷を上げてAIコーチの<strong style="color:var(--accent);">「脂肪を落としたい → トレーニング」</strong>で消費カロリーを増やしましょう`;
-    } else if (checkinInfo.focus === '筋肉をつけたい') {
-      recMessage = `いい調子！AIコーチの<strong style="color:var(--accent);">「筋肉をつけたい → トレーニング → ジムに通っている」</strong>で負荷を上げたメニューを試しましょう`;
-    } else {
-      recMessage = `昨日は余裕があったので、今日はAIコーチで<strong style="color:var(--accent);">少し強度を上げたメニュー</strong>に挑戦してみましょう`;
-    }
-  } else {
-    // ちょうどよかった
-    const priorityMap = {
-      '栄養管理': '栄養',
-      'トレーニング': 'トレーニング',
-      '回復・休養': '回復',
-    };
-    const methodLabel = priorityMap[checkinInfo.priority] || '栄養';
-    recMessage = `いいペースです。今日の重点「${checkinInfo.priority || 'おまかせ'}」に合わせて、AIコーチの<strong style="color:var(--accent);">「${checkinInfo.focus || ''} → ${methodLabel}」</strong>で今日のプランを作りましょう`;
-  }
-
-  // フィードバックに具体的なメモがあれば追記
-  if (lastFb.note) {
-    recMessage += `<br><span style="font-size:12px; color:var(--muted);">昨日のメモ「${escapeHtml(lastFb.note)}」も考慮してAIが提案します</span>`;
-  }
-
-  recText.innerHTML = recMessage;
-  recEl.style.display = '';
-}
-
-// タスクフィードバック保存
-document.getElementById('task-feedback-btn')?.addEventListener('click', () => {
-  const feeling = document.querySelector('input[name="task-feeling"]:checked')?.value || '';
-  const note = document.getElementById('task-feedback-note')?.value.trim() || '';
-
-  if (!feeling) { alert('感想を選択してください'); return; }
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const completed = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
-  const totalTasks = document.querySelectorAll('.daily-task-check').length;
-
-  const feedback = {
-    feeling,
-    note,
-    completedCount: completed.length,
-    totalTasks,
-    date: todayStr
+  const focusMap = {
+    '脂肪を落としたい': '「脂肪を落としたい → 栄養」でカロリー管理の具体プランを作成できます',
+    '筋肉をつけたい': '「筋肉をつけたい → トレーニング」で今日のメニューを生成できます',
+    '体力を上げたい': '「体力を上げたい → トレーニング」で持久力強化メニューを生成できます',
+    '不調を改善したい': '「不調を改善 → 回復」で改善プランを生成できます',
+    '体型を整えたい': '「体型を整える → トレーニング」でボディメイクメニューを生成できます',
   };
 
-  // 直近7日分のフィードバックを保持
-  const allFeedback = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
-  allFeedback.unshift(feedback);
-  if (allFeedback.length > 7) allFeedback.length = 7;
-  localStorage.setItem(userKey('task_feedback_history'), JSON.stringify(allFeedback));
+  let recMessage = '';
+  const focusLabel = focusMap[checkin.focus];
 
-  const area = document.getElementById('task-feedback-area');
-  if (area) {
-    area.innerHTML = '<p style="font-size:13px; color:var(--accent); text-align:center; padding:8px 0;">保存しました。明日のタスクに反映されます。</p>';
+  if (focusLabel) {
+    recMessage = `今日の目的に合わせて、AIコーチの<strong style="color:var(--accent);">${focusLabel}</strong>`;
   }
 
-  cachedUserContext = null;
-});
+  // 体調に応じた補足
+  if (checkin.condition === '悪い' || checkin.condition === 'かなり悪い') {
+    recMessage += `<br><span style="font-size:12px; color:var(--muted);">体調が優れないようなので、無理せず「回復・休養」メニューもおすすめです</span>`;
+  }
+  if (checkin.sleep === '眠れなかった') {
+    recMessage += `<br><span style="font-size:12px; color:var(--muted);">睡眠不足気味のため、強度は控えめがおすすめです</span>`;
+  }
+
+  if (recMessage) {
+    recText.innerHTML = recMessage;
+    recEl.style.display = '';
+  }
+}
+

@@ -1690,7 +1690,7 @@ body {
 }
 
 /* ============================================================
-   Daily Check-in & Tasks
+   Daily Check-in
    ============================================================ */
 .checkin-group {
   margin-bottom: 14px;
@@ -1780,44 +1780,6 @@ body {
   border-color: rgba(200,241,53,0.35);
 }
 
-.daily-task-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.daily-task-item:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: var(--border-hover);
-}
-
-.daily-task-item.done {
-  opacity: 0.5;
-}
-
-.daily-task-item.done .daily-task-text {
-  text-decoration: line-through;
-}
-
-.daily-task-check {
-  margin-top: 2px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-
-.daily-task-text {
-  font-size: 13px;
-  color: var(--white);
-  line-height: 1.5;
-  flex: 1;
-}
 
 /* ============================================================
    Link Styles

@@ -232,7 +232,7 @@
   <div class="checkin-gate-inner">
     <p class="section-tag" style="margin-bottom:8px;">DAILY CHECK-IN</p>
     <h2 class="checkin-gate-title">今日のコンディションを教えてください</h2>
-    <p class="checkin-gate-sub">あなたの状況に合わせてタスクとAIコーチを最適化します</p>
+    <p class="checkin-gate-sub">あなたの状況に合わせてAIコーチを最適化します</p>
 
     <div class="checkin-group">
       <p class="checkin-label">今のいちばんの目的は？</p>
@@ -401,35 +401,6 @@
           <button id="checkin-edit-btn" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 12px; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">変更する</button>
         </div>
         <div id="checkin-summary-content" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-      </div>
-
-      <!-- デイリータスク -->
-      <div class="card visible" id="daily-task-card" style="margin-bottom: 16px; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <p class="section-tag">TODAY'S TASKS</p>
-          <p id="task-progress" style="font-size:12px; color:var(--muted);">0/0 完了</p>
-        </div>
-        <p class="section-title">今日の<strong>タスク</strong></p>
-        <div class="progress-track" style="margin-bottom:16px; height:4px;">
-          <div id="task-progress-bar" class="progress-fill" style="width:0%; height:100%;"></div>
-        </div>
-        <div id="daily-task-content"></div>
-        <div id="task-feedback-area" style="display:none; border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
-          <p class="checkin-label">今日のふりかえり</p>
-          <div class="checkin-group">
-            <p class="checkin-label" style="font-size:11px;">全体の感想</p>
-            <div class="checkin-options">
-              <label class="checkin-option"><input type="radio" name="task-feeling" value="楽にできた"><span>楽にできた</span></label>
-              <label class="checkin-option"><input type="radio" name="task-feeling" value="ちょうどよかった"><span>ちょうどよい</span></label>
-              <label class="checkin-option"><input type="radio" name="task-feeling" value="きつかった"><span>きつかった</span></label>
-              <label class="checkin-option"><input type="radio" name="task-feeling" value="できなかった"><span>できなかった</span></label>
-            </div>
-          </div>
-          <div class="checkin-group">
-            <input type="text" id="task-feedback-note" placeholder="例：スクワットで膝が痛い、食事は守れた" class="checkin-input" style="width:100%;">
-          </div>
-          <button id="task-feedback-btn" class="checkin-submit">ふりかえりを保存</button>
-        </div>
       </div>
 
       <div class="card visible" style="margin-bottom: 16px;">
@@ -798,7 +769,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=11').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=12').then(reg => {
       reg.update();
     }).catch(() => {});
   });
