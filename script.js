@@ -21,6 +21,15 @@ const UNLOCK_BODY_DIAGNOSIS = 30;
 let unlockedFeatures = new Set();
 
 // ============================================================
+// ユーザースコープ付きlocalStorage
+// ============================================================
+let currentUserId = null;
+
+function userKey(key) {
+  return currentUserId ? `${currentUserId}_${key}` : key;
+}
+
+// ============================================================
 // ユーザーコンテキストシステム
 // ============================================================
 let cachedUserContext = null;
@@ -56,7 +65,7 @@ async function buildUserContext() {
 
   // デイリーチェックイン
   const todayStr = now.toISOString().split('T')[0];
-  const checkin = JSON.parse(localStorage.getItem(`checkin_${todayStr}`) || 'null');
+  const checkin = JSON.parse(localStorage.getItem(userKey(`checkin_${todayStr}`)) || 'null');
 
   // コンテキスト組み立て
   let ctx = '【ユーザープロフィール】\n';
@@ -124,7 +133,7 @@ async function buildUserContext() {
   }
 
   // 過去のタスクフィードバック
-  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
   if (feedbackHistory.length > 0) {
     ctx += `\n【直近のタスクフィードバック】\n`;
     feedbackHistory.slice(0, 3).forEach(fb => {
@@ -153,12 +162,12 @@ async function buildUserContext() {
 // ============================================================
 function getTodayCheckin() {
   const todayStr = new Date().toISOString().split('T')[0];
-  return JSON.parse(localStorage.getItem(`checkin_${todayStr}`) || 'null');
+  return JSON.parse(localStorage.getItem(userKey(`checkin_${todayStr}`)) || 'null');
 }
 
 function saveTodayCheckin(data) {
   const todayStr = new Date().toISOString().split('T')[0];
-  localStorage.setItem(`checkin_${todayStr}`, JSON.stringify(data));
+  localStorage.setItem(userKey(`checkin_${todayStr}`), JSON.stringify(data));
 }
 
 // ============================================================
@@ -173,7 +182,7 @@ async function generateDailyTasks() {
   if (!taskCard || !taskContent) return;
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const cached = localStorage.getItem(`daily_tasks_${todayStr}`);
+  const cached = localStorage.getItem(userKey(`daily_tasks_${todayStr}`));
   if (cached) {
     taskContent.innerHTML = cached;
     taskCard.style.display = '';
@@ -229,7 +238,7 @@ async function generateDailyTasks() {
     `).join('');
 
     taskContent.innerHTML = html;
-    localStorage.setItem(`daily_tasks_${todayStr}`, html);
+    localStorage.setItem(userKey(`daily_tasks_${todayStr}`), html);
     attachTaskCheckboxes();
   } catch (err) {
     console.error('デイリータスク生成エラー:', err);
@@ -239,13 +248,13 @@ async function generateDailyTasks() {
 
 function attachTaskCheckboxes() {
   const todayStr = new Date().toISOString().split('T')[0];
-  const completed = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+  const completed = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
   document.querySelectorAll('.daily-task-check').forEach(cb => {
     const idx = parseInt(cb.dataset.index);
     cb.checked = completed.includes(idx);
     if (cb.checked) cb.closest('.daily-task-item').classList.add('done');
     cb.addEventListener('change', () => {
-      const done = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+      const done = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
       if (cb.checked) {
         if (!done.includes(idx)) done.push(idx);
         cb.closest('.daily-task-item').classList.add('done');
@@ -254,7 +263,7 @@ function attachTaskCheckboxes() {
         if (i !== -1) done.splice(i, 1);
         cb.closest('.daily-task-item').classList.remove('done');
       }
-      localStorage.setItem(`tasks_done_${todayStr}`, JSON.stringify(done));
+      localStorage.setItem(userKey(`tasks_done_${todayStr}`), JSON.stringify(done));
       updateTaskProgress();
     });
   });
@@ -276,7 +285,7 @@ function updateTaskProgress() {
   // 1つでもチェックしたらフィードバック欄を表示
   const feedbackArea = document.getElementById('task-feedback-area');
   const todayStr = new Date().toISOString().split('T')[0];
-  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
   const alreadySubmitted = feedbackHistory.some(f => f.date === todayStr);
   if (feedbackArea && done > 0 && !alreadySubmitted) {
     feedbackArea.style.display = '';
@@ -422,6 +431,7 @@ async function incrementOnSuccess() {
 
 async function updateUI(session) {
   if (session) {
+    currentUserId = session.user.id;
     const count = await getUsageCount(session.user.id);
     loginBox.style.display = 'none';
     userBox.style.display = 'block';
@@ -466,11 +476,14 @@ async function updateUI(session) {
       consentModal.style.display = 'block';
     }
   } else {
+    currentUserId = null;
     loginBox.style.display = 'block';
     userBox.style.display = 'none';
     mainContent.style.display = 'none';
     consentModal.style.display = 'none';
     notAllowedScreen.style.display = 'none';
+    const checkinGate = document.getElementById('checkin-gate');
+    if (checkinGate) checkinGate.style.display = 'none';
     // ログイン前はナビとツールパネルを非表示
     const bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) bottomNav.style.display = 'none';
@@ -481,12 +494,10 @@ async function updateUI(session) {
 
 supabase.auth.getSession().then(async ({ data: { session } }) => {
   await updateUI(session);
-  if (session) loadDashboard();
 });
 
 supabase.auth.onAuthStateChange(async (_event, session) => {
   await updateUI(session);
-  if (session) loadDashboard();
 });
 
 googleLoginBtn.addEventListener('click', async () => {
@@ -2450,7 +2461,7 @@ function showNameInputModal(userId) {
 
   function closeOnboarding() {
     modal.style.display = 'none';
-    localStorage.setItem('fitai_onboarding_done', '1');
+    localStorage.setItem(userKey('fitai_onboarding_done'), '1');
   }
 
   nextBtn.addEventListener('click', () => {
@@ -2466,7 +2477,7 @@ function showNameInputModal(userId) {
 
   // ログイン後に初回のみ表示
   supabase.auth.onAuthStateChange((_event, session) => {
-    if (session && !localStorage.getItem('fitai_onboarding_done')) {
+    if (session && !localStorage.getItem(userKey('fitai_onboarding_done'))) {
       modal.style.display = 'flex';
     }
   });
@@ -2807,7 +2818,7 @@ function finalizeStreamingMessage(div, text) {
 
   // PWA対応 + 通知未許可 + まだ閉じていない場合に表示
   supabase.auth.onAuthStateChange((_event, session) => {
-    if (session && 'Notification' in window && Notification.permission === 'default' && !localStorage.getItem('fitai_notif_dismissed')) {
+    if (session && 'Notification' in window && Notification.permission === 'default' && !localStorage.getItem(userKey('fitai_notif_dismissed'))) {
       setTimeout(() => banner.classList.add('show'), 3000);
     }
   });
@@ -2816,7 +2827,7 @@ function finalizeStreamingMessage(div, text) {
     const permission = await Notification.requestPermission();
     banner.classList.remove('show');
     if (permission === 'granted') {
-      localStorage.setItem('fitai_notif_enabled', '1');
+      localStorage.setItem(userKey('fitai_notif_enabled'), '1');
       new Notification('フィットネスAIコーチ', {
         body: '通知が有効になりました。コーチからのリマインドを受け取れます。',
         icon: '/manifest.json'
@@ -2826,7 +2837,7 @@ function finalizeStreamingMessage(div, text) {
 
   closeBtn.addEventListener('click', () => {
     banner.classList.remove('show');
-    localStorage.setItem('fitai_notif_dismissed', '1');
+    localStorage.setItem(userKey('fitai_notif_dismissed'), '1');
   });
 })();
 
@@ -2885,7 +2896,7 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
 
   // タスク生成
   const todayStr = new Date().toISOString().split('T')[0];
-  localStorage.removeItem(`daily_tasks_${todayStr}`);
+  localStorage.removeItem(userKey(`daily_tasks_${todayStr}`));
   generateDailyTasks().catch(console.error);
   generateAIRecommendation();
 });
@@ -2899,7 +2910,7 @@ async function generateAIRecommendation() {
   if (!recEl || !recText) return;
 
   const checkin = getTodayCheckin();
-  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  const feedbackHistory = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
 
   // フィードバックがなければ簡易メッセージ
   if (feedbackHistory.length === 0 && checkin) {
@@ -2971,7 +2982,7 @@ document.getElementById('task-feedback-btn')?.addEventListener('click', () => {
   if (!feeling) { alert('感想を選択してください'); return; }
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const completed = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+  const completed = JSON.parse(localStorage.getItem(userKey(`tasks_done_${todayStr}`)) || '[]');
   const totalTasks = document.querySelectorAll('.daily-task-check').length;
 
   const feedback = {
@@ -2983,10 +2994,10 @@ document.getElementById('task-feedback-btn')?.addEventListener('click', () => {
   };
 
   // 直近7日分のフィードバックを保持
-  const allFeedback = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  const allFeedback = JSON.parse(localStorage.getItem(userKey('task_feedback_history')) || '[]');
   allFeedback.unshift(feedback);
   if (allFeedback.length > 7) allFeedback.length = 7;
-  localStorage.setItem('task_feedback_history', JSON.stringify(allFeedback));
+  localStorage.setItem(userKey('task_feedback_history'), JSON.stringify(allFeedback));
 
   const area = document.getElementById('task-feedback-area');
   if (area) {
