@@ -1211,7 +1211,7 @@ async function generateResponse() {
 
   const count = await getUsageCount(session.user.id);
   if (count >= DAILY_LIMIT) {
-    alert('本日の利用回数が上限（20回）に達しました。明日またご利用ください。');
+    alert('本日の利用回数が上限（100回）に達しました。明日またご利用ください。');
     return;
   }
 
