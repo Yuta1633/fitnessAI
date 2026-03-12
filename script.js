@@ -211,12 +211,14 @@ async function updateUI(session) {
   }
 }
 
-supabase.auth.getSession().then(({ data: { session } }) => {
-  updateUI(session);
+supabase.auth.getSession().then(async ({ data: { session } }) => {
+  await updateUI(session);
+  if (session) loadDashboard();
 });
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  updateUI(session);
+supabase.auth.onAuthStateChange(async (_event, session) => {
+  await updateUI(session);
+  if (session) loadDashboard();
 });
 
 googleLoginBtn.addEventListener('click', async () => {
@@ -1118,9 +1120,11 @@ resetBtn.addEventListener('click', () => {
 // ダッシュボード
 // ============================================================
 async function loadDashboard() {
+  console.log('loadDashboard called');
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
+  if (!session) { console.log('loadDashboard: no session'); return; }
   const userId = session.user.id;
+  console.log('loadDashboard: userId=', userId);
 
   const { data: usageData } = await supabase
     .from('usage_limits')
@@ -1495,10 +1499,6 @@ document.getElementById('record-btn').addEventListener('click', async () => {
   document.getElementById('weight-input').value = '';
   document.getElementById('bodyfat-input').value = '';
   await loadDashboard();
-});
-
-supabase.auth.onAuthStateChange((_event, session) => {
-  if (session) loadDashboard();
 });
 
 // ============================================================
