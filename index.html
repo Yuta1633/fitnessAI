@@ -335,6 +335,25 @@
         <p class="section-tag">TODAY'S CHECK-IN</p>
         <p class="section-title">今日の<strong>コンディション</strong></p>
         <div class="checkin-group">
+          <p class="checkin-label">今のいちばんの目的は？</p>
+          <div class="checkin-options">
+            <label class="checkin-option"><input type="radio" name="focus" value="脂肪を落としたい"><span>脂肪を落とす</span></label>
+            <label class="checkin-option"><input type="radio" name="focus" value="筋肉をつけたい"><span>筋肉をつける</span></label>
+            <label class="checkin-option"><input type="radio" name="focus" value="体力を上げたい"><span>体力を上げる</span></label>
+            <label class="checkin-option"><input type="radio" name="focus" value="不調を改善したい"><span>不調を改善</span></label>
+            <label class="checkin-option"><input type="radio" name="focus" value="体型を整えたい"><span>体型を整える</span></label>
+          </div>
+        </div>
+        <div class="checkin-group">
+          <p class="checkin-label">今日は何を重点的にやりたい？</p>
+          <div class="checkin-options">
+            <label class="checkin-option"><input type="radio" name="priority" value="栄養管理"><span>栄養管理</span></label>
+            <label class="checkin-option"><input type="radio" name="priority" value="トレーニング"><span>トレーニング</span></label>
+            <label class="checkin-option"><input type="radio" name="priority" value="回復・休養"><span>回復・休養</span></label>
+            <label class="checkin-option"><input type="radio" name="priority" value="おまかせ"><span>おまかせ</span></label>
+          </div>
+        </div>
+        <div class="checkin-group">
           <p class="checkin-label">体調</p>
           <div class="checkin-options">
             <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
@@ -353,9 +372,9 @@
         </div>
         <div class="checkin-group">
           <p class="checkin-label">メモ（任意）</p>
-          <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛" class="checkin-input">
+          <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛、膝が少し痛い" class="checkin-input">
         </div>
-        <button id="checkin-save-btn" class="checkin-submit">チェックインする</button>
+        <button id="checkin-save-btn" class="checkin-submit">チェックインしてタスクを生成</button>
       </div>
 
       <!-- デイリータスク -->
@@ -369,6 +388,22 @@
           <div id="task-progress-bar" class="progress-fill" style="width:0%; height:100%;"></div>
         </div>
         <div id="daily-task-content"></div>
+        <div id="task-feedback-area" style="display:none; border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
+          <p class="checkin-label">今日のふりかえり</p>
+          <div class="checkin-group">
+            <p class="checkin-label" style="font-size:11px;">全体の感想</p>
+            <div class="checkin-options">
+              <label class="checkin-option"><input type="radio" name="task-feeling" value="楽にできた"><span>楽にできた</span></label>
+              <label class="checkin-option"><input type="radio" name="task-feeling" value="ちょうどよかった"><span>ちょうどよい</span></label>
+              <label class="checkin-option"><input type="radio" name="task-feeling" value="きつかった"><span>きつかった</span></label>
+              <label class="checkin-option"><input type="radio" name="task-feeling" value="できなかった"><span>できなかった</span></label>
+            </div>
+          </div>
+          <div class="checkin-group">
+            <input type="text" id="task-feedback-note" placeholder="例：スクワットで膝が痛い、食事は守れた" class="checkin-input" style="width:100%;">
+          </div>
+          <button id="task-feedback-btn" class="checkin-submit">ふりかえりを保存</button>
+        </div>
       </div>
 
       <div class="card visible" style="margin-bottom: 16px;">
@@ -737,7 +772,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=6').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=7').then(reg => {
       reg.update();
     }).catch(() => {});
   });

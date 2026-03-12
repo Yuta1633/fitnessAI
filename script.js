@@ -116,12 +116,33 @@ async function buildUserContext() {
 
   if (checkin) {
     ctx += `\n【今日のコンディション】\n`;
+    if (checkin.focus) ctx += `今の目的: ${checkin.focus}\n`;
+    if (checkin.priority) ctx += `今日の重点: ${checkin.priority}\n`;
     if (checkin.condition) ctx += `体調: ${checkin.condition}\n`;
     if (checkin.sleep) ctx += `睡眠: ${checkin.sleep}\n`;
     if (checkin.note) ctx += `メモ: ${checkin.note}\n`;
   }
 
-  ctx += '\n上記のユーザー情報を考慮し、この人の現在の状況に最適化した具体的な提案をしてください。体重・体脂肪率・目標・期限がある場合は、そこから逆算した提案をすること。\n';
+  // 過去のタスクフィードバック
+  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  if (feedbackHistory.length > 0) {
+    ctx += `\n【直近のタスクフィードバック】\n`;
+    feedbackHistory.slice(0, 3).forEach(fb => {
+      ctx += `${fb.date}: ${fb.completedCount}/${fb.totalTasks}完了 / 感想:${fb.feeling}`;
+      if (fb.note) ctx += ` / ${fb.note}`;
+      ctx += '\n';
+    });
+    // フィードバック傾向を明示
+    const recentFeelings = feedbackHistory.slice(0, 3).map(f => f.feeling);
+    if (recentFeelings.includes('きつかった') || recentFeelings.includes('できなかった')) {
+      ctx += '→ 直近で「きつい」「できなかった」のフィードバックあり。負荷を下げるか内容を変える必要がある。\n';
+    }
+    if (recentFeelings.includes('楽にできた')) {
+      ctx += '→ 直近で「楽にできた」のフィードバックあり。負荷を上げてもよい。\n';
+    }
+  }
+
+  ctx += '\n上記のユーザー情報を全て考慮し、この人の現在の状況・目的・体調・過去のフィードバックに最適化した具体的な提案をしてください。体重・体脂肪率・目標・期限がある場合は、そこから逆算した提案をすること。\n';
 
   cachedUserContext = ctx;
   return ctx;
@@ -170,12 +191,18 @@ async function generateDailyTasks() {
 
 上記のユーザー情報を元に、今日やるべきタスクを3〜5個生成してください。
 
-【ルール】
-・ユーザーの目標・体組成・今週の取り組みバランスを考慮して最適化すること
-・栄養・トレーニング・回復のバランスを見て、足りていない領域を優先すること
+【重要ルール】
+・ユーザーの「今の目的」と「今日の重点」を最優先で反映すること
+・目的が「脂肪を落としたい」なら消費カロリー＞摂取カロリーになるタスク構成にする
+・目的が「筋肉をつけたい」ならタンパク質摂取量とトレーニング種目を具体化する
+・「今日の重点」が指定されていればその領域のタスクを厚くする（「おまかせ」なら今週のバランスで判断）
 ・体調が悪い日は負荷を下げる、睡眠不足なら回復を優先するなど柔軟に対応
+・過去のフィードバックで「きつい」「できなかった」があれば難易度を下げる
+・過去のフィードバックで「楽にできた」があれば負荷を上げる
+・過去にフィードバックで具体的な問題（膝が痛い等）があればそれを避ける
 ・各タスクは具体的で実行可能なもの（「水を2L飲む」「スクワット3セット×15回」など）
 ・曖昧な指示は禁止（「運動する」「気をつける」はNG）
+・体重/体脂肪/目標/期限があれば逆算して日割りペースを意識する
 
 【出力形式】※この形式を厳守すること
 <task>タスク内容</task>
@@ -245,6 +272,14 @@ function updateTaskProgress() {
   const barEl = document.getElementById('task-progress-bar');
   if (barEl) {
     barEl.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
+  }
+  // 1つでもチェックしたらフィードバック欄を表示
+  const feedbackArea = document.getElementById('task-feedback-area');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const feedbackHistory = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  const alreadySubmitted = feedbackHistory.some(f => f.date === todayStr);
+  if (feedbackArea && done > 0 && !alreadySubmitted) {
+    feedbackArea.style.display = '';
   }
 }
 
@@ -2830,13 +2865,16 @@ function initDailyCheckin() {
 }
 
 document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
+  const focus = document.querySelector('input[name="focus"]:checked')?.value || '';
+  const priority = document.querySelector('input[name="priority"]:checked')?.value || '';
   const condition = document.querySelector('input[name="condition"]:checked')?.value || '';
   const sleep = document.querySelector('input[name="sleep"]:checked')?.value || '';
   const note = document.getElementById('checkin-note')?.value.trim() || '';
 
+  if (!focus) { alert('目的を選択してください'); return; }
   if (!condition) { alert('体調を選択してください'); return; }
 
-  saveTodayCheckin({ condition, sleep, note });
+  saveTodayCheckin({ focus, priority, condition, sleep, note });
   cachedUserContext = null;
 
   const checkinCard = document.getElementById('checkin-card');
@@ -2846,4 +2884,37 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   const todayStr = new Date().toISOString().split('T')[0];
   localStorage.removeItem(`daily_tasks_${todayStr}`);
   generateDailyTasks().catch(console.error);
+});
+
+// タスクフィードバック保存
+document.getElementById('task-feedback-btn')?.addEventListener('click', () => {
+  const feeling = document.querySelector('input[name="task-feeling"]:checked')?.value || '';
+  const note = document.getElementById('task-feedback-note')?.value.trim() || '';
+
+  if (!feeling) { alert('感想を選択してください'); return; }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const completed = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+  const totalTasks = document.querySelectorAll('.daily-task-check').length;
+
+  const feedback = {
+    feeling,
+    note,
+    completedCount: completed.length,
+    totalTasks,
+    date: todayStr
+  };
+
+  // 直近7日分のフィードバックを保持
+  const allFeedback = JSON.parse(localStorage.getItem('task_feedback_history') || '[]');
+  allFeedback.unshift(feedback);
+  if (allFeedback.length > 7) allFeedback.length = 7;
+  localStorage.setItem('task_feedback_history', JSON.stringify(allFeedback));
+
+  const area = document.getElementById('task-feedback-area');
+  if (area) {
+    area.innerHTML = '<p style="font-size:13px; color:var(--accent); text-align:center; padding:8px 0;">保存しました。明日のタスクに反映されます。</p>';
+  }
+
+  cachedUserContext = null;
 });
