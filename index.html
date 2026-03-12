@@ -784,7 +784,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=30').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=31').then(reg => {
       reg.update();
     }).catch(() => {});
   });

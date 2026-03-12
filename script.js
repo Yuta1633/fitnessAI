@@ -1044,10 +1044,19 @@ function addMessage(role, text) {
       const { cleanText, options } = parseOptions(text);
       div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
 
-      if (options.length > 0) {
+      let finalOpts = options;
+      if (finalOpts.length === 0 && isNutritionResponse(text)) {
+        finalOpts = [
+          { number: '1', label: '第一候補のレシピを見る' },
+          { number: '2', label: '第二候補のレシピを見る' },
+          { number: '3', label: 'これならOKのレシピを見る' }
+        ];
+      }
+
+      if (finalOpts.length > 0) {
         const btnGroup = document.createElement('div');
         btnGroup.className = 'option-buttons';
-        options.forEach(opt => {
+        finalOpts.forEach(opt => {
           const btn = document.createElement('button');
           btn.className = 'option-btn';
           btn.textContent = `${opt.number}. ${opt.label}`;
@@ -1247,7 +1256,9 @@ async function generateResponse() {
     : '';
   let userCtx = cachedUserContext || '';
   try { if (!userCtx) userCtx = await buildUserContext(); } catch (e) { console.warn('コンテキスト構築失敗:', e); }
-  const finalPrompt = `${userCtx}\n${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
+  const goalLabel = { '1': '体脂肪減少', '2': '筋肥大', '3': '体力向上', '4': '不調改善', '5': '見た目改善' };
+  const goalTag = `【現在の目的番号: ${selectedGoal}「${goalLabel[selectedGoal] || ''}」】\nPFC計算では目的${selectedGoal}の係数を使うこと。\n`;
+  const finalPrompt = `${userCtx}\n${goalTag}${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
   conversationHistory.push({ role: 'user', content: finalPrompt });
 
   loadingIndicator.classList.add('hidden');
@@ -2726,10 +2737,20 @@ function finalizeStreamingMessage(div, text) {
   const { cleanText, options } = parseOptions(text);
   div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
 
-  if (options.length > 0) {
+  // 選択肢ボタンを表示（AIが出力した場合 or 栄養提案の場合にレシピボタンを強制追加）
+  let finalOptions = options;
+  if (finalOptions.length === 0 && isNutritionResponse(text)) {
+    finalOptions = [
+      { number: '1', label: '第一候補のレシピを見る' },
+      { number: '2', label: '第二候補のレシピを見る' },
+      { number: '3', label: 'これならOKのレシピを見る' }
+    ];
+  }
+
+  if (finalOptions.length > 0) {
     const btnGroup = document.createElement('div');
     btnGroup.className = 'option-buttons';
-    options.forEach(opt => {
+    finalOptions.forEach(opt => {
       const btn = document.createElement('button');
       btn.className = 'option-btn';
       btn.textContent = `${opt.number}. ${opt.label}`;
@@ -2742,6 +2763,10 @@ function finalizeStreamingMessage(div, text) {
     div.appendChild(btnGroup);
   }
   chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+function isNutritionResponse(text) {
+  return text.includes('第一候補') && text.includes('第二候補') && text.includes('これならOK');
 }
 
 // ============================================================
