@@ -252,9 +252,11 @@
       align-items: center;
       gap: 12px;
       padding: 12px 16px;
-      background: rgba(8,8,10,0.95);
-      border-bottom: 1px solid #1a1a1a;
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      background: rgba(8,8,10,0.98);
+      border-bottom: 1px solid #2a2a2a;
       flex-shrink: 0;
+      min-height: 52px;
     }
 
     .overlay-back {
@@ -316,9 +318,13 @@
     <div class="overlay-bar">
       <button class="overlay-back" onclick="closeToolOverlay()">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        戻る
+        ツール一覧
       </button>
       <span class="overlay-title" id="overlay-title">ツール</span>
+      <button class="overlay-back" onclick="closeToolOverlay(); switchTab('home');" style="margin-left:auto">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+        AIコーチ
+      </button>
     </div>
     <iframe id="tool-iframe" src="" loading="lazy"></iframe>
   </div>
@@ -911,7 +917,10 @@ document.addEventListener('keydown', function(e) {
 
 // iframe内のツールページからの戻るボタン対応
 window.addEventListener('message', function(e) {
-  if (e.data === 'closeToolOverlay') closeToolOverlay();
+  if (e.data === 'closeToolOverlay') {
+    closeToolOverlay();
+    switchTab('home');
+  }
 });
 </script>
 </body>
