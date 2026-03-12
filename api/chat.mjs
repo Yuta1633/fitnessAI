@@ -49,8 +49,8 @@ export default async function handler(req, res) {
       .eq('date', today)
       .maybeSingle();
 
-    if (usageData && usageData.count >= 20) {
-      return res.status(429).json({ error: '本日の利用回数が上限（20回）に達しました。' });
+    if (usageData && usageData.count >= 100) {
+      return res.status(429).json({ error: '本日の利用回数が上限（100回）に達しました。' });
     }
   } catch (e) {
     console.error('Auth check failed:', e.message);

@@ -13,7 +13,7 @@ const userNameEl     = document.getElementById('user-name');
 const usageCountEl   = document.getElementById('usage-count');
 const mainContent    = document.getElementById('main-content');
 
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 100;
 
 let currentStreak = 0;
 const UNLOCK_PERSONAL_ANALYSIS = 7;
