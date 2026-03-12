@@ -218,10 +218,10 @@
       <a href="/Privacy.html" target="_blank" class="consent-link">プライバシーポリシー</a>
     </div>
 
-    <label id="consent-label" class="consent-checkbox-label">
-      <input type="checkbox" id="consent-checkbox" class="consent-checkbox">
-      <span class="consent-checkbox-text"><a href="/Terms.html" target="_blank" class="link-accent" style="text-decoration:underline;">利用規約</a>と<a href="/Privacy.html" target="_blank" class="link-accent" style="text-decoration:underline;">プライバシーポリシー</a>に同意します</span>
-    </label>
+    <div id="consent-label" class="consent-checkbox-label" onclick="document.getElementById('consent-checkbox').click()">
+      <input type="checkbox" id="consent-checkbox" class="consent-checkbox" onclick="event.stopPropagation()">
+      <span class="consent-checkbox-text"><a href="/Terms.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">利用規約</a>と<a href="/Privacy.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">プライバシーポリシー</a>に同意します</span>
+    </div>
 
     <button id="consent-agree-btn" disabled class="consent-btn">同意してはじめる</button>
   </div>
@@ -769,7 +769,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=12').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=13').then(reg => {
       reg.update();
     }).catch(() => {});
   });
