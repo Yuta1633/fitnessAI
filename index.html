@@ -6,308 +6,9 @@
   <title>フィットネスAIコーチ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-  <style>
-    /* ============================================================
-       Bottom Nav Bar
-       ============================================================ */
-    :root {
-      --nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 9999;
-      background: rgba(10,10,10,0.96);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-top: 1px solid #1e1e1e;
-      display: flex;
-      height: 64px;
-      padding-bottom: env(safe-area-inset-bottom, 0);
-    }
-
-    .nav-tab {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: none;
-      background: none;
-      color: #555;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 10px;
-      letter-spacing: 0.05em;
-      padding: 8px 0;
-      position: relative;
-    }
-
-    .nav-tab svg {
-      width: 20px; height: 20px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: all 0.2s;
-    }
-
-    .nav-tab.active {
-      color: #c8f135;
-    }
-
-    .nav-tab.active::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 20%; right: 20%;
-      height: 2px;
-      background: #c8f135;
-      border-radius: 0 0 2px 2px;
-    }
-
-    /* ============================================================
-       Tools Panel
-       ============================================================ */
-    #tools-panel {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: var(--nav-height);
-      z-index: 900;
-      background: #0a0a0a;
-      overflow-y: auto;
-      padding: 32px 20px 32px;
-      animation: slideUp 0.3s ease both;
-    }
-
-    #tools-panel.open {
-      display: block;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .tools-hdr {
-      margin-bottom: 28px;
-    }
-
-    .tools-hdr-label {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.35em;
-      color: #c8f135;
-      margin-bottom: 8px;
-    }
-
-    .tools-hdr h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 40px;
-      line-height: 1;
-      color: #f5f5f0;
-    }
-
-    .tools-hdr h2 span {
-      color: #c8f135;
-    }
-
-    .tools-hdr p {
-      font-size: 12px;
-      color: #666;
-      margin-top: 8px;
-      line-height: 1.7;
-    }
-
-    .tools-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .tool-card {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      padding: 20px;
-      background: #111;
-      border: 1px solid #1e1e1e;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.22s;
-      position: relative;
-      overflow: hidden;
-      text-decoration: none;
-    }
-
-    .tool-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(120deg, rgba(200,241,53,0.04), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .tool-card:hover, .tool-card:active {
-      border-color: rgba(200,241,53,0.25);
-      transform: translateX(4px);
-    }
-
-    .tool-card:hover::before, .tool-card:active::before {
-      opacity: 1;
-    }
-
-    .tool-icon {
-      width: 48px; height: 48px;
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
-    }
-
-    .tool-icon.red   { background: rgba(255,59,92,0.1);  }
-    .tool-icon.purple{ background: rgba(139,92,246,0.1); }
-    .tool-icon.teal  { background: rgba(6,182,212,0.1);  }
-    .tool-icon.orange{ background: rgba(249,115,22,0.1); }
-
-    .tool-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .tool-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: #f5f5f0;
-      margin-bottom: 4px;
-    }
-
-    .tool-desc {
-      font-size: 11px;
-      color: #666;
-      line-height: 1.6;
-    }
-
-    .tool-badge {
-      font-family: 'Bebas Neue', monospace;
-      font-size: 9px;
-      color: #c8f135;
-      border: 1px solid rgba(200,241,53,0.3);
-      border-radius: 4px;
-      padding: 2px 6px;
-      letter-spacing: 1px;
-      flex-shrink: 0;
-    }
-
-    /* Science badge on panel */
-    .tools-sci-note {
-      margin-top: 24px;
-      padding: 14px 16px;
-      background: #111;
-      border: 1px solid #1e1e1e;
-      border-radius: 12px;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-    }
-
-    .tools-sci-note span {
-      font-size: 11px;
-      color: #555;
-      line-height: 1.7;
-    }
-
-    /* ============================================================
-       Tool Iframe Overlay
-       ============================================================ */
-    #tool-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: var(--nav-height);
-      z-index: 950;
-      flex-direction: column;
-      background: #08080A;
-    }
-
-    #tool-overlay.open {
-      display: flex;
-    }
-
-    .overlay-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      padding-top: calc(12px + env(safe-area-inset-top, 0px));
-      background: #111118;
-      border-bottom: 2px solid #FF3B5C;
-      flex-shrink: 0;
-      min-height: 52px;
-      z-index: 10;
-    }
-
-    .overlay-back {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 16px;
-      background: #FF3B5C;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .overlay-back:hover {
-      background: #e0334f;
-    }
-
-    .overlay-back svg {
-      width: 14px; height: 14px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .overlay-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 16px;
-      letter-spacing: 0.1em;
-      color: #f5f5f0;
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    #tool-iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-      background: #08080A;
-    }
-  </style>
 </head>
 <body>
 
@@ -335,8 +36,8 @@
        ツールパネル
        ====================================================== -->
   <div id="tools-panel">
-    <button onclick="switchTab('home')" style="display:flex;align-items:center;gap:8px;padding:12px 20px;margin:0 0 8px;background:#FF3B5C;border:none;border-radius:10px;color:#fff;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;cursor:pointer;width:100%;">
-      <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    <button class="tools-back-btn" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
       AIコーチに戻る
     </button>
     <div class="tools-hdr">
@@ -390,141 +91,90 @@
   </div>
 
   <!-- ======================================================
-       既存コンテンツ（変更なし）
+       メインパネル
        ====================================================== -->
   <div id="main-panel" style="padding-bottom: var(--nav-height);">
     <div class="container">
-      <!-- ログインエリア -->
-<div id="auth-area" style="text-align:center; padding: 20px 0 40px;">
+
+<!-- ログインエリア -->
+<div id="auth-area" class="auth-area">
   <div id="login-box">
-    <p style="color: #888; margin-bottom: 16px; font-size: 14px;">ログインしてご利用ください</p>
-    <button id="google-login-btn" style="
-      background: #fff;
-      color: #333;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px 24px;
-      font-size: 15px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 auto;
-    ">
-      <img src="https://www.google.com/favicon.ico" width="18">
+    <p class="auth-hint">ログインしてご利用ください</p>
+    <button id="google-login-btn" class="google-login-btn">
+      <img src="https://www.google.com/favicon.ico" width="18" alt="Google">
       Googleでログイン
     </button>
-    <p style="margin-top:12px;"><a href="/lp.html" style="color:#4ecdc4; font-size:13px; text-decoration:none;">サービスの詳細を見る →</a></p>
+    <p style="margin-top:12px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
   </div>
   <div id="user-box" style="display:none;">
-    <p id="user-name" style="color: #c8f135; font-size: 14px; margin-bottom: 8px;"></p>
-    <p id="usage-count" style="color: #888; font-size: 13px; margin-bottom: 12px;"></p>
-    <button id="logout-btn" style="
-      background: transparent;
-      color: #888;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 8px 16px;
-      font-size: 13px;
-      cursor: pointer;
-    ">ログアウト</button>
+    <p id="user-name" class="user-name"></p>
+    <p id="usage-count" class="usage-count"></p>
+    <button id="logout-btn" class="logout-btn">ログアウト</button>
   </div>
 </div>
 
 <!-- アクセス権なし画面（購入ボタン付き） -->
 <div id="not-allowed-screen" style="display:none; text-align:center; padding:60px 20px;">
-  <div style="max-width:400px; margin:0 auto; background:#111; border:1px solid #333; border-radius:16px; padding:40px 24px;">
-    <p style="font-size:48px; margin-bottom:16px;">🔒</p>
-    <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:12px;">フルサポートプランに参加しよう</h2>
-    <p style="font-size:14px; color:#888; line-height:1.7; margin-bottom:16px;">3ヶ月パーソナルコーチング + AI長期利用権</p>
+  <div class="purchase-card">
+    <div class="locked-icon">🔒</div>
+    <h2 class="purchase-title">フルサポートプランに参加しよう</h2>
+    <p class="purchase-subtitle">3ヶ月パーソナルコーチング + AI長期利用権</p>
 
     <!-- 支払い方法選択 -->
-    <div id="plan-toggle" style="display:flex; gap:6px; margin-bottom:20px;">
-      <button onclick="selectPlan('onetime')" id="plan-onetime" style="
-        flex:1; padding:10px 4px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;
-        background:#c8f135; color:#000; border:2px solid #c8f135;
-      ">
-        一括払い<br><span style="font-size:17px;">¥99,800</span>
+    <div class="plan-toggle" id="plan-toggle">
+      <button onclick="selectPlan('onetime')" id="plan-onetime" class="plan-btn active">
+        一括払い<br><span class="price">¥99,800</span>
       </button>
-      <button onclick="selectPlan('split3')" id="plan-split3" style="
-        flex:1; padding:10px 4px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;
-        background:transparent; color:#888; border:2px solid #333;
-      ">
-        3回払い<br><span style="font-size:17px;">¥33,267</span><span style="font-size:10px;">/月</span>
+      <button onclick="selectPlan('split3')" id="plan-split3" class="plan-btn">
+        3回払い<br><span class="price">¥33,267</span><span class="price-unit">/月</span>
       </button>
-      <button onclick="selectPlan('split6')" id="plan-split6" style="
-        flex:1; padding:10px 4px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;
-        background:transparent; color:#888; border:2px solid #333;
-      ">
-        6回払い<br><span style="font-size:17px;">¥16,634</span><span style="font-size:10px;">/月</span>
+      <button onclick="selectPlan('split6')" id="plan-split6" class="plan-btn">
+        6回払い<br><span class="price">¥16,634</span><span class="price-unit">/月</span>
       </button>
     </div>
-    <p id="plan-note" style="font-size:11px; color:#666; margin-bottom:20px;">税込・買い切り</p>
+    <p id="plan-note" class="plan-note">税込・買い切り</p>
 
-    <button id="purchase-btn" onclick="startCheckout()" style="
-      width:100%;
-      padding:16px;
-      background:#c8f135;
-      color:#000;
-      border:none;
-      border-radius:10px;
-      font-size:16px;
-      font-weight:700;
-      cursor:pointer;
-      margin-bottom:12px;
-      transition: opacity 0.2s;
-    ">購入してはじめる →</button>
+    <button id="purchase-btn" onclick="startCheckout()" class="purchase-cta">購入してはじめる →</button>
 
-    <p id="purchase-msg" style="font-size:13px; color:#f87171; min-height:20px;"></p>
+    <p id="purchase-msg" class="purchase-msg"></p>
 
-    <div style="margin-top:20px; padding-top:16px; border-top:1px solid #333;">
-      <p style="font-size:12px; color:#666; margin-bottom:8px;">プランに含まれるもの</p>
-      <div style="display:flex; flex-direction:column; gap:6px; text-align:left;">
-        <p style="font-size:13px; color:#aaa;">✓ 専属AIコーチによる個別プラン生成</p>
-        <p style="font-size:13px; color:#aaa;">✓ 3ヶ月間のパーソナルコーチング</p>
-        <p style="font-size:13px; color:#aaa;">✓ 栄養・トレーニング・回復の総合サポート</p>
-        <p style="font-size:13px; color:#aaa;">✓ サービス提供終了後も6ヶ月間AI利用可能</p>
+    <div class="purchase-features">
+      <p class="purchase-features-label">プランに含まれるもの</p>
+      <div class="purchase-features-list">
+        <p class="feature-item">専属AIコーチによる個別プラン生成</p>
+        <p class="feature-item">3ヶ月間のパーソナルコーチング</p>
+        <p class="feature-item">栄養・トレーニング・回復の総合サポート</p>
+        <p class="feature-item">サービス提供終了後も6ヶ月間AI利用可能</p>
       </div>
     </div>
 
-    <p style="margin-top:16px;"><a href="/lp.html" style="color:#4ecdc4; font-size:13px; text-decoration:none;">サービスの詳細を見る →</a></p>
-    <p style="margin-top:8px; font-size:12px; color:#666;">ご質問は <a href="#contact" style="color:#4ecdc4; text-decoration:none;">お問い合わせフォーム</a> から</p>
+    <p style="margin-top:16px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
+    <p style="margin-top:8px; font-size:12px; color:var(--text-tertiary);">ご質問は <a href="#contact" class="link-accent">お問い合わせフォーム</a> から</p>
   </div>
 </div>
 
 <!-- 同意モーダル -->
-<div id="consent-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; overflow-y:auto;">
-  <div style="max-width:480px; margin:60px auto; padding:32px 24px; background:#111; border:1px solid #333; border-radius:16px;">
-    <h2 style="font-size:20px; font-weight:700; color:#fff; margin-bottom:8px;">ご利用にあたって</h2>
-    <p style="font-size:13px; color:#888; margin-bottom:24px;">サービスをご利用いただくには、以下の規約への同意が必要です。</p>
-    
-    <div style="background:#1a1a1a; border:1px solid #333; border-radius:12px; padding:16px; margin-bottom:16px;">
-      <p style="font-size:14px; color:#ccc; margin-bottom:12px;">本サービスは、フィットネスに関する助言・サポートを提供するものであり、特定の成果を保証するものではありません。医療行為や専門的な指導に代わるものでもありません。</p>
-      <p style="font-size:13px; color:#888;">詳しくは各規約をご確認ください。</p>
+<div id="consent-modal" class="consent-backdrop" style="display:none;">
+  <div class="consent-card">
+    <h2 class="consent-title">ご利用にあたって</h2>
+    <p class="consent-subtitle">サービスをご利用いただくには、以下の規約への同意が必要です。</p>
+
+    <div class="consent-body">
+      <p class="consent-text">本サービスは、フィットネスに関する助言・サポートを提供するものであり、特定の成果を保証するものではありません。医療行為や専門的な指導に代わるものでもありません。</p>
+      <p class="consent-text-muted">詳しくは各規約をご確認ください。</p>
     </div>
 
-    <div style="display:flex; gap:12px; margin-bottom:24px;">
-      <a href="/Terms.html" target="_blank" style="flex:1; padding:10px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#4ecdc4; font-size:13px; text-align:center; text-decoration:none;">利用規約</a>
-      <a href="/Privacy.html" target="_blank" style="flex:1; padding:10px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#4ecdc4; font-size:13px; text-align:center; text-decoration:none;">プライバシーポリシー</a>
+    <div class="consent-links">
+      <a href="/Terms.html" target="_blank" class="consent-link">利用規約</a>
+      <a href="/Privacy.html" target="_blank" class="consent-link">プライバシーポリシー</a>
     </div>
 
-    <label id="consent-label" style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; margin-bottom:24px; padding:12px; border-radius:8px; border:1px solid #333;">
-      <input type="checkbox" id="consent-checkbox" style="margin-top:2px; width:18px; height:18px; accent-color:#c8f135; cursor:pointer;">
-      <span style="font-size:14px; color:#ccc; line-height:1.6;"><a href="/Terms.html" target="_blank" style="color:#4ecdc4; text-decoration:underline;">利用規約</a>と<a href="/Privacy.html" target="_blank" style="color:#4ecdc4; text-decoration:underline;">プライバシーポリシー</a>に同意します</span>
+    <label id="consent-label" class="consent-checkbox-label">
+      <input type="checkbox" id="consent-checkbox" class="consent-checkbox">
+      <span class="consent-checkbox-text"><a href="/Terms.html" target="_blank" class="link-accent" style="text-decoration:underline;">利用規約</a>と<a href="/Privacy.html" target="_blank" class="link-accent" style="text-decoration:underline;">プライバシーポリシー</a>に同意します</span>
     </label>
 
-    <button id="consent-agree-btn" disabled style="
-      width:100%;
-      padding:14px;
-      background:#333;
-      color:#666;
-      border:none;
-      border-radius:10px;
-      font-size:15px;
-      font-weight:700;
-      cursor:not-allowed;
-      transition: all 0.3s;
-    ">同意してはじめる</button>
+    <button id="consent-agree-btn" disabled class="consent-btn">同意してはじめる</button>
   </div>
 </div>
 
@@ -539,20 +189,12 @@
     </header>
 
     <!-- コーチング面談予約バナー -->
-    <div style="margin-bottom:24px; padding:18px 20px; background:linear-gradient(135deg, rgba(6,199,85,0.08), rgba(6,199,85,0.02)); border:1px solid rgba(6,199,85,0.25); border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-      <div style="flex:1; min-width:180px;">
-        <p style="font-size:14px; font-weight:700; color:#fff; margin-bottom:4px;">💬 コーチに相談する</p>
-        <p style="font-size:12px; color:#888; line-height:1.6;">AIでは対応しきれない悩みや方向性の相談はコーチが直接サポートします</p>
+    <div class="coaching-banner">
+      <div class="coaching-banner-text">
+        <p class="coaching-banner-title">💬 コーチに相談する</p>
+        <p class="coaching-banner-desc">AIでは対応しきれない悩みや方向性の相談はコーチが直接サポートします</p>
       </div>
-      <a href="https://timerex.net/s/fit.project.ai.1633_95b1/638bdf1a" target="_blank" style="
-        display:inline-flex; align-items:center; gap:6px;
-        padding:12px 24px;
-        background:#06c755; color:#fff;
-        border-radius:10px; text-decoration:none;
-        font-size:14px; font-weight:700;
-        white-space:nowrap;
-        transition: transform 0.2s, box-shadow 0.2s;
-      " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(6,199,85,0.3)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <a href="https://timerex.net/s/fit.project.ai.1633_95b1/638bdf1a" target="_blank" class="coaching-banner-btn">
         📅 面談を予約する
       </a>
     </div>
@@ -614,22 +256,22 @@
       <div class="card visible" style="margin-bottom: 16px;">
         <p class="section-tag">STREAK</p>
         <p class="section-title">継続<strong>記録</strong></p>
-        <div style="display:flex; gap:24px; align-items:center; margin-bottom:16px;">
-          <div style="text-align:center;">
-            <p id="streak-count" style="font-size:48px; font-weight:700; color:var(--accent); line-height:1;">0</p>
-            <p style="font-size:12px; color:var(--muted);">日連続</p>
+        <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+          <div class="stat-card" style="flex:1;">
+            <p id="streak-count" class="stat-metric accent">0</p>
+            <p class="stat-label">日連続</p>
           </div>
-          <div style="text-align:center;">
-            <p id="weekly-count" style="font-size:48px; font-weight:700; color:var(--white); line-height:1;">0</p>
-            <p style="font-size:12px; color:var(--muted);">今週の利用回数</p>
+          <div class="stat-card" style="flex:1;">
+            <p id="weekly-count" class="stat-metric">0</p>
+            <p class="stat-label">今週の利用回数</p>
           </div>
         </div>
-        <div id="streak-badge" style="display:none; background:#111; border:1px solid var(--border); border-radius:12px; padding:14px 16px;">
+        <div id="streak-badge" class="badge-card" style="display:none;">
           <div style="display:flex; align-items:center; gap:12px;">
             <p id="badge-icon" style="font-size:32px; line-height:1;"></p>
             <div>
               <p id="badge-title" style="font-size:15px; font-weight:700; color:var(--accent);"></p>
-              <p id="badge-desc" style="font-size:12px; color:var(--muted); margin-top:2px;"></p>
+              <p id="badge-desc" class="stat-label" style="margin-top:2px;"></p>
             </div>
           </div>
           <div id="badge-next" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);"></div>
@@ -644,23 +286,22 @@
         </div>
       </div>
 
-
       <!-- AIパーソナル分析（7日連続で開放） -->
       <div class="card visible" id="personal-analysis-card" style="margin-bottom: 16px;">
         <p class="section-tag">PERSONAL ANALYSIS</p>
         <p class="section-title">あなたの<strong>タイプ分析</strong></p>
         <div id="pa-locked" style="text-align:center; padding:20px 0;">
-          <p style="font-size:40px; margin-bottom:12px;">🔒</p>
-          <p style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px;">7日連続利用で開放</p>
-          <p style="font-size:12px; color:#888; margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
-          <div style="background:#1e1e1e; border-radius:100px; height:8px; overflow:hidden; border:1px solid var(--border); margin:0 20px;">
-            <div id="pa-progress-bar" style="height:100%; width:0%; background:var(--accent); border-radius:100px; transition:width 0.6s ease;"></div>
+          <div class="locked-icon">🔒</div>
+          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">7日連続利用で開放</p>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
+          <div class="progress-track" style="margin:0 20px;">
+            <div id="pa-progress-bar" class="progress-fill" style="width:0%;"></div>
           </div>
           <p id="pa-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 7日</p>
         </div>
         <div id="pa-unlocked" style="display:none;">
           <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">全履歴からあなたのフィットネスタイプ・バランス・弱点をAIが診断します。</p>
-          <button id="pa-run-btn" style="width:100%; padding:14px; background:transparent; color:var(--accent); border:2px solid var(--accent); border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;">🧠 パーソナル分析を実行 →</button>
+          <button id="pa-run-btn" class="action-btn-outline">🧠 パーソナル分析を実行 →</button>
           <div id="pa-loading" style="display:none; text-align:center; padding:20px 0;">
             <div class="loading-dots"><span></span><span></span><span></span></div>
             <p style="color:var(--muted); font-size:13px; margin-top:8px;">分析中...（10〜20秒）</p>
@@ -674,30 +315,30 @@
         <p class="section-tag">BODY DIAGNOSIS</p>
         <p class="section-title">AIボディメイク<strong>診断</strong></p>
         <div id="bd-locked" style="text-align:center; padding:20px 0;">
-          <p style="font-size:40px; margin-bottom:12px;">🔒</p>
-          <p style="font-size:14px; font-weight:700; color:#fff; margin-bottom:6px;">30日連続利用で開放</p>
-          <p style="font-size:12px; color:#888; margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
-          <div style="background:#1e1e1e; border-radius:100px; height:8px; overflow:hidden; border:1px solid var(--border); margin:0 20px;">
-            <div id="bd-progress-bar" style="height:100%; width:0%; background:#4fc3f7; border-radius:100px; transition:width 0.6s ease;"></div>
+          <div class="locked-icon">🔒</div>
+          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">30日連続利用で開放</p>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
+          <div class="progress-track" style="margin:0 20px;">
+            <div id="bd-progress-bar" class="progress-fill blue" style="width:0%;"></div>
           </div>
           <p id="bd-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 30日</p>
         </div>
         <div id="bd-unlocked" style="display:none;">
           <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">正面からの全身写真をアップロードすると、AIが体型を分析して改善ポイントを提案します。</p>
-          <div id="bd-consent" style="background:#1a1a1a; border:1px solid #333; border-radius:12px; padding:16px; margin-bottom:16px;">
-            <p style="font-size:13px; font-weight:700; color:#fff; margin-bottom:10px;">📋 写真の取り扱いについて</p>
-            <div style="font-size:12px; color:#aaa; line-height:1.7; margin-bottom:12px;">
+          <div id="bd-consent" class="bd-consent-box">
+            <p style="font-size:13px; font-weight:700; color:var(--white); margin-bottom:10px;">📋 写真の取り扱いについて</p>
+            <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
               <p style="margin-bottom:6px;">✅ 写真はAI分析のためだけに使用されます</p>
               <p style="margin-bottom:6px;">✅ 写真はサーバーに保存されません（端末上で処理）</p>
               <p style="margin-bottom:6px;">✅ 運営側が写真を閲覧することは一切ありません</p>
               <p>✅ 分析完了後、写真データは自動的に破棄されます</p>
             </div>
-            <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:10px; border-radius:8px; border:1px solid #333;">
-              <input type="checkbox" id="bd-consent-checkbox" style="margin-top:2px; width:18px; height:18px; accent-color:#4fc3f7; cursor:pointer;">
-              <span style="font-size:13px; color:#ccc; line-height:1.5;">上記の内容を理解し、写真のアップロードに同意します</span>
+            <label class="consent-checkbox-label" style="margin-bottom:0; padding:10px;">
+              <input type="checkbox" id="bd-consent-checkbox" class="consent-checkbox" style="accent-color:#4fc3f7;">
+              <span class="consent-checkbox-text">上記の内容を理解し、写真のアップロードに同意します</span>
             </label>
           </div>
-          <div id="bd-upload-area" style="display:none; border:2px dashed var(--border); border-radius:12px; padding:24px; text-align:center; cursor:pointer; transition:border-color 0.2s;" onclick="document.getElementById('bd-file-input').click()">
+          <div id="bd-upload-area" class="bd-upload-area" style="display:none;" onclick="document.getElementById('bd-file-input').click()">
             <p style="font-size:32px; margin-bottom:8px;">📸</p>
             <p style="font-size:14px; color:var(--white); font-weight:700;">写真をアップロード</p>
             <p style="font-size:12px; color:var(--muted); margin-top:4px;">タップして写真を選択 or 撮影</p>
@@ -705,62 +346,61 @@
           </div>
           <div id="bd-preview" style="display:none; margin-top:12px; text-align:center;">
             <img id="bd-preview-img" style="max-width:100%; max-height:300px; border-radius:12px; border:1px solid var(--border);">
-            <button id="bd-run-btn" style="width:100%; margin-top:12px; padding:14px; background:transparent; color:#4fc3f7; border:2px solid #4fc3f7; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;">🔍 AIに診断してもらう →</button>
-            <button id="bd-reset-photo" style="width:100%; margin-top:8px; padding:10px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-size:13px; cursor:pointer;">写真を変更する</button>
+            <button id="bd-run-btn" class="action-btn-outline" style="margin-top:12px; color:#4fc3f7; border-color:#4fc3f7;">🔍 AIに診断してもらう →</button>
+            <button id="bd-reset-photo" class="action-btn-ghost" style="margin-top:8px;">写真を変更する</button>
           </div>
           <div id="bd-loading" style="display:none; text-align:center; padding:20px 0;">
             <div class="loading-dots"><span></span><span></span><span></span></div>
             <p style="color:var(--muted); font-size:13px; margin-top:8px;">体型を分析中...（10〜20秒）</p>
           </div>
           <div id="bd-result" style="display:none; margin-top:16px;"></div>
-          <p style="font-size:11px; color:#666; margin-top:12px; text-align:center;">※ 写真はAI分析のみに使用され、サーバーに保存されません</p>
+          <p style="font-size:11px; color:var(--text-tertiary); margin-top:12px; text-align:center;">※ 写真はAI分析のみに使用され、サーバーに保存されません</p>
         </div>
       </div>
-
 
 </div><!-- main-content閉じ -->
 
 <!-- ===== お問い合わせフォーム ===== -->
 <div id="contact" class="card visible" style="margin-top:40px; margin-bottom:24px;">
-  <p style="font-size:11px; font-weight:700; letter-spacing:3px; color:#c8f135; margin-bottom:10px; text-transform:uppercase;">CONTACT</p>
-  <p style="font-size:20px; font-weight:900; color:#fff; margin-bottom:8px;">お問い合わせ</p>
-  <p style="font-size:13px; color:#888; margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
+  <p class="section-tag">CONTACT</p>
+  <p class="section-title" style="margin-bottom:8px;">お問い合わせ</p>
+  <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
   <form id="contact-form" style="display:flex; flex-direction:column; gap:16px;">
     <div style="display:flex; gap:10px;">
       <div style="flex:1;">
-        <label style="display:block; font-size:12px; color:#888; margin-bottom:6px;">姓 <span style="color:#f87171;">*</span></label>
-        <input type="text" name="last_name" required placeholder="例: 山田" style="width:100%; padding:12px 14px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#333'">
+        <label class="form-label">姓 <span class="form-required">*</span></label>
+        <input type="text" name="last_name" required placeholder="例: 山田" class="form-input">
       </div>
       <div style="flex:1;">
-        <label style="display:block; font-size:12px; color:#888; margin-bottom:6px;">名 <span style="color:#f87171;">*</span></label>
-        <input type="text" name="first_name" required placeholder="例: 太郎" style="width:100%; padding:12px 14px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#333'">
+        <label class="form-label">名 <span class="form-required">*</span></label>
+        <input type="text" name="first_name" required placeholder="例: 太郎" class="form-input">
       </div>
     </div>
     <div>
-      <label style="display:block; font-size:12px; color:#888; margin-bottom:6px;">メールアドレス <span style="color:#f87171;">*</span></label>
-      <input type="email" name="email" required placeholder="例: example@gmail.com" style="width:100%; padding:12px 14px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#333'">
+      <label class="form-label">メールアドレス <span class="form-required">*</span></label>
+      <input type="email" name="email" required placeholder="例: example@gmail.com" class="form-input">
     </div>
     <div>
-      <label style="display:block; font-size:12px; color:#888; margin-bottom:6px;">電話番号（任意）</label>
-      <input type="tel" name="phone" placeholder="例: 090-1234-5678" style="width:100%; padding:12px 14px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#333'">
+      <label class="form-label">電話番号（任意）</label>
+      <input type="tel" name="phone" placeholder="例: 090-1234-5678" class="form-input">
     </div>
     <div>
-      <label style="display:block; font-size:12px; color:#888; margin-bottom:6px;">お問い合わせ内容 <span style="color:#f87171;">*</span></label>
-      <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" style="width:100%; padding:12px 14px; background:#1e1e1e; border:1px solid #333; border-radius:8px; color:#fff; font-size:14px; outline:none; resize:vertical; font-family:'Noto Sans JP',sans-serif; line-height:1.7; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#333'"></textarea>
+      <label class="form-label">お問い合わせ内容 <span class="form-required">*</span></label>
+      <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" class="form-textarea"></textarea>
     </div>
-    <button type="submit" class="contact-submit-btn" style="width:100%; padding:16px; background:#c8f135; color:#000; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:opacity 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">送信する →</button>
+    <button type="submit" class="form-submit">送信する →</button>
     <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
   </form>
 </div>
 
-<footer style="text-align:center; padding:40px 0 24px; border-top:1px solid #1a1a1a; margin-top:40px;">
-  <div style="display:flex; justify-content:center; gap:20px; flex-wrap:wrap; margin-bottom:12px;">
-    <a href="/Terms.html" style="color:#666; font-size:12px; text-decoration:none;">利用規約</a>
-    <a href="/Privacy.html" style="color:#666; font-size:12px; text-decoration:none;">プライバシーポリシー</a>
-    <a href="/Tokushoho.html" style="color:#666; font-size:12px; text-decoration:none;">特定商取引法に基づく表記</a>
-    <a href="#contact" style="color:#666; font-size:12px; text-decoration:none;">お問い合わせ</a>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/Terms.html" class="footer-link">利用規約</a>
+    <a href="/Privacy.html" class="footer-link">プライバシーポリシー</a>
+    <a href="/Tokushoho.html" class="footer-link">特定商取引法に基づく表記</a>
+    <a href="#contact" class="footer-link">お問い合わせ</a>
   </div>
-  <p style="color:#444; font-size:11px;">© 2026 Fit Project AI</p>
+  <p class="footer-copy">© 2026 Fit Project AI</p>
 </footer>
 
     </div><!-- container閉じ -->
@@ -804,13 +444,9 @@ function selectPlan(plan) {
   };
   const note = document.getElementById('plan-note');
   Object.values(btns).forEach(b => {
-    b.style.background = 'transparent';
-    b.style.color = '#888';
-    b.style.borderColor = '#333';
+    b.classList.remove('active');
   });
-  btns[plan].style.background = '#c8f135';
-  btns[plan].style.color = '#000';
-  btns[plan].style.borderColor = '#c8f135';
+  btns[plan].classList.add('active');
   if (plan === 'onetime') {
     note.textContent = '税込・買い切り';
   } else if (plan === 'split3') {
@@ -930,3 +566,4 @@ window.addEventListener('message', function(e) {
 });
 </script>
 </body>
+</html>
