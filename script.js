@@ -177,6 +177,9 @@ async function updateUI(session) {
     }
 
     notAllowedScreen.style.display = 'none';
+    // ログイン後はナビを表示
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.style.display = 'flex';
 
     const consent = await checkConsent(session.user.id);
     if (consent) {
@@ -208,6 +211,11 @@ async function updateUI(session) {
     mainContent.style.display = 'none';
     consentModal.style.display = 'none';
     notAllowedScreen.style.display = 'none';
+    // ログイン前はナビとツールパネルを非表示
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.style.display = 'none';
+    const toolsPanel = document.getElementById('tools-panel');
+    if (toolsPanel) toolsPanel.classList.remove('open');
   }
 }
 
