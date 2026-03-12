@@ -849,13 +849,18 @@ function switchTab(tab) {
   const toolsPanel = document.getElementById('tools-panel');
   const navHome = document.getElementById('nav-home');
   const navTools = document.getElementById('nav-tools');
+  const overlay = document.getElementById('tool-overlay');
 
   // ツールオーバーレイが開いていたら閉じる
-  closeToolOverlay();
+  if (overlay && overlay.classList.contains('open')) {
+    overlay.classList.remove('open');
+    document.getElementById('tool-iframe').src = '';
+    document.body.style.overflow = '';
+  }
 
   if (tab === 'home') {
-    mainPanel.style.display = 'block';
     toolsPanel.classList.remove('open');
+    mainPanel.style.display = 'block';
     navHome.classList.add('active');
     navTools.classList.remove('active');
     document.body.style.overflow = '';
