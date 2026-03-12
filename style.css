@@ -1644,6 +1644,136 @@ body {
 }
 
 /* ============================================================
+   Daily Check-in & Tasks
+   ============================================================ */
+.checkin-group {
+  margin-bottom: 14px;
+}
+
+.checkin-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.checkin-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.checkin-option {
+  cursor: pointer;
+}
+
+.checkin-option input {
+  display: none;
+}
+
+.checkin-option span {
+  display: inline-block;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.checkin-option input:checked + span {
+  color: var(--black);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.checkin-option span:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.06);
+}
+
+.checkin-input {
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--white);
+  font-size: 13px;
+  font-family: 'Noto Sans JP', sans-serif;
+  transition: border-color 0.2s ease;
+}
+
+.checkin-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.checkin-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.checkin-submit {
+  width: 100%;
+  padding: 12px;
+  background: rgba(200,241,53,0.1);
+  border: 1px solid rgba(200,241,53,0.2);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.checkin-submit:hover {
+  background: rgba(200,241,53,0.18);
+  border-color: rgba(200,241,53,0.35);
+}
+
+.daily-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.daily-task-item:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: var(--border-hover);
+}
+
+.daily-task-item.done {
+  opacity: 0.5;
+}
+
+.daily-task-item.done .daily-task-text {
+  text-decoration: line-through;
+}
+
+.daily-task-check {
+  margin-top: 2px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.daily-task-text {
+  font-size: 13px;
+  color: var(--white);
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* ============================================================
    Link Styles
    ============================================================ */
 .link-accent {

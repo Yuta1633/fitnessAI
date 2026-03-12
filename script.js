@@ -21,6 +21,234 @@ const UNLOCK_BODY_DIAGNOSIS = 30;
 let unlockedFeatures = new Set();
 
 // ============================================================
+// ユーザーコンテキストシステム
+// ============================================================
+let cachedUserContext = null;
+
+async function buildUserContext() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return '';
+  const userId = session.user.id;
+
+  // 体組成データ（最新）
+  const { data: bodyRecords } = await supabase
+    .from('body_records')
+    .select('weight, body_fat, recorded_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  // 目標
+  const goal = await loadGoal(userId);
+
+  // 今週のアクティビティ
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  const mondayStr = monday.toISOString().split('T')[0];
+  const { data: recentChats } = await supabase
+    .from('chat_history')
+    .select('goal, method, sub, created_at')
+    .eq('user_id', userId)
+    .gte('created_at', `${mondayStr}T00:00:00`)
+    .order('created_at', { ascending: false });
+
+  // デイリーチェックイン
+  const todayStr = now.toISOString().split('T')[0];
+  const checkin = JSON.parse(localStorage.getItem(`checkin_${todayStr}`) || 'null');
+
+  // コンテキスト組み立て
+  let ctx = '【ユーザープロフィール】\n';
+
+  if (bodyRecords && bodyRecords.length > 0) {
+    const latest = bodyRecords[0];
+    ctx += `現在の体重: ${latest.weight ? latest.weight + 'kg' : '未記録'}`;
+    ctx += ` / 体脂肪率: ${latest.body_fat ? latest.body_fat + '%' : '未記録'}`;
+    ctx += ` (${latest.recorded_at || '日付不明'})\n`;
+    if (bodyRecords.length > 1) {
+      const prev = bodyRecords[1];
+      if (latest.weight && prev.weight) {
+        const diff = (latest.weight - prev.weight).toFixed(1);
+        ctx += `前回比: 体重${diff > 0 ? '+' : ''}${diff}kg`;
+        if (latest.body_fat && prev.body_fat) {
+          const bfDiff = (latest.body_fat - prev.body_fat).toFixed(1);
+          ctx += ` / 体脂肪率${bfDiff > 0 ? '+' : ''}${bfDiff}%`;
+        }
+        ctx += '\n';
+      }
+    }
+  } else {
+    ctx += '体組成データ: 未記録\n';
+  }
+
+  if (goal) {
+    if (goal.goal_weight) ctx += `目標体重: ${goal.goal_weight}kg`;
+    if (goal.goal_body_fat) ctx += ` / 目標体脂肪率: ${goal.goal_body_fat}%`;
+    if (goal.target_date) {
+      const target = new Date(goal.target_date);
+      const daysLeft = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+      ctx += ` / 期限: ${goal.target_date}（残り${daysLeft}日）`;
+    }
+    ctx += '\n';
+    // 目標との差分
+    if (bodyRecords && bodyRecords.length > 0) {
+      const latest = bodyRecords[0];
+      if (goal.goal_weight && latest.weight) {
+        const gap = (latest.weight - goal.goal_weight).toFixed(1);
+        ctx += `目標までの差: 体重${gap > 0 ? '+' : ''}${gap}kg`;
+      }
+      if (goal.goal_body_fat && latest.body_fat) {
+        const gap = (latest.body_fat - goal.goal_body_fat).toFixed(1);
+        ctx += ` / 体脂肪率${gap > 0 ? '+' : ''}${gap}%`;
+      }
+      ctx += '\n';
+    }
+  }
+
+  ctx += `継続日数: ${currentStreak}日\n`;
+
+  if (recentChats && recentChats.length > 0) {
+    const methodCount = { nutrition: 0, training: 0, recovery: 0 };
+    recentChats.forEach(c => { if (methodCount[c.method] !== undefined) methodCount[c.method]++; });
+    ctx += `今週の取り組み: 栄養${methodCount.nutrition}回 / トレーニング${methodCount.training}回 / 回復${methodCount.recovery}回\n`;
+  }
+
+  if (checkin) {
+    ctx += `\n【今日のコンディション】\n`;
+    if (checkin.condition) ctx += `体調: ${checkin.condition}\n`;
+    if (checkin.sleep) ctx += `睡眠: ${checkin.sleep}\n`;
+    if (checkin.note) ctx += `メモ: ${checkin.note}\n`;
+  }
+
+  ctx += '\n上記のユーザー情報を考慮し、この人の現在の状況に最適化した具体的な提案をしてください。体重・体脂肪率・目標・期限がある場合は、そこから逆算した提案をすること。\n';
+
+  cachedUserContext = ctx;
+  return ctx;
+}
+
+// ============================================================
+// デイリーチェックイン
+// ============================================================
+function getTodayCheckin() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  return JSON.parse(localStorage.getItem(`checkin_${todayStr}`) || 'null');
+}
+
+function saveTodayCheckin(data) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  localStorage.setItem(`checkin_${todayStr}`, JSON.stringify(data));
+}
+
+// ============================================================
+// デイリータスク
+// ============================================================
+async function generateDailyTasks() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const taskCard = document.getElementById('daily-task-card');
+  const taskContent = document.getElementById('daily-task-content');
+  if (!taskCard || !taskContent) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const cached = localStorage.getItem(`daily_tasks_${todayStr}`);
+  if (cached) {
+    taskContent.innerHTML = cached;
+    taskCard.style.display = '';
+    attachTaskCheckboxes();
+    return;
+  }
+
+  const ctx = await buildUserContext();
+  if (!ctx) return;
+
+  taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクを生成中...</p>';
+  taskCard.style.display = '';
+
+  const taskPrompt = `${ctx}
+
+上記のユーザー情報を元に、今日やるべきタスクを3〜5個生成してください。
+
+【ルール】
+・ユーザーの目標・体組成・今週の取り組みバランスを考慮して最適化すること
+・栄養・トレーニング・回復のバランスを見て、足りていない領域を優先すること
+・体調が悪い日は負荷を下げる、睡眠不足なら回復を優先するなど柔軟に対応
+・各タスクは具体的で実行可能なもの（「水を2L飲む」「スクワット3セット×15回」など）
+・曖昧な指示は禁止（「運動する」「気をつける」はNG）
+
+【出力形式】※この形式を厳守すること
+<task>タスク内容</task>
+<task>タスク内容</task>
+<task>タスク内容</task>
+
+タスクのみ出力し、他の説明は不要。`;
+
+  try {
+    const messages = [{ role: 'user', content: taskPrompt }];
+    const text = await callAPI(messages);
+    const tasks = [...text.matchAll(/<task>(.*?)<\/task>/gs)].map(m => m[1].trim());
+
+    if (tasks.length === 0) {
+      taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクの生成に失敗しました。</p>';
+      return;
+    }
+
+    const html = tasks.map((t, i) => `
+      <label class="daily-task-item" data-index="${i}">
+        <input type="checkbox" class="daily-task-check" data-index="${i}">
+        <span class="daily-task-text">${escapeHtml(t)}</span>
+      </label>
+    `).join('');
+
+    taskContent.innerHTML = html;
+    localStorage.setItem(`daily_tasks_${todayStr}`, html);
+    attachTaskCheckboxes();
+  } catch (err) {
+    console.error('デイリータスク生成エラー:', err);
+    taskContent.innerHTML = '<p style="color:var(--muted); font-size:13px;">タスクの生成に失敗しました。リロードしてお試しください。</p>';
+  }
+}
+
+function attachTaskCheckboxes() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const completed = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+  document.querySelectorAll('.daily-task-check').forEach(cb => {
+    const idx = parseInt(cb.dataset.index);
+    cb.checked = completed.includes(idx);
+    if (cb.checked) cb.closest('.daily-task-item').classList.add('done');
+    cb.addEventListener('change', () => {
+      const done = JSON.parse(localStorage.getItem(`tasks_done_${todayStr}`) || '[]');
+      if (cb.checked) {
+        if (!done.includes(idx)) done.push(idx);
+        cb.closest('.daily-task-item').classList.add('done');
+      } else {
+        const i = done.indexOf(idx);
+        if (i !== -1) done.splice(i, 1);
+        cb.closest('.daily-task-item').classList.remove('done');
+      }
+      localStorage.setItem(`tasks_done_${todayStr}`, JSON.stringify(done));
+      updateTaskProgress();
+    });
+  });
+  updateTaskProgress();
+}
+
+function updateTaskProgress() {
+  const total = document.querySelectorAll('.daily-task-check').length;
+  const done = document.querySelectorAll('.daily-task-check:checked').length;
+  const progressEl = document.getElementById('task-progress');
+  if (progressEl) {
+    progressEl.textContent = `${done}/${total} 完了`;
+    progressEl.style.color = done === total && total > 0 ? 'var(--accent)' : 'var(--muted)';
+  }
+  const barEl = document.getElementById('task-progress-bar');
+  if (barEl) {
+    barEl.style.width = total > 0 ? `${(done / total) * 100}%` : '0%';
+  }
+}
+
+// ============================================================
 // 同意確認
 // ============================================================
 const consentModal    = document.getElementById('consent-modal');
@@ -1056,7 +1284,8 @@ async function generateResponse() {
   const pastInfo = pastSummary
     ? `\n\n${pastSummary}\n\n上記の過去の提案と被らないよう、新しい内容を提案してください。`
     : '';
-  const finalPrompt = `${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
+  const userCtx = cachedUserContext || await buildUserContext();
+  const finalPrompt = `${userCtx}\n${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
   conversationHistory.push({ role: 'user', content: finalPrompt });
 
   loadingIndicator.classList.add('hidden');
@@ -1334,8 +1563,12 @@ async function loadDashboard() {
       const parts = [];
       if (goal.goal_weight) parts.push(`目標体重: ${goal.goal_weight}kg`);
       if (goal.goal_body_fat) parts.push(`目標体脂肪率: ${goal.goal_body_fat}%`);
+      if (goal.target_date) {
+        const daysLeft = Math.ceil((new Date(goal.target_date) - new Date()) / (1000*60*60*24));
+        parts.push(`期限: ${goal.target_date}（残り${daysLeft}日）`);
+      }
       goalCurrentEl.innerHTML = parts.length > 0
-        ? `現在の目標 → ${parts.join('　／　')} <span style="color:var(--accent); cursor:pointer; font-size:11px; margin-left:8px;">変更する↑</span>`
+        ? `現在の目標 → ${parts.join('　／　')}`
         : '';
     } else {
       goalCurrentEl.innerHTML = '';
@@ -1431,16 +1664,18 @@ async function loadDashboard() {
 async function loadGoal(userId) {
   const { data } = await supabase
     .from('user_goals')
-    .select('goal_weight, goal_body_fat')
+    .select('goal_weight, goal_body_fat, target_date')
     .eq('user_id', userId)
     .maybeSingle();
   return data || null;
 }
 
-async function saveGoal(userId, goalWeight, goalBodyFat) {
+async function saveGoal(userId, goalWeight, goalBodyFat, targetDate) {
+  const row = { user_id: userId, goal_weight: goalWeight, goal_body_fat: goalBodyFat };
+  if (targetDate) row.target_date = targetDate;
   await supabase
     .from('user_goals')
-    .upsert({ user_id: userId, goal_weight: goalWeight, goal_body_fat: goalBodyFat }, { onConflict: 'user_id' });
+    .upsert(row, { onConflict: 'user_id' });
 }
 
 document.getElementById('goal-save-btn')?.addEventListener('click', async () => {
@@ -1448,10 +1683,13 @@ document.getElementById('goal-save-btn')?.addEventListener('click', async () => 
   if (!session) return;
   const goalWeight = parseFloat(document.getElementById('goal-weight-input').value) || null;
   const goalBodyFat = parseFloat(document.getElementById('goal-bodyfat-input').value) || null;
+  const targetDate = document.getElementById('goal-date-input')?.value || null;
   if (!goalWeight && !goalBodyFat) { alert('目標体重か目標体脂肪率を入力してください'); return; }
-  await saveGoal(session.user.id, goalWeight, goalBodyFat);
+  await saveGoal(session.user.id, goalWeight, goalBodyFat, targetDate);
   document.getElementById('goal-weight-input').value = '';
   document.getElementById('goal-bodyfat-input').value = '';
+  if (document.getElementById('goal-date-input')) document.getElementById('goal-date-input').value = '';
+  cachedUserContext = null;
   loadDashboard();
 });
 
@@ -1551,6 +1789,7 @@ document.getElementById('record-btn')?.addEventListener('click', async () => {
 
   document.getElementById('weight-input').value = '';
   document.getElementById('bodyfat-input').value = '';
+  cachedUserContext = null;
   await loadDashboard();
 });
 
@@ -2569,4 +2808,42 @@ loadDashboard = async function() {
   // 非同期で追加データを読み込み
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
+  initDailyCheckin();
+  generateDailyTasks().catch(console.error);
+  // ユーザーコンテキストをプリロード
+  buildUserContext().catch(console.error);
 };
+
+// ============================================================
+// デイリーチェックインUI
+// ============================================================
+function initDailyCheckin() {
+  const checkinCard = document.getElementById('checkin-card');
+  if (!checkinCard) return;
+
+  const existing = getTodayCheckin();
+  if (existing) {
+    checkinCard.style.display = 'none';
+    return;
+  }
+  checkinCard.style.display = '';
+}
+
+document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
+  const condition = document.querySelector('input[name="condition"]:checked')?.value || '';
+  const sleep = document.querySelector('input[name="sleep"]:checked')?.value || '';
+  const note = document.getElementById('checkin-note')?.value.trim() || '';
+
+  if (!condition) { alert('体調を選択してください'); return; }
+
+  saveTodayCheckin({ condition, sleep, note });
+  cachedUserContext = null;
+
+  const checkinCard = document.getElementById('checkin-card');
+  if (checkinCard) checkinCard.style.display = 'none';
+
+  // タスク再生成（チェックイン情報で最適化）
+  const todayStr = new Date().toISOString().split('T')[0];
+  localStorage.removeItem(`daily_tasks_${todayStr}`);
+  generateDailyTasks().catch(console.error);
+});

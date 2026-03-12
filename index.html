@@ -329,6 +329,48 @@
     </div>
 
     <div id="dashboard" style="margin-top: 40px;">
+
+      <!-- デイリーチェックイン -->
+      <div class="card visible" id="checkin-card" style="margin-bottom: 16px; display:none;">
+        <p class="section-tag">TODAY'S CHECK-IN</p>
+        <p class="section-title">今日の<strong>コンディション</strong></p>
+        <div class="checkin-group">
+          <p class="checkin-label">体調</p>
+          <div class="checkin-options">
+            <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
+            <label class="checkin-option"><input type="radio" name="condition" value="普通"><span>普通</span></label>
+            <label class="checkin-option"><input type="radio" name="condition" value="やや疲れ"><span>やや疲れ</span></label>
+            <label class="checkin-option"><input type="radio" name="condition" value="体調不良"><span>体調不良</span></label>
+          </div>
+        </div>
+        <div class="checkin-group">
+          <p class="checkin-label">昨晩の睡眠</p>
+          <div class="checkin-options">
+            <label class="checkin-option"><input type="radio" name="sleep" value="よく眠れた"><span>よく眠れた</span></label>
+            <label class="checkin-option"><input type="radio" name="sleep" value="普通"><span>普通</span></label>
+            <label class="checkin-option"><input type="radio" name="sleep" value="あまり眠れなかった"><span>あまり眠れず</span></label>
+          </div>
+        </div>
+        <div class="checkin-group">
+          <p class="checkin-label">メモ（任意）</p>
+          <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛" class="checkin-input">
+        </div>
+        <button id="checkin-save-btn" class="checkin-submit">チェックインする</button>
+      </div>
+
+      <!-- デイリータスク -->
+      <div class="card visible" id="daily-task-card" style="margin-bottom: 16px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <p class="section-tag">TODAY'S TASKS</p>
+          <p id="task-progress" style="font-size:12px; color:var(--muted);">0/0 完了</p>
+        </div>
+        <p class="section-title">今日の<strong>タスク</strong></p>
+        <div class="progress-track" style="margin-bottom:16px; height:4px;">
+          <div id="task-progress-bar" class="progress-fill" style="width:0%; height:100%;"></div>
+        </div>
+        <div id="daily-task-content"></div>
+      </div>
+
       <div class="card visible" style="margin-bottom: 16px;">
         <p class="section-tag">STREAK</p>
         <p class="section-title">継続<strong>記録</strong></p>
@@ -359,6 +401,36 @@
         <p class="section-title">今週の<strong>内訳</strong></p>
         <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;">
           <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
+        </div>
+      </div>
+
+      <!-- 体組成記録 & 目標設定 -->
+      <div class="card visible" style="margin-bottom: 16px;">
+        <p class="section-tag">BODY DATA</p>
+        <p class="section-title">体組成<strong>記録</strong></p>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <input type="number" id="weight-input" placeholder="体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
+          <input type="number" id="bodyfat-input" placeholder="体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
+        </div>
+        <button id="record-btn" class="checkin-submit" style="margin-bottom:16px;">記録する</button>
+        <div id="record-history"></div>
+
+        <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
+          <p class="checkin-label">目標設定</p>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input type="number" id="goal-weight-input" placeholder="目標体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
+            <input type="number" id="goal-bodyfat-input" placeholder="目標体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
+          </div>
+          <div style="margin-bottom:12px;">
+            <input type="date" id="goal-date-input" class="checkin-input" style="width:100%;">
+          </div>
+          <button id="goal-save-btn" class="checkin-submit">目標を保存</button>
+          <p id="goal-current" style="font-size:12px; color:var(--muted); margin-top:8px;"></p>
+        </div>
+
+        <div id="progress-card" style="display:none; border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
+          <p class="checkin-label">進捗</p>
+          <div id="progress-content"></div>
         </div>
       </div>
 
@@ -665,7 +737,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=5').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=6').then(reg => {
       reg.update();
     }).catch(() => {});
   });
