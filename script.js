@@ -1120,11 +1120,9 @@ resetBtn.addEventListener('click', () => {
 // ダッシュボード
 // ============================================================
 async function loadDashboard() {
-  console.log('loadDashboard called');
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) { console.log('loadDashboard: no session'); return; }
+  if (!session) return;
   const userId = session.user.id;
-  console.log('loadDashboard: userId=', userId);
 
   const { data: usageData } = await supabase
     .from('usage_limits')
