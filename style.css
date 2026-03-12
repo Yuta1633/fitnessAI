@@ -114,88 +114,128 @@ body {
 /* ============================================================
    Header
    ============================================================ */
-.header-label {
-  font-family: 'Inter', 'Noto Sans JP', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.4em;
-  color: var(--accent);
-  margin-bottom: 16px;
-  text-shadow: 0 0 20px rgba(200,241,53,0.3);
-  position: relative;
-  display: inline-block;
-}
-
-.header-label::before,
-.header-label::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 40px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.4));
-}
-.header-label::before { right: 100%; margin-right: 12px; background: linear-gradient(90deg, transparent, rgba(200,241,53,0.4)); }
-.header-label::after { left: 100%; margin-left: 12px; background: linear-gradient(270deg, transparent, rgba(200,241,53,0.4)); }
-
 .site-header {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 56px;
   animation: fadeDown 0.8s ease both;
+  position: relative;
+  padding: 20px 0 32px;
+}
+
+.header-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.header-eyebrow-line {
+  display: block;
+  width: 40px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.5));
+}
+
+.header-eyebrow-line:last-child {
+  background: linear-gradient(270deg, transparent, rgba(200,241,53,0.5));
+}
+
+.header-label {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5em;
+  color: var(--accent);
+  text-shadow: 0 0 24px rgba(200,241,53,0.4);
+  padding: 6px 20px;
+  border: 1px solid rgba(200,241,53,0.15);
+  border-radius: 100px;
+  background: rgba(200,241,53,0.04);
+}
+
+.header-hero {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(60px, 14vw, 96px);
+  line-height: 0.95;
+  color: var(--white);
+  letter-spacing: 0.02em;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 60px rgba(0,0,0,0.6);
   position: relative;
 }
 
-.site-header::after {
-  content: '';
-  position: absolute;
-  bottom: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  border-radius: 2px;
-  opacity: 0.5;
-}
-
-.site-header h1 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(56px, 12vw, 88px);
-  line-height: 1;
-  color: var(--white);
-  letter-spacing: 0.02em;
-  margin-bottom: 16px;
-  text-shadow: 0 4px 40px rgba(0,0,0,0.5);
-}
-
-.site-header h1 .accent {
-  background: linear-gradient(135deg, #c8f135 0%, #7fff00 50%, #c8f135 100%);
-  background-size: 200% auto;
+.header-hero .accent {
+  background: linear-gradient(135deg, #c8f135 0%, #7fff00 30%, #e0ff60 60%, #c8f135 100%);
+  background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientShift 4s ease-in-out infinite;
-  filter: drop-shadow(0 0 24px rgba(200,241,53,0.3));
+  animation: gradientShift 5s ease-in-out infinite;
+  filter: drop-shadow(0 0 32px rgba(200,241,53,0.35));
+  position: relative;
 }
 
 .header-sub {
   font-size: 14px;
   color: var(--muted);
   font-weight: 300;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+}
+
+.site-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.4), transparent);
 }
 
 .header-glow {
   position: absolute;
-  top: 50%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(200,241,53,0.06) 0%, transparent 70%);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(200,241,53,0.08) 0%, rgba(200,241,53,0.02) 40%, transparent 70%);
   pointer-events: none;
   z-index: -1;
   animation: ambientFloat 15s ease-in-out infinite alternate;
+}
+
+/* Header floating particles */
+.header-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.header-particles span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(200,241,53,0.3);
+  animation: particleFloat 8s ease-in-out infinite;
+}
+
+.header-particles span:nth-child(1) { left: 15%; top: 20%; animation-delay: 0s; animation-duration: 7s; }
+.header-particles span:nth-child(2) { left: 75%; top: 30%; animation-delay: -2s; animation-duration: 9s; width: 2px; height: 2px; }
+.header-particles span:nth-child(3) { left: 40%; top: 70%; animation-delay: -4s; animation-duration: 6s; }
+.header-particles span:nth-child(4) { left: 85%; top: 60%; animation-delay: -1s; animation-duration: 10s; width: 2px; height: 2px; }
+.header-particles span:nth-child(5) { left: 25%; top: 80%; animation-delay: -3s; animation-duration: 8s; width: 4px; height: 4px; opacity: 0.2; }
+
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+  25% { transform: translateY(-20px) scale(1.2); opacity: 0.6; }
+  50% { transform: translateY(-10px) scale(0.8); opacity: 0.4; }
+  75% { transform: translateY(-25px) scale(1.1); opacity: 0.5; }
 }
 
 .section-title strong {
@@ -1604,55 +1644,119 @@ body {
 }
 
 /* ============================================================
-   Coaching Banner
+   Coaching Banner — Premium
    ============================================================ */
 .coaching-banner {
-  margin-bottom: 24px;
-  padding: 18px 20px;
-  background: linear-gradient(135deg, rgba(6,199,85,0.06), rgba(6,199,85,0.02));
-  border: 1px solid rgba(6,199,85,0.15);
-  border-radius: var(--radius-md);
+  position: relative;
+  margin-bottom: 32px;
+  padding: 28px 24px;
+  background: linear-gradient(135deg, rgba(6,199,85,0.05), rgba(200,241,53,0.03), rgba(6,199,85,0.02));
+  border: 1px solid rgba(6,199,85,0.12);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.coaching-banner:hover {
+  border-color: rgba(6,199,85,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(6,199,85,0.08), 0 0 0 1px rgba(6,199,85,0.06);
+}
+
+.coaching-banner-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(6,199,85,0.12), rgba(6,199,85,0.04));
+  border: 1px solid rgba(6,199,85,0.15);
+  color: #06c755;
+  box-shadow: 0 0 20px rgba(6,199,85,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.coaching-banner-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.coaching-banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
 }
 
 .coaching-banner-text {
-  flex: 1;
-  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coaching-banner-label {
+  font-family: 'Inter', 'Bebas Neue', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  color: #06c755;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 .coaching-banner-title {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
   color: var(--white);
-  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
 }
 
 .coaching-banner-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.7;
+  max-width: 380px;
 }
 
 .coaching-banner-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px 24px;
+  align-self: flex-start;
+  gap: 8px;
+  padding: 12px 28px;
   background: linear-gradient(135deg, #06c755, #00e676);
   color: #fff;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   text-decoration: none;
   font-size: 14px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   white-space: nowrap;
-  transition: all var(--transition);
-  box-shadow: 0 4px 16px rgba(6,199,85,0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 4px 20px rgba(6,199,85,0.25), 0 0 0 0 rgba(6,199,85,0);
   position: relative;
   overflow: hidden;
+}
+
+.coaching-banner-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(6,199,85,0.35), 0 0 0 1px rgba(6,199,85,0.2);
+}
+
+.coaching-banner-btn:hover svg {
+  transform: translateX(3px);
+}
+
+.coaching-banner-btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.3s ease;
 }
 
 .coaching-banner-btn::after {
@@ -1664,6 +1768,18 @@ body {
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
   animation: shimmer 4s ease-in-out infinite;
+}
+
+.coaching-banner-glow {
+  position: absolute;
+  bottom: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(6,199,85,0.08), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glowPulse 6s ease-in-out infinite;
 }
 
 .coaching-banner-btn:hover {
