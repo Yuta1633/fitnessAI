@@ -997,13 +997,29 @@ function highlightButton(section, selectedBtn) {
 }
 
 function parseOptions(text) {
+  const lines = text.split('\n');
+  const pattern = /^(\d+)[.\)）]\s*(.+)$/;
   const options = [];
-  const pattern = /^(\d+)[.\)）]\s*(.+)$/gm;
-  let match;
-  while ((match = pattern.exec(text)) !== null) {
-    options.push({ number: match[1], label: match[2].trim() });
+
+  // 末尾の空行をスキップ
+  let i = lines.length - 1;
+  while (i >= 0 && lines[i].trim() === '') i--;
+
+  // 末尾から連続する番号行のみを選択肢として収集
+  const optionIndices = [];
+  while (i >= 0 && pattern.test(lines[i].trim())) {
+    optionIndices.unshift(i);
+    i--;
   }
-  const cleanText = text.replace(/^(\d+)[.\)）]\s*(.+)$/gm, '').trim();
+
+  for (const idx of optionIndices) {
+    const match = lines[idx].trim().match(pattern);
+    if (match) {
+      options.push({ number: match[1], label: match[2].trim() });
+    }
+  }
+
+  const cleanText = lines.filter((_, idx) => !optionIndices.includes(idx)).join('\n').trim();
   return { cleanText, options };
 }
 
