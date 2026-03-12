@@ -1278,15 +1278,17 @@ async function loadDashboard() {
   const goal = await loadGoal(userId);
 
   const goalCurrentEl = document.getElementById('goal-current');
-  if (goal) {
-    const parts = [];
-    if (goal.goal_weight) parts.push(`目標体重: ${goal.goal_weight}kg`);
-    if (goal.goal_body_fat) parts.push(`目標体脂肪率: ${goal.goal_body_fat}%`);
-    goalCurrentEl.innerHTML = parts.length > 0
-      ? `現在の目標 → ${parts.join('　／　')} <span style="color:var(--accent); cursor:pointer; font-size:11px; margin-left:8px;">変更する↑</span>`
-      : '';
-  } else {
-    goalCurrentEl.innerHTML = '';
+  if (goalCurrentEl) {
+    if (goal) {
+      const parts = [];
+      if (goal.goal_weight) parts.push(`目標体重: ${goal.goal_weight}kg`);
+      if (goal.goal_body_fat) parts.push(`目標体脂肪率: ${goal.goal_body_fat}%`);
+      goalCurrentEl.innerHTML = parts.length > 0
+        ? `現在の目標 → ${parts.join('　／　')} <span style="color:var(--accent); cursor:pointer; font-size:11px; margin-left:8px;">変更する↑</span>`
+        : '';
+    } else {
+      goalCurrentEl.innerHTML = '';
+    }
   }
 
   const progressCard = document.getElementById('progress-card');
@@ -1341,13 +1343,13 @@ async function loadDashboard() {
       }
     }
 
-    if (gaugeHTML) {
+    if (gaugeHTML && progressCard && progressContent) {
       progressCard.style.display = 'block';
       progressContent.innerHTML = gaugeHTML;
-    } else {
+    } else if (progressCard) {
       progressCard.style.display = 'none';
     }
-  } else {
+  } else if (progressCard) {
     progressCard.style.display = 'none';
   }
 
@@ -1504,7 +1506,7 @@ document.getElementById('record-btn')?.addEventListener('click', async () => {
 // ============================================================
 // 週次振り返り
 // ============================================================
-document.getElementById('review-btn').addEventListener('click', async () => {
+document.getElementById('review-btn')?.addEventListener('click', async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
 
