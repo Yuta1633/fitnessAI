@@ -1267,10 +1267,12 @@ async function loadDashboard() {
     .limit(50);
 
   const historyEl = document.getElementById('record-history');
-  if (records && records.length > 0) {
-    renderRecordHistory(historyEl, records, 5);
-  } else {
-    historyEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">記録なし</p>';
+  if (historyEl) {
+    if (records && records.length > 0) {
+      renderRecordHistory(historyEl, records, 5);
+    } else {
+      historyEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">記録なし</p>';
+    }
   }
 
   const goal = await loadGoal(userId);
@@ -1388,7 +1390,7 @@ async function saveGoal(userId, goalWeight, goalBodyFat) {
     .upsert({ user_id: userId, goal_weight: goalWeight, goal_body_fat: goalBodyFat }, { onConflict: 'user_id' });
 }
 
-document.getElementById('goal-save-btn').addEventListener('click', async () => {
+document.getElementById('goal-save-btn')?.addEventListener('click', async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
   const goalWeight = parseFloat(document.getElementById('goal-weight-input').value) || null;
@@ -1475,7 +1477,7 @@ function renderRecordHistory(el, records, pageSize) {
   render();
 }
 
-document.getElementById('record-btn').addEventListener('click', async () => {
+document.getElementById('record-btn')?.addEventListener('click', async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
   const weight = parseFloat(document.getElementById('weight-input').value) || null;
