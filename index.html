@@ -281,19 +281,6 @@
 <!-- メインコンテンツ -->
 <div id="main-content" style="display:none;">
 
-    <!-- AIおすすめバナー -->
-    <div id="ai-recommendation" class="card visible ai-rec-card" style="display:none; margin-bottom:20px;">
-      <div style="display:flex; align-items:flex-start; gap:14px;">
-        <div class="coaching-banner-icon" style="background:linear-gradient(135deg,rgba(200,241,53,0.12),rgba(200,241,53,0.04)); border-color:rgba(200,241,53,0.15); color:var(--accent);">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <div style="flex:1; min-width:0;">
-          <p style="font-size:10px; font-weight:600; letter-spacing:0.3em; color:var(--accent); margin-bottom:4px;">TODAY'S RECOMMENDATION</p>
-          <p id="ai-rec-text" style="font-size:13px; color:var(--white); line-height:1.6;"></p>
-        </div>
-      </div>
-    </div>
-
     <!-- ヘッダー -->
     <header class="site-header">
       <span class="section-tag">AI FITNESS COACH</span>
@@ -769,7 +756,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=13').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=14').then(reg => {
       reg.update();
     }).catch(() => {});
   });

@@ -1682,12 +1682,6 @@ body {
   line-height: 1.6;
 }
 
-/* AI Recommendation card */
-.ai-rec-card {
-  opacity: 1 !important;
-  transform: none !important;
-  animation: fadeUp 0.5s ease 0.2s both;
-}
 
 /* ============================================================
    Daily Check-in

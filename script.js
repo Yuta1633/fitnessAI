@@ -2736,7 +2736,6 @@ function showAfterCheckin() {
     if (checkinGate) checkinGate.style.display = 'none';
     mainContent.style.display = 'block';
     loadDashboard();
-    generateAIRecommendation();
     renderCheckinSummary(existing);
   } else {
     // 未チェックイン → ゲート表示
@@ -2820,46 +2819,6 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   mainContent.style.display = 'block';
   loadDashboard();
   renderCheckinSummary(checkinData);
-  generateAIRecommendation();
 });
 
-// ============================================================
-// AIおすすめ（フィードバック→今日のコーチ推奨）
-// ============================================================
-async function generateAIRecommendation() {
-  const recEl = document.getElementById('ai-recommendation');
-  const recText = document.getElementById('ai-rec-text');
-  if (!recEl || !recText) return;
-
-  const checkin = getTodayCheckin();
-  if (!checkin) return;
-
-  const focusMap = {
-    '脂肪を落としたい': '「脂肪を落としたい → 栄養」でカロリー管理の具体プランを作成できます',
-    '筋肉をつけたい': '「筋肉をつけたい → トレーニング」で今日のメニューを生成できます',
-    '体力を上げたい': '「体力を上げたい → トレーニング」で持久力強化メニューを生成できます',
-    '不調を改善したい': '「不調を改善 → 回復」で改善プランを生成できます',
-    '体型を整えたい': '「体型を整える → トレーニング」でボディメイクメニューを生成できます',
-  };
-
-  let recMessage = '';
-  const focusLabel = focusMap[checkin.focus];
-
-  if (focusLabel) {
-    recMessage = `今日の目的に合わせて、AIコーチの<strong style="color:var(--accent);">${focusLabel}</strong>`;
-  }
-
-  // 体調に応じた補足
-  if (checkin.condition === '悪い' || checkin.condition === 'かなり悪い') {
-    recMessage += `<br><span style="font-size:12px; color:var(--muted);">体調が優れないようなので、無理せず「回復・休養」メニューもおすすめです</span>`;
-  }
-  if (checkin.sleep === '眠れなかった') {
-    recMessage += `<br><span style="font-size:12px; color:var(--muted);">睡眠不足気味のため、強度は控えめがおすすめです</span>`;
-  }
-
-  if (recMessage) {
-    recText.innerHTML = recMessage;
-    recEl.style.display = '';
-  }
-}
 
