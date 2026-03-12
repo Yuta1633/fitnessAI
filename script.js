@@ -1100,87 +1100,29 @@ function escapeHtml(str) {
 // ============================================================
 function isTrainingPlan(text) {
   const courseCount = [/🔥/, /💪/, /⚡/].filter(r => r.test(text)).length;
-  return courseCount >= 2 && /【やり方】|【ポイント】/.test(text);
+  return courseCount >= 2;
 }
 
 function renderTrainingContent(text) {
   const lines = text.split('\n');
   let html = '';
-  let i = 0;
 
-  while (i < lines.length) {
-    const line = lines[i];
+  for (const line of lines) {
     const trimmed = line.trim();
 
-    // コースヘッダー（🔥💪⚡）
     if (/^[🔥💪⚡]/.test(trimmed)) {
       html += `<div class="tp-course">${escapeHtml(line)}</div>`;
-      i++;
-      continue;
-    }
-
-    // セクションヘッダー（▼）
-    if (/^▼/.test(trimmed)) {
+    } else if (/^▼/.test(trimmed)) {
       html += `<div class="tp-section">${escapeHtml(line)}</div>`;
-      i++;
-      continue;
-    }
-
-    // 種目行（番号付き）
-    if (/^\d+\.\s/.test(trimmed)) {
+    } else if (/^\d+\.\s/.test(trimmed)) {
       html += `<div class="tp-exercise">${escapeHtml(line)}</div>`;
-      i++;
-
-      // 詳細行を収集（【やり方】【ポイント】【なぜこの種目か】）
-      const details = [];
-      while (i < lines.length) {
-        const next = lines[i].trim();
-        if (/^\d+\.\s/.test(next) || /^[🔥💪⚡]/.test(next) || /^▼/.test(next)) break;
-        if (next === '' && details.length === 0) { i++; continue; }
-        if (/^【/.test(next) || details.length > 0) {
-          details.push(lines[i]);
-          i++;
-        } else {
-          break;
-        }
-      }
-
-      if (details.length > 0) {
-        html += `<div class="tp-details-wrap">`;
-        html += `<div class="tp-details-toggle"><span class="tp-toggle-icon"></span>詳細を見る</div>`;
-        html += `<div class="tp-details-content">`;
-        for (const dl of details) {
-          const dt = dl.trim();
-          if (/^【やり方】/.test(dt)) {
-            html += `<div class="tp-detail-label">💡 やり方</div><div class="tp-detail-text">${escapeHtml(dt.replace(/^【やり方】\s*/, ''))}</div>`;
-          } else if (/^【ポイント】/.test(dt)) {
-            html += `<div class="tp-detail-label">🎯 ポイント</div><div class="tp-detail-text">${escapeHtml(dt.replace(/^【ポイント】\s*/, ''))}</div>`;
-          } else if (/^【なぜこの種目か】/.test(dt)) {
-            html += `<div class="tp-detail-label">📌 なぜこの種目か</div><div class="tp-detail-text">${escapeHtml(dt.replace(/^【なぜこの種目か】\s*/, ''))}</div>`;
-          } else if (dt !== '') {
-            html += `<div class="tp-detail-text">${escapeHtml(dl)}</div>`;
-          }
-        }
-        html += `</div></div>`;
-      }
-      continue;
+    } else {
+      html += escapeHtml(line) + '<br>';
     }
-
-    // 通常行
-    html += escapeHtml(line) + '<br>';
-    i++;
   }
 
   return html;
 }
-
-// トグルイベント委譲（チャット履歴内のトグルをクリックで開閉）
-document.getElementById('chat-history')?.addEventListener('click', (e) => {
-  const toggle = e.target.closest('.tp-details-toggle');
-  if (!toggle) return;
-  const wrap = toggle.closest('.tp-details-wrap');
-  if (wrap) wrap.classList.toggle('open');
-});
 
 async function callAPI(messages) {
   const { data: { session } } = await supabase.auth.getSession();
