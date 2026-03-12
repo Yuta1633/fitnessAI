@@ -762,28 +762,402 @@ body {
 }
 
 /* ============================================================
-   Responsive
+   Responsive — Mobile-first optimizations
    ============================================================ */
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  /* Container: tighter padding, less bottom space */
   .container {
-    padding: 28px 16px 60px;
+    padding: 20px 14px calc(var(--nav-height) + 16px);
   }
 
+  /* Cards: reduce padding & margins */
   .card {
-    padding: 24px 20px;
+    padding: 20px 16px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-md);
   }
 
-  .site-header h1 {
-    font-size: 56px;
+  /* Header: compact */
+  .site-header {
+    margin-bottom: 16px;
   }
 
+  .header-hero {
+    font-size: 20px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+  }
+
+  /* Section titles: smaller */
+  .section-title {
+    font-size: 18px;
+    margin-bottom: 18px;
+  }
+
+  .section-tag {
+    font-size: 9px;
+    margin-bottom: 10px;
+    padding: 4px 10px 4px 0;
+  }
+
+  /* Step indicator: compact */
+  .step-indicator {
+    margin-bottom: 24px;
+  }
+
+  .step-num {
+    font-size: 16px;
+  }
+
+  .step.active .step-num {
+    width: 32px;
+    height: 32px;
+  }
+
+  .step-label {
+    font-size: 10px;
+  }
+
+  .step-line {
+    width: 32px;
+    margin: 0 4px;
+    margin-bottom: 14px;
+  }
+
+  /* Choice buttons: mobile-friendly tap targets */
   .choice-btn {
-    padding: 14px 16px;
+    padding: 14px 14px;
     font-size: 14px;
+    gap: 10px;
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    padding: 5px;
   }
 
   .btn-sub {
     display: none;
+  }
+
+  .button-group {
+    gap: 8px;
+  }
+
+  /* Stats: less oversized */
+  .stat-metric {
+    font-size: 36px;
+  }
+
+  .stat-card {
+    padding: 16px 14px;
+  }
+
+  /* Coaching banner: stack on very small */
+  .coaching-banner {
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .coaching-banner-btn {
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+
+  /* Chat: better mobile sizing */
+  .chat-history {
+    max-height: 60vh;
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  .chat-message {
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .chat-message.user {
+    max-width: 85%;
+  }
+
+  .chat-input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+    padding: 12px 14px;
+  }
+
+  .chat-send-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  /* Response card */
+  .response-text {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  /* Reset button */
+  .reset-btn {
+    margin-top: 16px;
+    padding: 12px;
+  }
+
+  /* Check-in gate */
+  .checkin-gate {
+    padding: 16px 14px;
+    align-items: flex-start;
+    padding-top: 48px;
+  }
+
+  .checkin-gate-inner {
+    padding: 24px 18px;
+  }
+
+  .checkin-gate-title {
+    font-size: 18px;
+  }
+
+  .checkin-gate-sub {
+    font-size: 12px;
+    margin-bottom: 18px;
+  }
+
+  .checkin-options {
+    gap: 6px;
+  }
+
+  .checkin-option span {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+
+  .checkin-label {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .checkin-group {
+    margin-bottom: 12px;
+  }
+
+  .checkin-input {
+    font-size: 16px; /* prevents iOS zoom */
+    padding: 10px 12px;
+  }
+
+  /* Body data inputs */
+  #record-btn,
+  #goal-save-btn {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  /* Progress chart */
+  .chart-container {
+    height: 180px;
+  }
+
+  .chart-tabs {
+    gap: 6px;
+  }
+
+  .chart-tab {
+    padding: 5px 12px;
+    font-size: 11px;
+  }
+
+  /* History list */
+  .history-list {
+    max-height: 250px;
+  }
+
+  .history-item {
+    padding: 12px 14px;
+  }
+
+  /* Locked features */
+  .locked-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .locked-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Purchase card */
+  .purchase-card {
+    padding: 28px 18px;
+  }
+
+  .purchase-title {
+    font-size: 18px;
+  }
+
+  .plan-toggle {
+    gap: 4px;
+  }
+
+  .plan-btn {
+    padding: 10px 2px;
+    font-size: 11px;
+  }
+
+  .plan-btn .price {
+    font-size: 15px;
+  }
+
+  /* Consent modal */
+  .consent-card {
+    margin: 40px 14px;
+    padding: 24px 18px;
+  }
+
+  .consent-title {
+    font-size: 18px;
+  }
+
+  /* Footer */
+  .site-footer {
+    padding: 24px 0 16px;
+    margin-top: 24px;
+  }
+
+  .footer-links {
+    gap: 14px;
+  }
+
+  /* Onboarding */
+  .onboarding-card {
+    padding: 28px 20px;
+  }
+
+  .onboarding-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 16px;
+  }
+
+  .onboarding-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .onboarding-title {
+    font-size: 18px;
+  }
+
+  .onboarding-desc {
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  /* Notification banner */
+  .notification-banner {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .notification-banner-text {
+    font-size: 11px;
+  }
+
+  /* Tools panel */
+  #tools-panel {
+    padding: 20px 14px;
+  }
+
+  .tools-hdr h2 {
+    font-size: 32px;
+  }
+
+  .tool-card {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .tool-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .tool-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tool-name {
+    font-size: 14px;
+  }
+
+  /* Form */
+  .form-input, .form-textarea {
+    font-size: 16px; /* prevents iOS zoom */
+    padding: 10px 14px;
+  }
+
+  .form-submit {
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  /* Bottom nav: taller tap target */
+  .bottom-nav {
+    height: 56px;
+  }
+
+  /* Disable hover effects on touch */
+  .card:hover {
+    transform: none;
+    border-color: var(--border);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.02);
+  }
+
+  .card:hover::before {
+    opacity: 0;
+  }
+
+  .choice-btn:hover {
+    transform: none;
+    border-color: var(--border);
+    background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .choice-btn:hover::before {
+    opacity: 0;
+  }
+
+  .choice-btn:hover .btn-icon {
+    transform: none;
+    box-shadow: none;
+    background: rgba(200,241,53,0.06);
+  }
+
+  /* Active states for touch instead of hover */
+  .choice-btn:active {
+    background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(200,241,53,0.03));
+    border-color: rgba(200,241,53,0.2);
+    transform: scale(0.98);
+  }
+
+  .card:active {
+    border-color: rgba(200,241,53,0.12);
+  }
+
+  .coaching-banner:hover {
+    transform: none;
+  }
+
+  .tool-card:hover, .tool-card:active {
+    transform: none;
   }
 }
 
