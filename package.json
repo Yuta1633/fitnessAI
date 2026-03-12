@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "stripe": "^20.3.1"
+  }
+}

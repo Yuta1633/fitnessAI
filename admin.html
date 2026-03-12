@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 | FITNESS AI</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+  body { background-color: #0a0a0a !important; }
+</style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="container">
+    <div class="site-header">
+      <p class="header-label">ADMIN PANEL</p>
+      <h1>管理<span class="accent">画面</span></h1>
+    </div>
+
+    <div id="auth-check" class="card visible">
+      <p style="color: var(--muted); text-align:center;">認証確認中...</p>
+    </div>
+
+    <div id="admin-content" style="display:none;">
+
+
+
+      <!-- サービス停止 -->
+      <div class="card visible">
+        <p class="section-tag">SERVICE CONTROL</p>
+        <p class="section-title">サービス<strong>全体停止</strong></p>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <p id="service-status" style="color: var(--accent);">● 稼働中</p>
+          <button id="toggle-service-btn" class="choice-btn" style="width:auto; padding: 12px 24px;">
+            <span class="btn-text">サービスを停止する</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- アクセス許可管理 -->
+      <div class="card visible">
+        <p class="section-tag">ACCESS CONTROL</p>
+        <p class="section-title">アクセス<strong>許可管理</strong></p>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">ここに追加されたメールアドレスのユーザーだけがサービスを利用できます。</p>
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <input id="allowed-email-input" type="email" placeholder="メールアドレスを入力" style="flex:1; padding:12px 16px; background:#1e1e1e; border:1px solid var(--border); border-radius:12px; color:var(--white); font-size:14px; outline:none;">
+          <button id="add-allowed-btn" style="padding:12px 20px; background:var(--accent); color:#000; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap;">追加</button>
+        </div>
+        <div id="allowed-list" style="display:flex; flex-direction:column; gap:6px;">
+          <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
+        </div>
+      </div>
+
+      <!-- ユーザー一覧 -->
+      <div class="card visible">
+        <p class="section-tag">USER MANAGEMENT</p>
+        <p class="section-title">ユーザー<strong>一覧</strong></p>
+        <div style="margin-bottom: 16px;">
+          <input id="user-search" type="text" placeholder="メールアドレスで検索..." style="width:100%; padding:12px 16px; background:#1e1e1e; border:1px solid var(--border); border-radius:12px; color:var(--white); font-size:14px; outline:none;">
+        </div>
+        <div id="user-list" style="display:flex; flex-direction:column; gap:10px;">
+          <p style="color: var(--muted);">読み込み中...</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
