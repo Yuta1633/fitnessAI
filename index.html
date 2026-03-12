@@ -908,5 +908,10 @@ function closeToolOverlay() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeToolOverlay();
 });
+
+// iframe内のツールページからの戻るボタン対応
+window.addEventListener('message', function(e) {
+  if (e.data === 'closeToolOverlay') closeToolOverlay();
+});
 </script>
 </body>

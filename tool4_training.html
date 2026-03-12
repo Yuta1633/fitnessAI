@@ -15,6 +15,9 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding-bottom:72px}
+.back-btn{position:fixed;top:12px;left:12px;z-index:9999;display:flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(15,15,20,0.85);backdrop-filter:blur(8px);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:background 0.2s}
+.back-btn:hover{background:rgba(249,115,22,0.15);border-color:var(--accent)}
+.back-btn svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2}
 
 .hdr{background:linear-gradient(160deg,#0A0A08 0%,#0C0A06 100%);padding:44px 20px 32px;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
 .hdr::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(249,115,22,0.1),transparent 65%);border-radius:50%}
@@ -113,6 +116,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
 </style>
 </head>
 <body>
+<button class="back-btn" onclick="if(window.parent!==window){window.parent.postMessage('closeToolOverlay','*')}else{location.href='/'}">
+  <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>AIコーチに戻る
+</button>
 <div class="hdr">
   <div class="brand">Fit Project AI</div>
   <h1>トレーニング<br><span>頻度計算</span></h1>
