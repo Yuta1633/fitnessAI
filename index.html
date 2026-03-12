@@ -149,34 +149,9 @@
     </button>
     <div class="record-panel-content">
 
-    <!-- スケルトンローディング -->
-    <div id="dashboard-skeleton" style="display:none;">
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line medium"></div>
-        <div style="display:flex; gap:16px; margin-top:16px;">
-          <div style="flex:1;" class="skeleton" style="height:80px; border-radius:14px;"><div style="height:80px;"></div></div>
-          <div style="flex:1;" class="skeleton" style="height:80px; border-radius:14px;"><div style="height:80px;"></div></div>
-        </div>
-      </div>
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line long"></div>
-        <div class="skeleton skeleton-line medium"></div>
-      </div>
-    </div>
-
     <div id="dashboard">
 
-      <!-- 今日のコンディション表示 -->
-      <div class="card visible" id="checkin-summary-card" style="margin-bottom:14px; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <p class="section-tag">TODAY'S CONDITION</p>
-          <button id="checkin-edit-btn" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 12px; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">変更する</button>
-        </div>
-        <div id="checkin-summary-content" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-      </div>
-
+      <!-- 継続記録 -->
       <div class="card visible" style="margin-bottom: 14px;">
         <p class="section-tag">STREAK</p>
         <p class="section-title">継続<strong>記録</strong></p>
@@ -199,14 +174,6 @@
             </div>
           </div>
           <div id="badge-next" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);"></div>
-        </div>
-      </div>
-
-      <div class="card visible" style="margin-bottom: 14px;">
-        <p class="section-tag">WEEKLY REPORT</p>
-        <p class="section-title">今週の<strong>内訳</strong></p>
-        <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;">
-          <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
         </div>
       </div>
 
@@ -254,128 +221,7 @@
         </div>
       </div>
 
-      <!-- チャット履歴 -->
-      <div class="card visible" id="history-card" style="margin-bottom: 14px; display:none;">
-        <p class="section-tag">HISTORY</p>
-        <p class="section-title">過去の<strong>相談</strong></p>
-        <div id="chat-history-list" class="history-list"></div>
-      </div>
-
-      <!-- AIパーソナル分析（7日連続で開放） -->
-      <div class="card visible" id="personal-analysis-card" style="margin-bottom: 14px;">
-        <p class="section-tag">PERSONAL ANALYSIS</p>
-        <p class="section-title">あなたの<strong>タイプ分析</strong></p>
-        <div id="pa-locked" style="text-align:center; padding:20px 0;">
-          <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">7日連続利用で開放</p>
-          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
-          <div class="progress-track" style="margin:0 20px;">
-            <div id="pa-progress-bar" class="progress-fill" style="width:0%;"></div>
-          </div>
-          <p id="pa-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 7日</p>
-        </div>
-        <div id="pa-unlocked" style="display:none;">
-          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">全履歴からあなたのフィットネスタイプ・バランス・弱点をAIが診断します。</p>
-          <button id="pa-run-btn" class="action-btn-outline">パーソナル分析を実行 →</button>
-          <div id="pa-loading" style="display:none; text-align:center; padding:20px 0;">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-            <p style="color:var(--muted); font-size:13px; margin-top:8px;">分析中...（10〜20秒）</p>
-          </div>
-          <div id="pa-result" style="display:none; margin-top:16px;"></div>
-        </div>
-      </div>
-
-      <!-- AIボディメイク診断（30日連続で開放） -->
-      <div class="card visible" id="body-diagnosis-card" style="margin-bottom: 14px;">
-        <p class="section-tag">BODY DIAGNOSIS</p>
-        <p class="section-title">AIボディメイク<strong>診断</strong></p>
-        <div id="bd-locked" style="text-align:center; padding:20px 0;">
-          <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">30日連続利用で開放</p>
-          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
-          <div class="progress-track" style="margin:0 20px;">
-            <div id="bd-progress-bar" class="progress-fill blue" style="width:0%;"></div>
-          </div>
-          <p id="bd-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 30日</p>
-        </div>
-        <div id="bd-unlocked" style="display:none;">
-          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">正面からの全身写真をアップロードすると、AIが体型を分析して改善ポイントを提案します。</p>
-          <div id="bd-consent" class="bd-consent-box">
-            <p style="font-size:13px; font-weight:700; color:var(--white); margin-bottom:10px;">写真の取り扱いについて</p>
-            <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はAI分析のためだけに使用されます</p>
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はサーバーに保存されません（端末上で処理）</p>
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;運営側が写真を閲覧することは一切ありません</p>
-              <p style="color:var(--accent-muted);">&#10003;分析完了後、写真データは自動的に破棄されます</p>
-            </div>
-            <label class="consent-checkbox-label" style="margin-bottom:0; padding:10px;">
-              <input type="checkbox" id="bd-consent-checkbox" class="consent-checkbox" style="accent-color:#4fc3f7;">
-              <span class="consent-checkbox-text">上記の内容を理解し、写真のアップロードに同意します</span>
-            </label>
-          </div>
-          <div id="bd-upload-area" class="bd-upload-area" style="display:none;" onclick="document.getElementById('bd-file-input').click()">
-            <p style="margin-bottom:8px; color:var(--muted);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></p>
-            <p style="font-size:14px; color:var(--white); font-weight:700;">写真をアップロード</p>
-            <p style="font-size:12px; color:var(--muted); margin-top:4px;">タップして写真を選択 or 撮影</p>
-            <input type="file" id="bd-file-input" accept="image/*" capture="environment" style="display:none;">
-          </div>
-          <div id="bd-preview" style="display:none; margin-top:12px; text-align:center;">
-            <img id="bd-preview-img" style="max-width:100%; max-height:300px; border-radius:12px; border:1px solid var(--border);">
-            <button id="bd-run-btn" class="action-btn-outline" style="margin-top:12px; color:#4fc3f7; border-color:#4fc3f7;">AIに診断してもらう →</button>
-            <button id="bd-reset-photo" class="action-btn-ghost" style="margin-top:8px;">写真を変更する</button>
-          </div>
-          <div id="bd-loading" style="display:none; text-align:center; padding:20px 0;">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-            <p style="color:var(--muted); font-size:13px; margin-top:8px;">体型を分析中...（10〜20秒）</p>
-          </div>
-          <div id="bd-result" style="display:none; margin-top:16px;"></div>
-          <p style="font-size:11px; color:var(--text-tertiary); margin-top:12px; text-align:center;">※ 写真はAI分析のみに使用され、サーバーに保存されません</p>
-        </div>
-      </div>
-
     </div><!-- dashboard閉じ -->
-
-    <!-- お問い合わせフォーム -->
-    <div id="contact" class="card visible" style="margin-bottom:24px;">
-      <p class="section-tag">CONTACT</p>
-      <p class="section-title" style="margin-bottom:8px;">お問い合わせ</p>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
-      <form id="contact-form" style="display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; gap:10px;">
-          <div style="flex:1;">
-            <label class="form-label">姓 <span class="form-required">*</span></label>
-            <input type="text" name="last_name" required placeholder="例: 山田" class="form-input">
-          </div>
-          <div style="flex:1;">
-            <label class="form-label">名 <span class="form-required">*</span></label>
-            <input type="text" name="first_name" required placeholder="例: 太郎" class="form-input">
-          </div>
-        </div>
-        <div>
-          <label class="form-label">メールアドレス <span class="form-required">*</span></label>
-          <input type="email" name="email" required placeholder="例: example@gmail.com" class="form-input">
-        </div>
-        <div>
-          <label class="form-label">電話番号（任意）</label>
-          <input type="tel" name="phone" placeholder="例: 090-1234-5678" class="form-input">
-        </div>
-        <div>
-          <label class="form-label">お問い合わせ内容 <span class="form-required">*</span></label>
-          <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" class="form-textarea"></textarea>
-        </div>
-        <button type="submit" class="form-submit">送信する →</button>
-        <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
-      </form>
-    </div>
-
-    <footer class="site-footer">
-      <div class="footer-links">
-        <a href="/Terms.html" class="footer-link">利用規約</a>
-        <a href="/Privacy.html" class="footer-link">プライバシーポリシー</a>
-        <a href="/Tokushoho.html" class="footer-link">特定商取引法に基づく表記</a>
-      </div>
-      <p class="footer-copy">© 2026 Fit Project AI</p>
-    </footer>
 
     </div><!-- record-panel-content閉じ -->
   </div><!-- record-panel閉じ -->
@@ -597,7 +443,162 @@
       <button id="reset-btn" class="reset-btn hidden">最初からやり直す</button>
     </section>
 
+    <!-- スケルトンローディング -->
+    <div id="dashboard-skeleton" style="margin-top: 24px; display:none;">
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line medium"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line long"></div>
+        <div class="skeleton skeleton-line medium"></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;">
+
+      <!-- 今日のコンディション表示 -->
+      <div class="card visible" id="checkin-summary-card" style="margin-bottom:14px; display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <p class="section-tag">TODAY'S CONDITION</p>
+          <button id="checkin-edit-btn" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 12px; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">変更する</button>
+        </div>
+        <div id="checkin-summary-content" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
+      <div class="card visible" style="margin-bottom: 14px;">
+        <p class="section-tag">WEEKLY REPORT</p>
+        <p class="section-title">今週の<strong>内訳</strong></p>
+        <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;">
+          <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
+        </div>
+      </div>
+
+      <!-- チャット履歴 -->
+      <div class="card visible" id="history-card" style="margin-bottom: 14px; display:none;">
+        <p class="section-tag">HISTORY</p>
+        <p class="section-title">過去の<strong>相談</strong></p>
+        <div id="chat-history-list" class="history-list"></div>
+      </div>
+
+      <!-- AIパーソナル分析（7日連続で開放） -->
+      <div class="card visible" id="personal-analysis-card" style="margin-bottom: 14px;">
+        <p class="section-tag">PERSONAL ANALYSIS</p>
+        <p class="section-title">あなたの<strong>タイプ分析</strong></p>
+        <div id="pa-locked" style="text-align:center; padding:20px 0;">
+          <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">7日連続利用で開放</p>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
+          <div class="progress-track" style="margin:0 20px;">
+            <div id="pa-progress-bar" class="progress-fill" style="width:0%;"></div>
+          </div>
+          <p id="pa-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 7日</p>
+        </div>
+        <div id="pa-unlocked" style="display:none;">
+          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">全履歴からあなたのフィットネスタイプ・バランス・弱点をAIが診断します。</p>
+          <button id="pa-run-btn" class="action-btn-outline">パーソナル分析を実行 →</button>
+          <div id="pa-loading" style="display:none; text-align:center; padding:20px 0;">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            <p style="color:var(--muted); font-size:13px; margin-top:8px;">分析中...（10〜20秒）</p>
+          </div>
+          <div id="pa-result" style="display:none; margin-top:16px;"></div>
+        </div>
+      </div>
+
+      <!-- AIボディメイク診断（30日連続で開放） -->
+      <div class="card visible" id="body-diagnosis-card" style="margin-bottom: 14px;">
+        <p class="section-tag">BODY DIAGNOSIS</p>
+        <p class="section-title">AIボディメイク<strong>診断</strong></p>
+        <div id="bd-locked" style="text-align:center; padding:20px 0;">
+          <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">30日連続利用で開放</p>
+          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
+          <div class="progress-track" style="margin:0 20px;">
+            <div id="bd-progress-bar" class="progress-fill blue" style="width:0%;"></div>
+          </div>
+          <p id="bd-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 30日</p>
+        </div>
+        <div id="bd-unlocked" style="display:none;">
+          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">正面からの全身写真をアップロードすると、AIが体型を分析して改善ポイントを提案します。</p>
+          <div id="bd-consent" class="bd-consent-box">
+            <p style="font-size:13px; font-weight:700; color:var(--white); margin-bottom:10px;">写真の取り扱いについて</p>
+            <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
+              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はAI分析のためだけに使用されます</p>
+              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はサーバーに保存されません（端末上で処理）</p>
+              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;運営側が写真を閲覧することは一切ありません</p>
+              <p style="color:var(--accent-muted);">&#10003;分析完了後、写真データは自動的に破棄されます</p>
+            </div>
+            <label class="consent-checkbox-label" style="margin-bottom:0; padding:10px;">
+              <input type="checkbox" id="bd-consent-checkbox" class="consent-checkbox" style="accent-color:#4fc3f7;">
+              <span class="consent-checkbox-text">上記の内容を理解し、写真のアップロードに同意します</span>
+            </label>
+          </div>
+          <div id="bd-upload-area" class="bd-upload-area" style="display:none;" onclick="document.getElementById('bd-file-input').click()">
+            <p style="margin-bottom:8px; color:var(--muted);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></p>
+            <p style="font-size:14px; color:var(--white); font-weight:700;">写真をアップロード</p>
+            <p style="font-size:12px; color:var(--muted); margin-top:4px;">タップして写真を選択 or 撮影</p>
+            <input type="file" id="bd-file-input" accept="image/*" capture="environment" style="display:none;">
+          </div>
+          <div id="bd-preview" style="display:none; margin-top:12px; text-align:center;">
+            <img id="bd-preview-img" style="max-width:100%; max-height:300px; border-radius:12px; border:1px solid var(--border);">
+            <button id="bd-run-btn" class="action-btn-outline" style="margin-top:12px; color:#4fc3f7; border-color:#4fc3f7;">AIに診断してもらう →</button>
+            <button id="bd-reset-photo" class="action-btn-ghost" style="margin-top:8px;">写真を変更する</button>
+          </div>
+          <div id="bd-loading" style="display:none; text-align:center; padding:20px 0;">
+            <div class="loading-dots"><span></span><span></span><span></span></div>
+            <p style="color:var(--muted); font-size:13px; margin-top:8px;">体型を分析中...（10〜20秒）</p>
+          </div>
+          <div id="bd-result" style="display:none; margin-top:16px;"></div>
+          <p style="font-size:11px; color:var(--text-tertiary); margin-top:12px; text-align:center;">※ 写真はAI分析のみに使用され、サーバーに保存されません</p>
+        </div>
+      </div>
+
+    </div>
+
 </div><!-- main-content閉じ -->
+
+<!-- お問い合わせフォーム -->
+<div id="contact" class="card visible" style="margin-top:24px; margin-bottom:24px;">
+  <p class="section-tag">CONTACT</p>
+  <p class="section-title" style="margin-bottom:8px;">お問い合わせ</p>
+  <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
+  <form id="contact-form" style="display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <label class="form-label">姓 <span class="form-required">*</span></label>
+        <input type="text" name="last_name" required placeholder="例: 山田" class="form-input">
+      </div>
+      <div style="flex:1;">
+        <label class="form-label">名 <span class="form-required">*</span></label>
+        <input type="text" name="first_name" required placeholder="例: 太郎" class="form-input">
+      </div>
+    </div>
+    <div>
+      <label class="form-label">メールアドレス <span class="form-required">*</span></label>
+      <input type="email" name="email" required placeholder="例: example@gmail.com" class="form-input">
+    </div>
+    <div>
+      <label class="form-label">電話番号（任意）</label>
+      <input type="tel" name="phone" placeholder="例: 090-1234-5678" class="form-input">
+    </div>
+    <div>
+      <label class="form-label">お問い合わせ内容 <span class="form-required">*</span></label>
+      <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" class="form-textarea"></textarea>
+    </div>
+    <button type="submit" class="form-submit">送信する →</button>
+    <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
+  </form>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/Terms.html" class="footer-link">利用規約</a>
+    <a href="/Privacy.html" class="footer-link">プライバシーポリシー</a>
+    <a href="/Tokushoho.html" class="footer-link">特定商取引法に基づく表記</a>
+  </div>
+  <p class="footer-copy">© 2026 Fit Project AI</p>
+</footer>
 
     </div><!-- container閉じ -->
   </div><!-- main-panel閉じ -->
@@ -783,7 +784,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=16').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=17').then(reg => {
       reg.update();
     }).catch(() => {});
   });
