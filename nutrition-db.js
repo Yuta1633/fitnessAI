@@ -441,23 +441,44 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 
 /**
  * 1食の目安PFCを計算
+ * 目標体重・期限がある場合はそこから逆算した赤字/黒字を適用
+ *
  * @param {object} params
- * @param {number} params.weight - 体重(kg)
+ * @param {number} params.weight - 現在の体重(kg)
  * @param {string} params.goalNum - 目的番号 "1"〜"5"
  * @param {number|null} params.currentBF - 現在の体脂肪率
  * @param {number|null} params.targetBF - 目標体脂肪率
+ * @param {number|null} params.goalWeight - 目標体重(kg)
+ * @param {number|null} params.daysLeft - 目標期限までの残日数
  * @param {string} params.timeOfDay - 時間帯（朝/昼/夕方/夜/間食）
  * @param {string} params.hunger - 空腹度
- * @returns {{ cal: number, p: number, f: number, c: number, dailyCal: number }}
+ * @returns {{ cal: number, p: number, f: number, c: number, dailyCal: number, deficit: number }}
  */
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, timeOfDay, hunger } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, daysLeft, timeOfDay, hunger } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
   const timeDist = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
 
-  // STEP1: 1日の目安
-  const dailyCal = weight * coeff.calPerKg;
+  // STEP1: ベースTDEE（目的別の体重×係数）
+  let dailyCal = weight * coeff.calPerKg;
+  let deficit = 0;
+
+  // STEP1b: 目標体重と期限がある場合、カロリー赤字/黒字を計算
+  if (goalWeight && daysLeft && daysLeft > 0) {
+    const weightDiff = weight - goalWeight; // 正=減量、負=増量
+    // 1kg体重変化 ≈ 7700kcal
+    const totalCalDiff = weightDiff * 7700;
+    let dailyDiff = totalCalDiff / daysLeft;
+    // 安全制限: 1日の赤字は最大750kcal（週0.7kg減）、黒字は最大500kcal
+    if (dailyDiff > 750) dailyDiff = 750;
+    if (dailyDiff < -500) dailyDiff = -500;
+    // 最低摂取カロリー: 体重×20kcal（安全下限）
+    const minCal = weight * 20;
+    dailyCal = Math.max(dailyCal - dailyDiff, minCal);
+    deficit = Math.round(dailyDiff);
+  }
+
   const dailyP = weight * coeff.pPerKg;
   const dailyF = dailyCal * coeff.fRatio / 9;
   const dailyC = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
@@ -468,13 +489,9 @@ function calculateMealTarget(params) {
   let mealF = dailyF * timeDist.f;
   let mealC = dailyC * timeDist.c;
 
-  // STEP3: 空腹度調整（カロリーのみ。Pは減らさない）
+  // STEP3: 空腹度調整（Pは減らさない）
   mealCal = mealCal * hungerMult;
-  if (hungerMult < 1.0) {
-    // 空腹でない場合: F,Cを調整、Pは維持
-    mealF = mealF * hungerMult;
-    mealC = mealC * hungerMult;
-  } else if (hungerMult > 1.0) {
+  if (hungerMult !== 1.0) {
     mealF = mealF * hungerMult;
     mealC = mealC * hungerMult;
   }
@@ -484,7 +501,8 @@ function calculateMealTarget(params) {
     p: Math.round(mealP),
     f: Math.round(mealF),
     c: Math.round(mealC),
-    dailyCal: Math.round(dailyCal)
+    dailyCal: Math.round(dailyCal),
+    deficit
   };
 }
 

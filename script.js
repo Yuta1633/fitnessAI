@@ -432,7 +432,34 @@ let questionAnswers = [];
 let currentQuestionIndex = 0;
 
 // 栄養提案のコンテキスト（PFC計算用）
-let nutritionContext = { timeOfDay: null, hunger: null };
+let nutritionContext = { timeOfDay: null, hunger: null, mealTarget: null };
+
+/**
+ * cachedUserContext と nutritionContext から目標PFCを計算
+ */
+function calcMealTargetFromContext() {
+  if (!cachedUserContext || !window.NutritionDB) return null;
+  const NDB = window.NutritionDB;
+  const weightMatch = cachedUserContext.match(/現在の体重:\s*([\d.]+)kg/);
+  if (!weightMatch) return null;
+
+  const weight = parseFloat(weightMatch[1]);
+  const bfMatch = cachedUserContext.match(/体脂肪率:\s*([\d.]+)%/);
+  const goalBFMatch = cachedUserContext.match(/目標体脂肪率:\s*([\d.]+)%/);
+  const goalWeightMatch = cachedUserContext.match(/目標体重:\s*([\d.]+)kg/);
+  const daysLeftMatch = cachedUserContext.match(/残り(\d+)日/);
+
+  return NDB.calculateMealTarget({
+    weight,
+    goalNum: selectedGoal,
+    currentBF: bfMatch ? parseFloat(bfMatch[1]) : null,
+    targetBF: goalBFMatch ? parseFloat(goalBFMatch[1]) : null,
+    goalWeight: goalWeightMatch ? parseFloat(goalWeightMatch[1]) : null,
+    daysLeft: daysLeftMatch ? parseInt(daysLeftMatch[1]) : null,
+    timeOfDay: nutritionContext.timeOfDay,
+    hunger: nutritionContext.hunger || '少し空腹'
+  });
+}
 
 function addOtherInput(btnGroup, div, onSubmit) {
   const otherBtn = document.createElement('button');
@@ -476,7 +503,20 @@ async function showQuestionStep(questions) {
       .map((ans, i) => `${questions[i].label} → ${ans}`)
       .join('\n');
     addMessage('user', summary);
-    conversationHistory.push({ role: 'user', content: summary });
+
+    // 栄養提案の場合: 目標PFCを計算してAIに渡す
+    let mealTargetPrompt = '';
+    if (selectedMethod === 'nutrition' && nutritionContext.timeOfDay && window.NutritionDB) {
+      const target = calcMealTargetFromContext();
+      if (target) {
+        nutritionContext.mealTarget = target;
+        mealTargetPrompt = `\n\n【この食事の目標PFC（システム計算済み）】\n` +
+          `約${target.cal}kcal | P${target.p}g | F${target.f}g | C${target.c}g\n` +
+          `(1日目安: ${target.dailyCal}kcal${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n` +
+          `各候補のカロリーはこの目標の±15%以内、Pは±20%以内で提案すること。\n`;
+      }
+    }
+    conversationHistory.push({ role: 'user', content: summary + mealTargetPrompt });
     questionAnswers = [];
     currentQuestionIndex = 0;
     loadingIndicator.classList.remove('hidden');
@@ -584,7 +624,7 @@ async function showQuestionStep(questions) {
 function showNutritionQuestions() {
   questionAnswers = [];
   currentQuestionIndex = 0;
-  nutritionContext = { timeOfDay: null, hunger: null };
+  nutritionContext = { timeOfDay: null, hunger: null, mealTarget: null };
   showQuestionStep(QUESTIONS.nutrition);
 }
 
@@ -2834,53 +2874,39 @@ function finalizeStreamingMessage(div, text) {
 
 /**
  * 栄養提案テキストの[ITEMS:]タグをPFCバッジに置換し、冒頭に1食目安を挿入
+ * ローカルDB即時表示 → 外部API非同期更新
  */
-function renderNutritionWithPFC(text) {
+function renderNutritionWithPFC(text, containerDiv) {
   const NDB = window.NutritionDB;
   // AIが直接出力してしまったPFC数値行を除去
   text = text.replace(/[（(]\s*(?:全体の)?目安[:：]?\s*約?\d+.*?kcal.*?[）)]/g, '');
   text = text.replace(/[（(]\s*約\d+kcal[｜|]P\d+g\s*F\d+g\s*C\d+g\s*[）)]/g, '');
   let html = '';
 
-  // 1食目安の計算（ユーザーデータから）
-  let mealTarget = null;
-  if (nutritionContext.timeOfDay && cachedUserContext) {
-    const weightMatch = cachedUserContext.match(/現在の体重:\s*([\d.]+)kg/);
-    const bfMatch = cachedUserContext.match(/体脂肪率:\s*([\d.]+)%/);
-    const goalBFMatch = cachedUserContext.match(/目標体脂肪率:\s*([\d.]+)%/);
-    if (weightMatch) {
-      const weight = parseFloat(weightMatch[1]);
-      const currentBF = bfMatch ? parseFloat(bfMatch[1]) : null;
-      const targetBF = goalBFMatch ? parseFloat(goalBFMatch[1]) : null;
-      // 空腹度をそのまま使う（HUNGER_ADJUSTMENTのキーと一致させる）
-      const hungerKey = nutritionContext.hunger || '少し空腹';
-      mealTarget = NDB.calculateMealTarget({
-        weight,
-        goalNum: selectedGoal,
-        currentBF,
-        targetBF,
-        timeOfDay: nutritionContext.timeOfDay,
-        hunger: hungerKey
-      });
-    }
-  }
+  // 1食目安の計算（目標体重・期限ベース）
+  const mealTarget = nutritionContext.mealTarget || calcMealTargetFromContext();
 
   // 冒頭に1食目安バッジを挿入
   if (mealTarget) {
     const timeLabel = nutritionContext.timeOfDay || '';
     const hungerLabel = nutritionContext.hunger || '';
-    html += NDB.createPFCBadgeHTML(mealTarget, `📊 あなたの1食の目安（${timeLabel}・${hungerLabel}）`);
+    let targetLabel = `📊 あなたの1食の目安（${timeLabel}・${hungerLabel}）`;
+    if (mealTarget.deficit > 0) {
+      targetLabel += `<span class="pfc-deficit">※目標逆算: -${mealTarget.deficit}kcal/日</span>`;
+    }
+    html += NDB.createPFCBadgeHTML(mealTarget, targetLabel);
     html += '<br>';
   }
 
   // テキストを行ごとに処理し、[ITEMS:]タグをPFCバッジに置換
   const lines = text.split('\n');
   const itemsPattern = /\[ITEMS:\s*([^\]]+)\]/;
+  const allParsedItems = []; // 外部API用に全候補のアイテムを収集
+  let badgeIndex = 0;
 
   for (const line of lines) {
     const itemsMatch = line.match(itemsPattern);
     if (itemsMatch) {
-      // [ITEMS:]タグをパースしてPFC計算
       const itemsStr = itemsMatch[1];
       const items = itemsStr.split(',').map(item => {
         const trimmed = item.trim();
@@ -2890,9 +2916,12 @@ function renderNutritionWithPFC(text) {
         }
         return { name: trimmed, amount: '1' };
       });
+
+      // ローカルDBで即時計算
       const pfc = NDB.calculateItemsPFC(items);
       const r = NDB.calculatePFCRange(pfc);
-      html += `<div class="pfc-badge pfc-badge-item">`;
+      const bid = `pfc-badge-${badgeIndex}`;
+      html += `<div class="pfc-badge pfc-badge-item" id="${bid}">`;
       html += `<div class="pfc-badge-values">`;
       html += `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> `;
       html += `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> `;
@@ -2903,12 +2932,83 @@ function renderNutritionWithPFC(text) {
         html += `<div class="pfc-unknown">※不明食材: ${escapeHtml(pfc.unknowns.join(', '))}</div>`;
       }
       html += `</div>`;
+
+      allParsedItems.push({ badgeId: bid, items });
+      badgeIndex++;
     } else {
       html += escapeHtml(line) + '<br>';
     }
   }
 
+  // 外部栄養APIで非同期に精度向上（バックグラウンド更新）
+  if (allParsedItems.length > 0) {
+    requestAnimationFrame(() => {
+      updatePFCFromAPI(allParsedItems);
+    });
+  }
+
   return html;
+}
+
+/**
+ * 外部栄養APIを呼び出してPFCバッジを更新
+ */
+async function updatePFCFromAPI(parsedItemGroups) {
+  const NDB = window.NutritionDB;
+  if (!NDB) return;
+
+  for (const group of parsedItemGroups) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch('/api/nutrition', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ items: group.items })
+      });
+
+      if (!response.ok) continue;
+      const result = await response.json();
+
+      // 全てunknownでなければバッジを更新
+      const hasData = result.items.some(i => !i.unknown);
+      if (!hasData) continue;
+
+      const badgeEl = document.getElementById(group.badgeId);
+      if (!badgeEl) continue;
+
+      const r = NDB.calculatePFCRange(result.total);
+      const valuesEl = badgeEl.querySelector('.pfc-badge-values');
+      if (valuesEl) {
+        valuesEl.innerHTML =
+          `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> ` +
+          `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> ` +
+          `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> ` +
+          `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
+      }
+      // 不明食材の表示を更新
+      const unknowns = result.items.filter(i => i.unknown).map(i => i.name);
+      const unknownEl = badgeEl.querySelector('.pfc-unknown');
+      if (unknowns.length > 0) {
+        if (unknownEl) {
+          unknownEl.textContent = `※不明食材: ${unknowns.join(', ')}`;
+        } else {
+          const div = document.createElement('div');
+          div.className = 'pfc-unknown';
+          div.textContent = `※不明食材: ${unknowns.join(', ')}`;
+          badgeEl.appendChild(div);
+        }
+      } else if (unknownEl) {
+        unknownEl.remove();
+      }
+    } catch (e) {
+      console.warn('栄養API更新失敗:', e);
+    }
+  }
 }
 
 function isNutritionResponse(text) {

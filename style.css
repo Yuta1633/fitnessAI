@@ -2803,6 +2803,14 @@ body {
   margin-top: 4px;
 }
 
+.pfc-deficit {
+  display: inline-block;
+  font-size: 11px;
+  color: #f5a623;
+  margin-left: 8px;
+  font-weight: 400;
+}
+
 /* ============================================================
    Additional Animations
    ============================================================ */
