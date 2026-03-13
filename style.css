@@ -2816,6 +2816,13 @@ body {
   font-weight: 400;
 }
 
+.pfc-ratio {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
 .pfc-unknown, .pfc-estimated {
   font-size: 11px;
   color: var(--muted);

@@ -526,6 +526,9 @@ async function showQuestionStep(questions) {
         };
         mealTargetPrompt += foodPriority[target.goalNum] || '';
 
+        // PFC比率最適化メニューテンプレートを注入
+        mealTargetPrompt += NDB.buildTemplatePrompt(target.goalNum, target.cal);
+
         // 筋肥大目的(goal 2)の夜食事: タンパク質を強調
         if (target.goalNum === '2' && nutritionContext.timeOfDay === '夜') {
           mealTargetPrompt += `【筋肥大・夜の食事】この食事でP${target.p}g以上を確保すること。1日合計P${target.dailyP}g達成のため、高タンパク食材（鶏胸肉・鮭・卵・豆腐等）を中心に提案すること。カゼインタンパク質（乳製品）も有効。\n`;
@@ -2952,6 +2955,11 @@ function renderNutritionWithPFC(text, containerDiv) {
     const totalP = pfc.p;
     const totalC = pfc.c;
 
+    // PFC比率を計算
+    const pPct = totalCal > 0 ? Math.round((totalP * 4 / totalCal) * 100) : 0;
+    const fPct = totalCal > 0 ? Math.round((totalF * 9 / totalCal) * 100) : 0;
+    const cPct = totalCal > 0 ? Math.round((totalC * 4 / totalCal) * 100) : 0;
+
     // PFC行を挿入
     html += `<div class="pfc-line">`;
     html += `<span class="pfc-cal">約${totalCal}kcal</span>`;
@@ -2959,6 +2967,7 @@ function renderNutritionWithPFC(text, containerDiv) {
     html += `<span class="pfc-p">P${totalP}g</span> `;
     html += `<span class="pfc-f">F${totalF}g</span> `;
     html += `<span class="pfc-c">C${totalC}g</span>`;
+    html += `<span class="pfc-ratio">（P${pPct}% F${fPct}% C${cPct}%）</span>`;
     html += `</div>`;
     if (pfc.estimated && pfc.estimated.length > 0) {
       html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;

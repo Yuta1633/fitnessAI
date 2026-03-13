@@ -1038,11 +1038,215 @@ function createPFCBadgeHTML(pfc, label) {
 </div>`;
 }
 
+// ================================================================
+// 目的別メニューテンプレート（PFC比率最適化済み）
+// ================================================================
+const MEAL_TEMPLATES = {
+  // ① 脂肪を落としたい: P35% F25% C40%
+  '1': [
+    { name: '鶏胸肉の蒸し焼き定食', items: [
+      { name: '鶏胸肉', amount: '150g', cook: '蒸す' },
+      { name: '白米', amount: '120g' },
+      { name: 'ブロッコリー', amount: '80g', cook: '茹でる' },
+      { name: '味噌汁', amount: '1杯' }
+    ]},
+    { name: '白身魚のグリル定食', items: [
+      { name: 'タラ', amount: '150g', cook: 'グリル' },
+      { name: '玄米', amount: '120g' },
+      { name: 'ほうれん草', amount: '80g', cook: '茹でる' },
+      { name: 'ポン酢', amount: '大さじ1' }
+    ]},
+    { name: 'ささみサラダボウル', items: [
+      { name: '鶏ささみ', amount: '120g', cook: '茹でる' },
+      { name: '白米', amount: '100g' },
+      { name: 'レタス', amount: '50g' },
+      { name: 'トマト', amount: '50g' },
+      { name: '鶏卵', amount: '1個', cook: '茹でる' }
+    ]},
+    { name: '豆腐ハンバーグ定食', items: [
+      { name: '木綿豆腐', amount: '150g' },
+      { name: '鶏ひき肉', amount: '80g', cook: '焼く' },
+      { name: '白米', amount: '120g' },
+      { name: 'キャベツ', amount: '60g' },
+      { name: 'ポン酢', amount: '大さじ1' }
+    ]},
+    { name: 'サラダチキン＋おにぎり', items: [
+      { name: 'サラダチキン', amount: '1個' },
+      { name: 'おにぎり', amount: '1個' },
+      { name: 'わかめスープ', amount: '1杯' }
+    ]}
+  ],
+  // ② 筋肉をつけたい: P25% F20% C55%
+  '2': [
+    { name: '鶏もも肉のソテー＋大盛りご飯', items: [
+      { name: '鶏もも肉', amount: '150g', cook: 'ソテー' },
+      { name: 'オリーブオイル', amount: '小さじ1' },
+      { name: '白米', amount: '250g' },
+      { name: 'ブロッコリー', amount: '60g', cook: '茹でる' }
+    ]},
+    { name: '牛もも肉ステーキ丼', items: [
+      { name: '牛もも肉', amount: '150g', cook: '焼く' },
+      { name: '白米', amount: '250g' },
+      { name: '鶏卵', amount: '1個' },
+      { name: 'たまねぎ', amount: '50g', cook: '炒める' }
+    ]},
+    { name: '鮭の塩焼き＋さつまいもご飯', items: [
+      { name: '鮭', amount: '1切れ', cook: '焼く' },
+      { name: '白米', amount: '200g' },
+      { name: 'さつまいも', amount: '80g', cook: '蒸す' },
+      { name: '味噌汁', amount: '1杯' }
+    ]},
+    { name: '親子丼大盛り', items: [
+      { name: '鶏もも肉', amount: '120g', cook: '煮る' },
+      { name: '鶏卵', amount: '2個' },
+      { name: '白米', amount: '250g' },
+      { name: 'たまねぎ', amount: '50g' }
+    ]},
+    { name: 'オートミール＋プロテイン朝食', items: [
+      { name: 'オートミール', amount: '60g' },
+      { name: 'プロテイン', amount: '1食' },
+      { name: 'バナナ', amount: '1本' },
+      { name: '牛乳', amount: '200ml' }
+    ]}
+  ],
+  // ③ 体力を上げたい: P20% F20% C60%
+  '3': [
+    { name: '鮭おにぎり定食', items: [
+      { name: '白米', amount: '250g' },
+      { name: '鮭', amount: '1切れ', cook: '焼く' },
+      { name: 'バナナ', amount: '1本' },
+      { name: '味噌汁', amount: '1杯' }
+    ]},
+    { name: 'サバの味噌煮定食', items: [
+      { name: 'サバ', amount: '1切れ', cook: '煮る' },
+      { name: '玄米', amount: '250g' },
+      { name: 'ほうれん草', amount: '80g', cook: '茹でる' },
+      { name: 'みかん', amount: '1個' }
+    ]},
+    { name: 'オートミールボウル', items: [
+      { name: 'オートミール', amount: '80g' },
+      { name: 'バナナ', amount: '1本' },
+      { name: 'ヨーグルト無糖', amount: '100g' },
+      { name: 'アーモンド', amount: '5粒' }
+    ]},
+    { name: 'うどん＋卵', items: [
+      { name: 'うどん', amount: '250g' },
+      { name: '鶏卵', amount: '1個' },
+      { name: 'わかめ生', amount: '10g' },
+      { name: '醤油', amount: '大さじ1' }
+    ]},
+    { name: 'パスタ＋ツナ', items: [
+      { name: 'パスタ', amount: '200g' },
+      { name: 'ツナ缶水煮', amount: '1缶' },
+      { name: 'トマト', amount: '80g' },
+      { name: 'オリーブオイル', amount: '小さじ1' }
+    ]}
+  ],
+  // ④ 不調改善: P15% F15% C70%
+  '4': [
+    { name: 'おかゆ＋梅干し', items: [
+      { name: '白米', amount: '200g' },
+      { name: '鶏卵', amount: '1個' },
+      { name: '味噌汁', amount: '1杯' }
+    ]},
+    { name: 'やわらかうどん', items: [
+      { name: 'うどん', amount: '250g' },
+      { name: '鶏卵', amount: '1個' },
+      { name: 'ほうれん草', amount: '30g', cook: '茹でる' }
+    ]},
+    { name: '豆腐の煮物定食', items: [
+      { name: '絹ごし豆腐', amount: '200g', cook: '煮る' },
+      { name: '白米', amount: '200g' },
+      { name: '大根', amount: '60g', cook: '煮る' }
+    ]},
+    { name: '白身魚の蒸し物', items: [
+      { name: 'タラ', amount: '100g', cook: '蒸す' },
+      { name: '白米', amount: '200g' },
+      { name: 'にんじん', amount: '30g', cook: '煮る' }
+    ]},
+    { name: 'バナナヨーグルト＋食パン', items: [
+      { name: 'バナナ', amount: '1本' },
+      { name: 'ヨーグルト無糖', amount: '150g' },
+      { name: '食パン', amount: '60g' }
+    ]}
+  ],
+  // ⑤ 体型を整えたい: P30% F25% C45%
+  '5': [
+    { name: '鶏胸肉のグリル定食', items: [
+      { name: '鶏胸肉', amount: '150g', cook: 'グリル' },
+      { name: '玄米', amount: '130g' },
+      { name: 'ブロッコリー', amount: '80g', cook: '茹でる' },
+      { name: 'オリーブオイル', amount: '小さじ1' }
+    ]},
+    { name: 'ささみ＋アボカドサラダ', items: [
+      { name: '鶏ささみ', amount: '120g', cook: '茹でる' },
+      { name: '玄米', amount: '120g' },
+      { name: 'アボカド', amount: '40g' },
+      { name: 'レタス', amount: '40g' },
+      { name: 'トマト', amount: '50g' }
+    ]},
+    { name: 'タラのホイル焼き定食', items: [
+      { name: 'タラ', amount: '150g', cook: '蒸す' },
+      { name: '玄米', amount: '130g' },
+      { name: 'しめじ', amount: '50g' },
+      { name: 'ほうれん草', amount: '60g', cook: '茹でる' },
+      { name: 'ポン酢', amount: '大さじ1' }
+    ]},
+    { name: '豆腐ステーキ定食', items: [
+      { name: '木綿豆腐', amount: '200g', cook: '焼く' },
+      { name: '鶏卵', amount: '1個' },
+      { name: '白米', amount: '120g' },
+      { name: 'キャベツ', amount: '60g' },
+      { name: '醤油', amount: '小さじ1' }
+    ]},
+    { name: 'サラダチキン＋玄米おにぎり', items: [
+      { name: 'サラダチキン', amount: '1個' },
+      { name: '玄米', amount: '150g' },
+      { name: 'わかめスープ', amount: '1杯' }
+    ]}
+  ]
+};
+
+// メニューテンプレートのPFCを計算して文字列化
+function buildTemplatePrompt(goalNum, targetCal) {
+  const templates = MEAL_TEMPLATES[goalNum];
+  if (!templates) return '';
+  const coeff = getGoalCoefficients(goalNum);
+  const pPct = Math.round(coeff.pRatio * 100);
+  const fPct = Math.round(coeff.fRatio * 100);
+  const cPct = Math.round(coeff.cRatio * 100);
+
+  let text = `\n【PFC比率最適化メニュー例（目標 P${pPct}% F${fPct}% C${cPct}%）】\n`;
+  text += `以下はデータベースから正確に計算済みのメニュー例です。これらを参考に、同じPFC比率になる組み合わせを提案してください。\n`;
+  text += `※量を増減して目標カロリー（約${targetCal}kcal）に合わせること。\n\n`;
+
+  for (const tpl of templates) {
+    const items = tpl.items.map(i => ({ name: i.name, amount: i.amount }));
+    const pfc = calculateItemsPFC(items);
+    const totalKcal = pfc.cal || 0;
+    if (totalKcal === 0) continue;
+    const actualPPct = Math.round((pfc.p * 4 / totalKcal) * 100);
+    const actualFPct = Math.round((pfc.f * 9 / totalKcal) * 100);
+    const actualCPct = Math.round((pfc.c * 4 / totalKcal) * 100);
+
+    text += `▼ ${tpl.name}（${totalKcal}kcal P${actualPPct}% F${actualFPct}% C${actualCPct}%）\n`;
+    for (const item of tpl.items) {
+      const cookStr = item.cook ? `（${item.cook}）` : '';
+      text += `  ・${item.name} ${item.amount}${cookStr}\n`;
+    }
+    text += `  → P${pfc.p}g F${pfc.f}g C${pfc.c}g\n\n`;
+  }
+
+  text += `上記を参考に、PFC比率が P${pPct}%±5% / F${fPct}%±5% / C${cPct}%±5% に収まるよう食材と量を調整すること。\n`;
+  return text;
+}
+
 // グローバルに公開
 window.NutritionDB = {
   FOOD_DB, FOOD_DB_RAW, SERVING_SIZES, COOKING_METHODS, FOOD_ALIASES,
   lookupFood, parseAmount, parseNutritionItems,
   calculateItemsPFC, estimateUnknownFood, detectCookingOilAdjustment,
   calculateMealTarget, getGoalCoefficients, calculatePFCRange, createPFCBadgeHTML,
+  buildTemplatePrompt, MEAL_TEMPLATES,
   TIME_DISTRIBUTION, HUNGER_ADJUSTMENT, SIZE_ADJUSTMENT, GOAL_COEFFICIENTS
 };
