@@ -126,17 +126,38 @@ const FOOD_DB = {
   // コンビニ商品
   'サラダチキン': { p: 25, f: 1, c: 0, cal: 115, unit: '個', per: 1 },
   'サンドイッチツナ': { p: 10, f: 12, c: 28, cal: 260, unit: '個', per: 1 },
+  'サンドイッチたまご': { p: 9, f: 10, c: 26, cal: 230, unit: '個', per: 1 },
+  'サンドイッチハムレタス': { p: 10, f: 8, c: 24, cal: 210, unit: '個', per: 1 },
+  'サンドイッチチキン': { p: 14, f: 10, c: 26, cal: 250, unit: '個', per: 1 },
   'サンドイッチ': { p: 10, f: 12, c: 28, cal: 260, unit: '個', per: 1 },
   '冷やし中華': { p: 15, f: 8, c: 60, cal: 380, unit: '食', per: 1 },
   '幕の内弁当': { p: 20, f: 18, c: 90, cal: 600, unit: '個', per: 1 },
   '弁当': { p: 20, f: 18, c: 90, cal: 600, unit: '個', per: 1 },
+  'おにぎり鮭': { p: 5, f: 1, c: 40, cal: 190, unit: '個', per: 1 },
+  'おにぎりツナマヨ': { p: 5, f: 4, c: 38, cal: 215, unit: '個', per: 1 },
+  'おにぎり昆布': { p: 3, f: 0.5, c: 40, cal: 175, unit: '個', per: 1 },
+  'おにぎり明太子': { p: 4, f: 1, c: 39, cal: 180, unit: '個', per: 1 },
+  'おにぎり梅': { p: 3, f: 0.3, c: 39, cal: 170, unit: '個', per: 1 },
+  '玄米おにぎり': { p: 3, f: 0.5, c: 38, cal: 175, unit: '個', per: 1 },
+  '焼き鳥缶詰': { p: 14, f: 6, c: 5, cal: 130, unit: '缶', per: 1 },
+  '焼き鳥缶': { p: 14, f: 6, c: 5, cal: 130, unit: '缶', per: 1 },
+  'プロテインドリンク': { p: 15, f: 0, c: 5, cal: 85, unit: '本', per: 1 },
+  'プロテインバー': { p: 15, f: 6, c: 18, cal: 190, unit: '本', per: 1 },
+  '野菜ジュース': { p: 1, f: 0, c: 15, cal: 65, unit: '本', per: 1 },
+  '野菜スムージー': { p: 1, f: 0, c: 20, cal: 85, unit: '本', per: 1 },
+  'カットサラダ': { p: 1, f: 0.2, c: 4, cal: 20, unit: '袋', per: 1 },
+  'カップスープ': { p: 2, f: 2, c: 10, cal: 65, unit: '個', per: 1 },
+  'チキン&エッグサンド': { p: 14, f: 10, c: 26, cal: 250, unit: '個', per: 1 },
 
   // 外食・料理
   '牛丼並盛': { p: 22, f: 18, c: 68, cal: 550, unit: '杯', per: 1 },
   '牛丼': { p: 22, f: 18, c: 68, cal: 550, unit: '杯', per: 1 },
   'ざるそば': { p: 10, f: 2, c: 50, cal: 270, unit: '食', per: 1 },
   '親子丼': { p: 30, f: 15, c: 90, cal: 620, unit: '杯', per: 1 },
+  '海鮮丼': { p: 30, f: 5, c: 80, cal: 500, unit: '杯', per: 1 },
   'カレーライス': { p: 15, f: 15, c: 100, cal: 600, unit: '食', per: 1 },
+  '焼き鳥定食': { p: 30, f: 12, c: 70, cal: 520, unit: '食', per: 1 },
+  '鶏照り焼き定食': { p: 32, f: 14, c: 75, cal: 560, unit: '食', per: 1 },
   'サラダ': { p: 2, f: 3, c: 6, cal: 50, unit: '皿', per: 1 },
 };
 
@@ -181,6 +202,21 @@ const FOOD_ALIASES = {
   'トースト': '食パン',
   'ぱん': 'パン',
   'ツナサンド': 'サンドイッチツナ',
+  'たまごサンド': 'サンドイッチたまご',
+  '卵サンド': 'サンドイッチたまご',
+  'ハムサンド': 'サンドイッチハムレタス',
+  'チキンサンド': 'サンドイッチチキン',
+  '鮭おにぎり': 'おにぎり鮭',
+  'しゃけおにぎり': 'おにぎり鮭',
+  'ツナマヨおにぎり': 'おにぎりツナマヨ',
+  '昆布おにぎり': 'おにぎり昆布',
+  '明太子おにぎり': 'おにぎり明太子',
+  '梅おにぎり': 'おにぎり梅',
+  '焼鳥缶': '焼き鳥缶詰',
+  '焼鳥缶詰': '焼き鳥缶詰',
+  'やきとり缶': '焼き鳥缶詰',
+  'プロテインバー1本': 'プロテインバー',
+  '野菜ジュース1本': '野菜ジュース',
 };
 
 /**
@@ -195,12 +231,18 @@ function lookupFood(name) {
   // エイリアス
   const aliased = FOOD_ALIASES[normalized];
   if (aliased && FOOD_DB[aliased]) return { ...FOOD_DB[aliased], name: aliased };
-  // 部分一致（DBキーを含む or DBキーに含まれる）
+  // 部分一致（最も長くマッチするキーを優先）
+  let bestMatch = null;
+  let bestLen = 0;
   for (const key of Object.keys(FOOD_DB)) {
     if (normalized.includes(key) || key.includes(normalized)) {
-      return { ...FOOD_DB[key], name: key };
+      if (key.length > bestLen) {
+        bestMatch = key;
+        bestLen = key.length;
+      }
     }
   }
+  if (bestMatch) return { ...FOOD_DB[bestMatch], name: bestMatch };
   return null;
 }
 
