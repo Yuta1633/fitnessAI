@@ -526,8 +526,8 @@ async function showQuestionStep(questions) {
         };
         mealTargetPrompt += foodPriority[target.goalNum] || '';
 
-        // PFC比率最適化メニューテンプレートを注入
-        mealTargetPrompt += NDB.buildTemplatePrompt(target.goalNum, target.cal);
+        // PFC逆算メニュー設計プロンプトを注入
+        mealTargetPrompt += NDB.buildPFCTargetPrompt(target.goalNum, target);
 
         // 筋肥大目的(goal 2)の夜食事: タンパク質を強調
         if (target.goalNum === '2' && nutritionContext.timeOfDay === '夜') {
