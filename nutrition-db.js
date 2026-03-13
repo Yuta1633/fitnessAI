@@ -306,6 +306,16 @@ function parseAmount(amountStr, foodEntry) {
     return ml / 200;
   }
 
+  // 「大さじ1」「小さじ2」形式（単位が先）
+  const spoonMatch = str.match(/[大小]さじ\s*([\d.]+)/);
+  if (spoonMatch) {
+    const num = parseFloat(spoonMatch[1]);
+    if (foodEntry.unit === '大さじ' || foodEntry.unit === '小さじ') {
+      return num / foodEntry.per;
+    }
+    return num;
+  }
+
   // 数値のみ（個数系）
   const numMatch = str.match(/([\d.]+)/);
   if (numMatch) {
@@ -335,10 +345,15 @@ function parseNutritionItems(text) {
     const itemsStr = match[1];
     const items = itemsStr.split(',').map(item => {
       const trimmed = item.trim();
-      // "鶏胸肉 150g" or "卵 2個" or "味噌汁 1杯"
-      const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ]*)\s*$/);
+      // パターン1: "鶏胸肉 150g" "卵 2個" (数値が先)
+      const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ小さじ]*)\s*$/);
       if (parts) {
         return { name: parts[1].trim(), amount: parts[2].trim() };
+      }
+      // パターン2: "味噌 大さじ1" "サラダ油 小さじ1" (単位が先)
+      const parts2 = trimmed.match(/^(.+?)\s+([大小]さじ[\d./]+)\s*$/);
+      if (parts2) {
+        return { name: parts2[1].trim(), amount: parts2[2].trim() };
       }
       // 量なし → 1単位
       return { name: trimmed, amount: '1' };

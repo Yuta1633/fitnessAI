@@ -2910,9 +2910,15 @@ function renderNutritionWithPFC(text, containerDiv) {
       const itemsStr = itemsMatch[1];
       const items = itemsStr.split(',').map(item => {
         const trimmed = item.trim();
-        const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ]*)\s*$/);
+        // パターン1: "鶏胸肉 150g" "卵 2個" (数値が先)
+        const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ小さじ]*)\s*$/);
         if (parts) {
           return { name: parts[1].trim(), amount: parts[2].trim() };
+        }
+        // パターン2: "味噌 大さじ1" "サラダ油 小さじ1" (単位が先)
+        const parts2 = trimmed.match(/^(.+?)\s+([大小]さじ[\d./]+)\s*$/);
+        if (parts2) {
+          return { name: parts2[1].trim(), amount: parts2[2].trim() };
         }
         return { name: trimmed, amount: '1' };
       });
@@ -2933,7 +2939,7 @@ function renderNutritionWithPFC(text, containerDiv) {
       }
       html += `</div>`;
 
-      allParsedItems.push({ badgeId: bid, items });
+      allParsedItems.push({ badgeId: bid, items, localUnknowns: pfc.unknowns.length });
       badgeIndex++;
     } else {
       html += escapeHtml(line) + '<br>';
@@ -2974,9 +2980,14 @@ async function updatePFCFromAPI(parsedItemGroups) {
       if (!response.ok) continue;
       const result = await response.json();
 
-      // 全てunknownでなければバッジを更新
-      const hasData = result.items.some(i => !i.unknown);
-      if (!hasData) continue;
+      // APIの不明食材数がローカルより多ければ更新しない（ローカルの方が精度が良い）
+      const apiUnknowns = result.items.filter(i => i.unknown).length;
+      if (apiUnknowns >= group.localUnknowns && group.localUnknowns === 0) continue;
+      if (apiUnknowns > group.localUnknowns) continue;
+
+      // API由来のデータが1つもなければスキップ
+      const hasAPIData = result.items.some(i => i.source === 'api');
+      if (!hasAPIData) continue;
 
       const badgeEl = document.getElementById(group.badgeId);
       if (!badgeEl) continue;
