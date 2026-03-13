@@ -931,10 +931,18 @@ function calculateItemsPFC(items, contextText) {
 // ================================================================
 // 1食目安PFC
 // ================================================================
+// 目的別PFCバランス（科学的エビデンスベース）
+// reduction: Layman(2003), Leidy(2015), ISSN(2017) — P35% F25% C40%
+// muscle:    Phillips & Van Loon(2011), Burke(2011) — P25% F20% C55%
+// stamina:   IOC(2011), Hawley & Burke(1997), Thomas(2016) — P20% F20% C60%
+// recovery:  日本消化器病学会GL, Maughan & Shirreffs(2004) — P15% F15% C70%
+// toning:    Barakat(2020), Helms(2014) — P30% F25% C45%
 const GOAL_COEFFICIENTS = {
-  reduction: { calPerKg: 26, pPerKg: 1.8, fRatio: 0.22 },
-  muscle:    { calPerKg: 37, pPerKg: 2.0, fRatio: 0.27 },
-  health:    { calPerKg: 32, pPerKg: 1.4, fRatio: 0.27 }
+  reduction: { calPerKg: 26, pRatio: 0.35, fRatio: 0.25, cRatio: 0.40 },
+  muscle:    { calPerKg: 37, pRatio: 0.25, fRatio: 0.20, cRatio: 0.55 },
+  stamina:   { calPerKg: 35, pRatio: 0.20, fRatio: 0.20, cRatio: 0.60 },
+  recovery:  { calPerKg: 30, pRatio: 0.15, fRatio: 0.15, cRatio: 0.70 },
+  toning:    { calPerKg: 30, pRatio: 0.30, fRatio: 0.25, cRatio: 0.45 }
 };
 
 const TIME_DISTRIBUTION = {
@@ -946,28 +954,40 @@ const TIME_DISTRIBUTION = {
 };
 
 const HUNGER_ADJUSTMENT = {
-  'かなり空腹': 1.10, '少し空腹': 1.0,
-  'そこまで空腹じゃない': 0.90, 'なんとなく食べたい': 1.0
+  'かなり空腹': 1.10,
+  '少し空腹': 1.0,
+  'そこまで空腹じゃない': 0.90,
+  'なんとなく食べたい': 1.0,
+  '食欲がない': 0.75,    // 体調不良時: 70〜80%の中間
+  '体調が悪い': 0.75
 };
 
-function getGoalCoefficients(goalNum, currentBF, targetBF) {
+// サイズ倍率
+const SIZE_ADJUSTMENT = {
+  '小盛り': 0.7,
+  '普通': 1.0,
+  '大盛り': 1.3
+};
+
+function getGoalCoefficients(goalNum) {
   switch (goalNum) {
     case '1': return GOAL_COEFFICIENTS.reduction;
     case '2': return GOAL_COEFFICIENTS.muscle;
-    case '3': return GOAL_COEFFICIENTS.health;
-    case '4': return GOAL_COEFFICIENTS.health;
-    case '5': return (currentBF && targetBF && currentBF > targetBF) ?
-      GOAL_COEFFICIENTS.reduction : GOAL_COEFFICIENTS.muscle;
-    default: return GOAL_COEFFICIENTS.health;
+    case '3': return GOAL_COEFFICIENTS.stamina;
+    case '4': return GOAL_COEFFICIENTS.recovery;
+    case '5': return GOAL_COEFFICIENTS.toning;
+    default: return GOAL_COEFFICIENTS.stamina;
   }
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, goalWeight, daysLeft, timeOfDay, hunger } = params;
-  const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
+  const { weight, goalNum, goalWeight, daysLeft, timeOfDay, hunger, size } = params;
+  const coeff = getGoalCoefficients(goalNum);
   const timeDist = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
+  const sizeMult = SIZE_ADJUSTMENT[size] || 1.0;
 
+  // 1日の目標カロリー
   let dailyCal = weight * coeff.calPerKg, deficit = 0;
   if (goalWeight && daysLeft && daysLeft > 0) {
     let dailyDiff = (weight - goalWeight) * 7700 / daysLeft;
@@ -976,20 +996,24 @@ function calculateMealTarget(params) {
     deficit = Math.round(dailyDiff);
   }
 
-  const dailyP = weight * coeff.pPerKg;
-  const dailyF = dailyCal * coeff.fRatio / 9;
-  const dailyC = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
+  // PFCをカロリー比率から算出
+  const dailyP = (dailyCal * coeff.pRatio) / 4;  // 1g = 4kcal
+  const dailyF = (dailyCal * coeff.fRatio) / 9;  // 1g = 9kcal
+  const dailyC = (dailyCal * coeff.cRatio) / 4;  // 1g = 4kcal
 
-  let mealCal = dailyCal * timeDist.cal * hungerMult;
-  let mealP = dailyP * timeDist.p;
-  let mealF = dailyF * timeDist.f * (hungerMult !== 1.0 ? hungerMult : 1);
-  let mealC = dailyC * timeDist.c * (hungerMult !== 1.0 ? hungerMult : 1);
+  // 1食分 = 時間帯配分 × 空腹感係数 × サイズ倍率
+  const totalMult = hungerMult * sizeMult;
+  let mealCal = dailyCal * timeDist.cal * totalMult;
+  let mealP = dailyP * timeDist.p * totalMult;
+  let mealF = dailyF * timeDist.f * totalMult;
+  let mealC = dailyC * timeDist.c * totalMult;
 
   return {
     cal: Math.round(mealCal), p: Math.round(mealP),
     f: Math.round(mealF), c: Math.round(mealC),
     dailyCal: Math.round(dailyCal), dailyP: Math.round(dailyP),
-    deficit, goalNum
+    deficit, goalNum,
+    pRatio: coeff.pRatio, fRatio: coeff.fRatio, cRatio: coeff.cRatio
   };
 }
 
@@ -1020,5 +1044,5 @@ window.NutritionDB = {
   lookupFood, parseAmount, parseNutritionItems,
   calculateItemsPFC, estimateUnknownFood, detectCookingOilAdjustment,
   calculateMealTarget, getGoalCoefficients, calculatePFCRange, createPFCBadgeHTML,
-  TIME_DISTRIBUTION, HUNGER_ADJUSTMENT, GOAL_COEFFICIENTS
+  TIME_DISTRIBUTION, HUNGER_ADJUSTMENT, SIZE_ADJUSTMENT, GOAL_COEFFICIENTS
 };

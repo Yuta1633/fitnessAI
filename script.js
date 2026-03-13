@@ -444,20 +444,17 @@ function calcMealTargetFromContext() {
   if (!weightMatch) return null;
 
   const weight = parseFloat(weightMatch[1]);
-  const bfMatch = cachedUserContext.match(/体脂肪率:\s*([\d.]+)%/);
-  const goalBFMatch = cachedUserContext.match(/目標体脂肪率:\s*([\d.]+)%/);
   const goalWeightMatch = cachedUserContext.match(/目標体重:\s*([\d.]+)kg/);
   const daysLeftMatch = cachedUserContext.match(/残り(\d+)日/);
 
   return NDB.calculateMealTarget({
     weight,
     goalNum: selectedGoal,
-    currentBF: bfMatch ? parseFloat(bfMatch[1]) : null,
-    targetBF: goalBFMatch ? parseFloat(goalBFMatch[1]) : null,
     goalWeight: goalWeightMatch ? parseFloat(goalWeightMatch[1]) : null,
     daysLeft: daysLeftMatch ? parseInt(daysLeftMatch[1]) : null,
     timeOfDay: nutritionContext.timeOfDay,
-    hunger: nutritionContext.hunger || '少し空腹'
+    hunger: nutritionContext.hunger || '少し空腹',
+    size: nutritionContext.size || '普通'
   });
 }
 
@@ -510,13 +507,32 @@ async function showQuestionStep(questions) {
       const target = calcMealTargetFromContext();
       if (target) {
         nutritionContext.mealTarget = target;
+        const pRatioPct = Math.round((target.pRatio || 0.25) * 100);
+        const fRatioPct = Math.round((target.fRatio || 0.25) * 100);
+        const cRatioPct = Math.round((target.cRatio || 0.50) * 100);
         mealTargetPrompt = `\n\n【この食事の目標PFC（システム計算済み）】\n` +
           `約${target.cal}kcal | P${target.p}g | F${target.f}g | C${target.c}g\n` +
+          `PFCバランス: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%\n` +
           `(1日目安: ${target.dailyCal}kcal | 1日P目標: ${target.dailyP}g${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n` +
           `各候補のカロリーはこの目標の±15%以内、Pは±20%以内で提案すること。\n`;
+
+        // 目的別の食材優先指示
+        const foodPriority = {
+          '1': '【食材優先】高タンパク低脂質食材を優先: 鶏胸肉・鶏ささみ・タラ・豆腐・卵白・白身魚。脂質の多い食材（豚バラ・牛バラ等）は避ける。\n',
+          '2': '【食材優先】高タンパク高炭水化物食材を優先: 鶏胸肉・鶏もも肉・牛もも肉・卵・白米・さつまいも。炭水化物をしっかり確保すること。\n',
+          '3': '【食材優先】炭水化物多め＋良質タンパク: 白米・玄米・オートミール・鮭・サバ・バナナ・果物。持久力のためグリコーゲン補充を重視。\n',
+          '4': '【食材優先】消化の良い食材のみ使用: 白米（おかゆ）・うどん・豆腐・タラ・卵・バナナ。脂質の多い食材・揚げ物・刺激物は禁止。\n',
+          '5': '【食材優先】高タンパク低カロリー食材を優先: 鶏胸肉・鶏ささみ・タラ・豆腐・野菜・玄米・卵。脂質を抑えつつタンパク質を確保。\n'
+        };
+        mealTargetPrompt += foodPriority[target.goalNum] || '';
+
         // 筋肥大目的(goal 2)の夜食事: タンパク質を強調
         if (target.goalNum === '2' && nutritionContext.timeOfDay === '夜') {
-          mealTargetPrompt += `【筋肥大・夜の食事】この食事でP${target.p}g以上を確保すること。1日合計P${target.dailyP}g（体重×2g）達成のため、高タンパク食材（鶏胸肉・鮭・卵・豆腐等）を中心に提案すること。カゼインタンパク質（乳製品）も有効。\n`;
+          mealTargetPrompt += `【筋肥大・夜の食事】この食事でP${target.p}g以上を確保すること。1日合計P${target.dailyP}g達成のため、高タンパク食材（鶏胸肉・鮭・卵・豆腐等）を中心に提案すること。カゼインタンパク質（乳製品）も有効。\n`;
+        }
+        // 不調改善の場合: 消化優先の追加指示
+        if (target.goalNum === '4') {
+          mealTargetPrompt += `【不調改善】脂質${fRatioPct}%以下で胃腸負荷を最小化。調理法は蒸す・茹でる・煮るを優先。揚げ物・炒め物は禁止。\n`;
         }
       }
     }
