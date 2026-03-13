@@ -2934,8 +2934,8 @@ function renderNutritionWithPFC(text, containerDiv) {
       html += `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> `;
       html += `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
       html += `</div>`;
-      if (pfc.unknowns.length > 0) {
-        html += `<div class="pfc-unknown">※不明食材: ${escapeHtml(pfc.unknowns.join(', '))}</div>`;
+      if (pfc.estimated && pfc.estimated.length > 0) {
+        html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
       }
       html += `</div>`;
 
@@ -3001,20 +3001,15 @@ async function updatePFCFromAPI(parsedItemGroups) {
           `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> ` +
           `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
       }
-      // 不明食材の表示を更新
-      const unknowns = result.items.filter(i => i.unknown).map(i => i.name);
-      const unknownEl = badgeEl.querySelector('.pfc-unknown');
-      if (unknowns.length > 0) {
-        if (unknownEl) {
-          unknownEl.textContent = `※不明食材: ${unknowns.join(', ')}`;
-        } else {
-          const div = document.createElement('div');
-          div.className = 'pfc-unknown';
-          div.textContent = `※不明食材: ${unknowns.join(', ')}`;
-          badgeEl.appendChild(div);
+      // 推定食材の表示を更新
+      const estimatedItems = result.items.filter(i => i.unknown).map(i => i.name);
+      const estEl = badgeEl.querySelector('.pfc-estimated');
+      if (estimatedItems.length > 0) {
+        if (estEl) {
+          estEl.textContent = `※推定含む: ${estimatedItems.join(', ')}`;
         }
-      } else if (unknownEl) {
-        unknownEl.remove();
+      } else if (estEl) {
+        estEl.remove();
       }
     } catch (e) {
       console.warn('栄養API更新失敗:', e);

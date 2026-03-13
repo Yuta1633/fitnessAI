@@ -166,6 +166,51 @@ const FOOD_DB = {
   '焼き鳥定食': { p: 30, f: 12, c: 70, cal: 520, unit: '食', per: 1 },
   '鶏照り焼き定食': { p: 32, f: 14, c: 75, cal: 560, unit: '食', per: 1 },
   'サラダ': { p: 2, f: 3, c: 6, cal: 50, unit: '皿', per: 1 },
+
+  // 追加: よく使われる野菜・薬味
+  'ねぎ': { p: 1, f: 0.1, c: 5, cal: 25, unit: 'g', per: 50 },
+  '長ねぎ': { p: 1, f: 0.1, c: 5, cal: 25, unit: 'g', per: 50 },
+  '大葉': { p: 0, f: 0, c: 0, cal: 1, unit: '枚', per: 1 },
+  'しょうが': { p: 0, f: 0, c: 1, cal: 5, unit: 'g', per: 10 },
+  '生姜': { p: 0, f: 0, c: 1, cal: 5, unit: 'g', per: 10 },
+  'にんにく': { p: 0, f: 0, c: 2, cal: 10, unit: 'かけ', per: 1 },
+  'ごま': { p: 1, f: 3, c: 1, cal: 35, unit: '大さじ', per: 1 },
+  'のり': { p: 0.5, f: 0, c: 0.5, cal: 3, unit: '枚', per: 1 },
+  '大根': { p: 0.5, f: 0, c: 4, cal: 18, unit: 'g', per: 100 },
+  'かぼちゃ': { p: 2, f: 0.3, c: 17, cal: 80, unit: 'g', per: 100 },
+  'じゃがいも': { p: 2, f: 0.1, c: 17, cal: 76, unit: 'g', per: 100 },
+  'さつまいも': { p: 1, f: 0.2, c: 30, cal: 130, unit: 'g', per: 100 },
+  'こんにゃく': { p: 0, f: 0, c: 1, cal: 5, unit: 'g', per: 100 },
+  'ピーマン': { p: 1, f: 0.2, c: 5, cal: 22, unit: 'g', per: 100 },
+  'なす': { p: 1, f: 0.1, c: 5, cal: 22, unit: 'g', per: 100 },
+  'きゅうり': { p: 1, f: 0.1, c: 3, cal: 14, unit: 'g', per: 100 },
+  '白菜': { p: 1, f: 0.1, c: 3, cal: 14, unit: 'g', per: 100 },
+  '小松菜': { p: 2, f: 0.2, c: 2, cal: 14, unit: 'g', per: 100 },
+  '水菜': { p: 2, f: 0.1, c: 3, cal: 23, unit: 'g', per: 100 },
+
+  // 追加: 調味料・ソース
+  'ごま油': { p: 0, f: 12, c: 0, cal: 110, unit: '大さじ', per: 1 },
+  '片栗粉': { p: 0, f: 0, c: 8, cal: 30, unit: '大さじ', per: 1 },
+  '小麦粉': { p: 1, f: 0, c: 7, cal: 30, unit: '大さじ', per: 1 },
+  'パン粉': { p: 1, f: 1, c: 6, cal: 30, unit: '大さじ', per: 1 },
+  '鶏ガラスープの素': { p: 0, f: 0, c: 1, cal: 5, unit: '小さじ', per: 1 },
+  'コンソメ': { p: 0, f: 0, c: 1, cal: 5, unit: '小さじ', per: 1 },
+  '塩': { p: 0, f: 0, c: 0, cal: 0, unit: '小さじ', per: 1 },
+  'こしょう': { p: 0, f: 0, c: 0, cal: 0, unit: '少々', per: 1 },
+  'マスタード': { p: 0, f: 1, c: 0, cal: 10, unit: '小さじ', per: 1 },
+  'ソース': { p: 0, f: 0, c: 5, cal: 20, unit: '大さじ', per: 1 },
+  '焼肉のたれ': { p: 0, f: 0, c: 6, cal: 25, unit: '大さじ', per: 1 },
+
+  // 追加: よく出る料理
+  'チャーハン': { p: 12, f: 14, c: 65, cal: 450, unit: '食', per: 1 },
+  '味噌ラーメン': { p: 18, f: 15, c: 65, cal: 480, unit: '食', per: 1 },
+  '醤油ラーメン': { p: 16, f: 12, c: 60, cal: 420, unit: '食', per: 1 },
+  'とんかつ定食': { p: 25, f: 30, c: 85, cal: 750, unit: '食', per: 1 },
+  '焼き魚定食': { p: 25, f: 8, c: 70, cal: 460, unit: '食', per: 1 },
+  '唐揚げ定食': { p: 25, f: 25, c: 80, cal: 680, unit: '食', per: 1 },
+  'インスタント味噌汁': { p: 2, f: 1, c: 3, cal: 30, unit: '杯', per: 1 },
+  '卵スープ': { p: 4, f: 3, c: 2, cal: 45, unit: '杯', per: 1 },
+  'コーンスープ': { p: 2, f: 3, c: 10, cal: 75, unit: '杯', per: 1 },
 };
 
 // 食材名エイリアス → 正規名への解決
@@ -241,6 +286,30 @@ const FOOD_ALIASES = {
   'キノコ': 'きのこ',
   'ホウレン草': 'ほうれん草',
   'ほうれんそう': 'ほうれん草',
+  // 調味料・スープ
+  '鶏がらスープの素': '鶏ガラスープの素',
+  'がらスープ': '鶏ガラスープの素',
+  '顆粒だし': '鶏ガラスープの素',
+  'だし汁': '鶏ガラスープの素',
+  'しお': '塩',
+  'コショウ': 'こしょう',
+  '胡椒': 'こしょう',
+  // 野菜
+  'ネギ': 'ねぎ',
+  '葱': 'ねぎ',
+  'ニンニク': 'にんにく',
+  '大蒜': 'にんにく',
+  'ショウガ': 'しょうが',
+  'ゴマ': 'ごま',
+  '胡麻': 'ごま',
+  'ダイコン': '大根',
+  'ナス': 'なす',
+  '茄子': 'なす',
+  // 料理
+  'インスタントみそ汁': 'インスタント味噌汁',
+  '即席味噌汁': 'インスタント味噌汁',
+  'たまごスープ': '卵スープ',
+  '玉子スープ': '卵スープ',
 };
 
 /**
@@ -306,14 +375,19 @@ function parseAmount(amountStr, foodEntry) {
     return ml / 200;
   }
 
-  // 「大さじ1」「小さじ2」形式（単位が先）
-  const spoonMatch = str.match(/[大小]さじ\s*([\d.]+)/);
+  // 「大さじ1」「小さじ2」「1大さじ」「2小さじ」形式
+  const spoonMatch = str.match(/(?:[大小]さじ\s*([\d.]+)|([\d.]+)\s*[大小]さじ)/);
   if (spoonMatch) {
-    const num = parseFloat(spoonMatch[1]);
-    if (foodEntry.unit === '大さじ' || foodEntry.unit === '小さじ') {
-      return num / foodEntry.per;
+    const num = parseFloat(spoonMatch[1] || spoonMatch[2]);
+    const isSmall = str.includes('小さじ');
+    if (foodEntry.unit === '大さじ') {
+      // 小さじ→大さじ変換（小さじ = 大さじ/3）
+      return isSmall ? (num / 3) / foodEntry.per : num / foodEntry.per;
     }
-    return num;
+    if (foodEntry.unit === '小さじ') {
+      return isSmall ? num / foodEntry.per : (num * 3) / foodEntry.per;
+    }
+    return isSmall ? num / 3 : num;
   }
 
   // 数値のみ（個数系）
@@ -364,31 +438,118 @@ function parseNutritionItems(text) {
 }
 
 /**
- * 食材リストからPFCを計算
+ * 不明食材のPFCをカテゴリから推定
+ * @param {string} name - 食材名
+ * @param {string} amount - 量の文字列
+ * @returns {{ p, f, c, cal, estimated: true }}
+ */
+function estimateUnknownFood(name, amount) {
+  // 量からグラム数を推定
+  let grams = 100;
+  const gMatch = amount.match(/([\d.]+)\s*g/i);
+  if (gMatch) grams = parseFloat(gMatch[1]);
+  const numMatch = amount.match(/([\d.]+)/);
+  const num = numMatch ? parseFloat(numMatch[1]) : 1;
+
+  // 調味料系（大さじ/小さじ）→ 少量なので影響小
+  if (/[大小]さじ|少々/.test(amount) || /たれ|ソース|つゆ|ドレッシング|酢/.test(name)) {
+    const isSmall = /小さじ|少々/.test(amount);
+    const mult = isSmall ? num * 0.3 : num;
+    return { p: 0, f: Math.round(mult * 1), c: Math.round(mult * 3), cal: Math.round(mult * 20), estimated: true };
+  }
+
+  // カテゴリ推定（100gあたりの概算値）
+  const ratio = grams / 100;
+
+  // 肉・魚系
+  if (/肉|チキン|ポーク|ビーフ|ハンバーグ|つくね|そぼろ|焼き鳥|照り焼き/.test(name)) {
+    return { p: Math.round(20 * ratio), f: Math.round(10 * ratio), c: 0, cal: Math.round(180 * ratio), estimated: true };
+  }
+  if (/魚|刺身|焼き魚|煮魚|鯖|鮭|鰤|まぐろ|たら|さんま/.test(name)) {
+    return { p: Math.round(20 * ratio), f: Math.round(5 * ratio), c: 0, cal: Math.round(130 * ratio), estimated: true };
+  }
+
+  // 丼・定食系（1食単位）
+  if (/丼|定食/.test(name)) {
+    return { p: Math.round(25 * num), f: Math.round(15 * num), c: Math.round(80 * num), cal: Math.round(580 * num), estimated: true };
+  }
+
+  // ごはん・麺系
+  if (/ご飯|ごはん|ライス|米|おにぎり/.test(name)) {
+    return { p: Math.round(4 * ratio), f: Math.round(0.5 * ratio), c: Math.round(56 * ratio), cal: Math.round(250 * ratio), estimated: true };
+  }
+  if (/麺|ラーメン|うどん|そば|パスタ|スパゲ/.test(name)) {
+    return { p: Math.round(10 * num), f: Math.round(3 * num), c: Math.round(55 * num), cal: Math.round(300 * num), estimated: true };
+  }
+
+  // 卵系
+  if (/卵|たまご|エッグ/.test(name)) {
+    return { p: Math.round(7 * num), f: Math.round(6 * num), c: Math.round(0.5 * num), cal: Math.round(85 * num), estimated: true };
+  }
+
+  // 豆腐・大豆系
+  if (/豆腐|とうふ|納豆|豆乳|大豆/.test(name)) {
+    return { p: Math.round(8 * ratio), f: Math.round(5 * ratio), c: Math.round(2 * ratio), cal: Math.round(80 * ratio), estimated: true };
+  }
+
+  // 野菜系
+  if (/野菜|サラダ|ほうれん|キャベツ|レタス|ねぎ|もやし|大根|白菜|きゅうり|トマト|にんじん/.test(name)) {
+    return { p: Math.round(1.5 * ratio), f: Math.round(0.2 * ratio), c: Math.round(4 * ratio), cal: Math.round(25 * ratio), estimated: true };
+  }
+
+  // きのこ・海藻
+  if (/きのこ|しめじ|えのき|まいたけ|わかめ|海藻|のり|昆布/.test(name)) {
+    return { p: Math.round(2 * ratio), f: 0, c: Math.round(3 * ratio), cal: Math.round(15 * ratio), estimated: true };
+  }
+
+  // スープ・汁物系（1杯）
+  if (/スープ|汁|みそ汁/.test(name)) {
+    return { p: Math.round(3 * num), f: Math.round(1 * num), c: Math.round(4 * num), cal: Math.round(40 * num), estimated: true };
+  }
+
+  // ジュース・飲料
+  if (/ジュース|ドリンク|飲料|お茶|コーヒー/.test(name)) {
+    return { p: Math.round(1 * num), f: 0, c: Math.round(12 * num), cal: Math.round(50 * num), estimated: true };
+  }
+
+  // デフォルト: 野菜程度の控えめな推定
+  return { p: Math.round(2 * ratio), f: Math.round(1 * ratio), c: Math.round(5 * ratio), cal: Math.round(35 * ratio), estimated: true };
+}
+
+/**
+ * 食材リストからPFCを計算（不明食材も推定値で含む）
  * @param {Array<{name: string, amount: string}>} items
- * @returns {{ p: number, f: number, c: number, cal: number, details: Array, unknowns: Array }}
+ * @returns {{ p: number, f: number, c: number, cal: number, details: Array, unknowns: Array, estimated: Array }}
  */
 function calculateItemsPFC(items) {
   let totalP = 0, totalF = 0, totalC = 0, totalCal = 0;
   const details = [];
   const unknowns = [];
+  const estimated = [];
 
   for (const item of items) {
     const food = lookupFood(item.name);
-    if (!food) {
-      unknowns.push(item.name);
-      continue;
+    if (food) {
+      const multiplier = parseAmount(item.amount, food);
+      const p = Math.round(food.p * multiplier * 10) / 10;
+      const f = Math.round(food.f * multiplier * 10) / 10;
+      const c = Math.round(food.c * multiplier * 10) / 10;
+      const cal = Math.round(food.cal * multiplier);
+      totalP += p;
+      totalF += f;
+      totalC += c;
+      totalCal += cal;
+      details.push({ name: item.name, amount: item.amount, p, f, c, cal });
+    } else {
+      // 不明食材 → 推定値で計算に含める
+      const est = estimateUnknownFood(item.name, item.amount);
+      totalP += est.p;
+      totalF += est.f;
+      totalC += est.c;
+      totalCal += est.cal;
+      estimated.push(item.name);
+      details.push({ name: item.name, amount: item.amount, ...est });
     }
-    const multiplier = parseAmount(item.amount, food);
-    const p = Math.round(food.p * multiplier * 10) / 10;
-    const f = Math.round(food.f * multiplier * 10) / 10;
-    const c = Math.round(food.c * multiplier * 10) / 10;
-    const cal = Math.round(food.cal * multiplier);
-    totalP += p;
-    totalF += f;
-    totalC += c;
-    totalCal += cal;
-    details.push({ name: item.name, amount: item.amount, p, f, c, cal });
   }
 
   return {
@@ -397,7 +558,8 @@ function calculateItemsPFC(items) {
     c: Math.round(totalC),
     cal: Math.round(totalCal),
     details,
-    unknowns
+    unknowns, // 空配列（後方互換）
+    estimated  // 推定で計算した食材名リスト
   };
 }
 
@@ -561,6 +723,7 @@ window.NutritionDB = {
   parseAmount,
   parseNutritionItems,
   calculateItemsPFC,
+  estimateUnknownFood,
   calculateMealTarget,
   getGoalCoefficients,
   calculatePFCRange,

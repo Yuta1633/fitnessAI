@@ -2797,7 +2797,7 @@ body {
   font-size: 13px;
 }
 
-.pfc-unknown {
+.pfc-unknown, .pfc-estimated {
   font-size: 11px;
   color: var(--muted);
   margin-top: 4px;
