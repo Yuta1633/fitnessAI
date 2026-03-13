@@ -2901,7 +2901,6 @@ function renderNutritionWithPFC(text, containerDiv) {
   // テキストを行ごとに処理し、[ITEMS:]タグをPFCバッジに置換
   const lines = text.split('\n');
   const itemsPattern = /\[ITEMS:\s*([^\]]+)\]/;
-  const allParsedItems = []; // 外部API用に全候補のアイテムを収集
   let badgeIndex = 0;
 
   for (const line of lines) {
@@ -2923,11 +2922,10 @@ function renderNutritionWithPFC(text, containerDiv) {
         return { name: trimmed, amount: '1' };
       });
 
-      // ローカルDBで即時計算
+      // ローカルDBで計算
       const pfc = NDB.calculateItemsPFC(items);
       const r = NDB.calculatePFCRange(pfc);
-      const bid = `pfc-badge-${badgeIndex}`;
-      html += `<div class="pfc-badge pfc-badge-item" id="${bid}">`;
+      html += `<div class="pfc-badge pfc-badge-item">`;
       html += `<div class="pfc-badge-values">`;
       html += `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> `;
       html += `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> `;
@@ -2938,83 +2936,13 @@ function renderNutritionWithPFC(text, containerDiv) {
         html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
       }
       html += `</div>`;
-
-      allParsedItems.push({ badgeId: bid, items, localUnknowns: pfc.unknowns.length });
       badgeIndex++;
     } else {
       html += escapeHtml(line) + '<br>';
     }
   }
 
-  // 外部栄養APIで非同期に精度向上（バックグラウンド更新）
-  if (allParsedItems.length > 0) {
-    requestAnimationFrame(() => {
-      updatePFCFromAPI(allParsedItems);
-    });
-  }
-
   return html;
-}
-
-/**
- * 外部栄養APIを呼び出してPFCバッジを更新
- */
-async function updatePFCFromAPI(parsedItemGroups) {
-  const NDB = window.NutritionDB;
-  if (!NDB) return;
-
-  for (const group of parsedItemGroups) {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const response = await fetch('/api/nutrition', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ items: group.items })
-      });
-
-      if (!response.ok) continue;
-      const result = await response.json();
-
-      // APIの不明食材数がローカルより多ければ更新しない（ローカルの方が精度が良い）
-      const apiUnknowns = result.items.filter(i => i.unknown).length;
-      if (apiUnknowns >= group.localUnknowns && group.localUnknowns === 0) continue;
-      if (apiUnknowns > group.localUnknowns) continue;
-
-      // API由来のデータが1つもなければスキップ
-      const hasAPIData = result.items.some(i => i.source === 'api');
-      if (!hasAPIData) continue;
-
-      const badgeEl = document.getElementById(group.badgeId);
-      if (!badgeEl) continue;
-
-      const r = NDB.calculatePFCRange(result.total);
-      const valuesEl = badgeEl.querySelector('.pfc-badge-values');
-      if (valuesEl) {
-        valuesEl.innerHTML =
-          `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> ` +
-          `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> ` +
-          `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> ` +
-          `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
-      }
-      // 推定食材の表示を更新
-      const estimatedItems = result.items.filter(i => i.unknown).map(i => i.name);
-      const estEl = badgeEl.querySelector('.pfc-estimated');
-      if (estimatedItems.length > 0) {
-        if (estEl) {
-          estEl.textContent = `※推定含む: ${estimatedItems.join(', ')}`;
-        }
-      } else if (estEl) {
-        estEl.remove();
-      }
-    } catch (e) {
-      console.warn('栄養API更新失敗:', e);
-    }
-  }
 }
 
 function isNutritionResponse(text) {

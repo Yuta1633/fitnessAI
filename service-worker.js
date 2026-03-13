@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitai-v37';
+const CACHE_NAME = 'fitai-v38';
 const PRECACHE_URLS = [
   '/',
   '/style.css',
