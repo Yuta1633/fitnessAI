@@ -945,12 +945,13 @@ const GOAL_COEFFICIENTS = {
   toning:    { calPerKg: 30, pRatio: 0.30, fRatio: 0.25, cRatio: 0.45 }
 };
 
+// 時間帯別カロリー配分（PFC比率は目的別比率をそのまま使用）
 const TIME_DISTRIBUTION = {
-  '朝': { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
-  '昼': { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-  '夕方': { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
-  '夜': { cal: 0.20, p: 0.30, f: 0.15, c: 0.15 },
-  '間食': { cal: 0.10, p: 0.15, f: 0.10, c: 0.05 }
+  '朝': 0.30,
+  '昼': 0.35,
+  '夕方': 0.25,
+  '夜': 0.20,
+  '間食': 0.10
 };
 
 const HUNGER_ADJUSTMENT = {
@@ -983,7 +984,7 @@ function getGoalCoefficients(goalNum) {
 function calculateMealTarget(params) {
   const { weight, goalNum, goalWeight, daysLeft, timeOfDay, hunger, size } = params;
   const coeff = getGoalCoefficients(goalNum);
-  const timeDist = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
+  const timeRatio = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
   const sizeMult = SIZE_ADJUSTMENT[size] || 1.0;
 
@@ -1001,12 +1002,13 @@ function calculateMealTarget(params) {
   const dailyF = (dailyCal * coeff.fRatio) / 9;  // 1g = 9kcal
   const dailyC = (dailyCal * coeff.cRatio) / 4;  // 1g = 4kcal
 
-  // 1食分 = 時間帯配分 × 空腹感係数 × サイズ倍率
-  const totalMult = hungerMult * sizeMult;
-  let mealCal = dailyCal * timeDist.cal * totalMult;
-  let mealP = dailyP * timeDist.p * totalMult;
-  let mealF = dailyF * timeDist.f * totalMult;
-  let mealC = dailyC * timeDist.c * totalMult;
+  // 1食分 = 1日カロリー × 時間帯配分 × 空腹感係数 × サイズ倍率
+  // PFCは1食カロリーから目標比率で直接算出（PFC比率を維持）
+  const totalMult = timeRatio * hungerMult * sizeMult;
+  let mealCal = dailyCal * totalMult;
+  let mealP = (mealCal * coeff.pRatio) / 4;
+  let mealF = (mealCal * coeff.fRatio) / 9;
+  let mealC = (mealCal * coeff.cRatio) / 4;
 
   return {
     cal: Math.round(mealCal), p: Math.round(mealP),
@@ -1101,35 +1103,12 @@ function buildFoodPFCTable(goalNum) {
 
 // 目標PFCから逆算したメニュー設計プロンプトを生成
 function buildPFCTargetPrompt(goalNum, target) {
-  const coeff = getGoalCoefficients(goalNum);
-  const pPct = Math.round(coeff.pRatio * 100);
-  const fPct = Math.round(coeff.fRatio * 100);
-  const cPct = Math.round(coeff.cRatio * 100);
-  const guide = GOAL_FOOD_GUIDE[goalNum];
-
-  let text = `\n【PFC逆算メニュー設計 — 最重要】\n`;
-  text += `目標: 約${target.cal}kcal | P${target.p}g(${pPct}%) F${target.f}g(${fPct}%) C${target.c}g(${cPct}%)\n\n`;
-
-  text += `＜設計手順＞\n`;
-  text += `① まずP${target.p}gを満たすタンパク質食材を決める\n`;
-  text += `② 次にC${target.c}gを満たす主食の量を決める\n`;
-  text += `③ 最後にF${target.f}gに合うよう油脂・ナッツを調整する\n`;
-  text += `④ 合計が約${target.cal}kcal・P${pPct}%±5%・F${fPct}%±5%・C${cPct}%±5%に収まるか検証\n\n`;
-
-  text += `＜食材100gあたりPFC早見表＞\n`;
+  let text = `\n【食材PFC早見表（100gあたり）】\n`;
   text += buildFoodPFCTable(goalNum);
-  text += `\n`;
 
-  text += `＜逆算の具体例＞\n`;
-  // 目的に応じた具体例を生成
+  text += `\n【PFC比率が合う具体例（参考にすること）】\n`;
   const examples = buildExampleMeal(goalNum, target);
   text += examples;
-
-  text += `\n＜注意＞\n`;
-  if (guide) text += `・${guide.note}\n`;
-  text += `・PFC比率が目標の±5%に収まらない場合、主食の量またはタンパク質食材の量を10g単位で調整すること\n`;
-  text += `・脂質が不足する場合はオリーブオイル小さじ1(4g=36kcal,F4g)やアーモンド5粒(7.5g=52kcal,F4g)で調整\n`;
-  text += `・脂質が過剰な場合は調理法を蒸す/茹でるに変更し、油脂を減らす\n`;
 
   return text;
 }

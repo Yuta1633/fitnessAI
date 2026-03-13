@@ -510,11 +510,22 @@ async function showQuestionStep(questions) {
         const pRatioPct = Math.round((target.pRatio || 0.25) * 100);
         const fRatioPct = Math.round((target.fRatio || 0.25) * 100);
         const cRatioPct = Math.round((target.cRatio || 0.50) * 100);
-        mealTargetPrompt = `\n\n【この食事の目標PFC（システム計算済み）】\n` +
+        // PFC目標を最も目立つ形で注入
+        const pMin = pRatioPct - 5, pMax = pRatioPct + 5;
+        const fMin = fRatioPct - 5, fMax = fRatioPct + 5;
+        const cMin = cRatioPct - 5, cMax = cRatioPct + 5;
+        mealTargetPrompt = `\n\n` +
+          `===================================\n` +
+          `【PFC目標（厳守）】\n` +
           `約${target.cal}kcal | P${target.p}g | F${target.f}g | C${target.c}g\n` +
-          `PFCバランス: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%\n` +
-          `(1日目安: ${target.dailyCal}kcal | 1日P目標: ${target.dailyP}g${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n` +
-          `各候補のカロリーはこの目標の±15%以内、Pは±20%以内で提案すること。\n`;
+          `目標比率: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%\n` +
+          `許容範囲: P${pMin}〜${pMax}% / F${fMin}〜${fMax}% / C${cMin}〜${cMax}%\n` +
+          `===================================\n` +
+          `【全3候補でこの比率を必ず守ること。範囲外の候補は出力禁止。】\n` +
+          `・P${target.p}gを満たすにはタンパク質食材を十分に入れる（鶏胸肉150g以上 or 魚200g以上）\n` +
+          `・C${target.c}gに合わせて主食量を調整（白米は${Math.round(target.c / 0.371)}g以下が目安）\n` +
+          `・F${target.f}gを確保するため油脂食材を必ず入れる（オリーブオイル大さじ1=F12g / アーモンド10粒=F8g / アボカド40g=F7g）\n` +
+          `(1日目安: ${target.dailyCal}kcal | 1日P目標: ${target.dailyP}g${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n`;
 
         // 目的別の食材優先指示
         const foodPriority = {
@@ -536,6 +547,10 @@ async function showQuestionStep(questions) {
         // 不調改善の場合: 消化優先の追加指示
         if (target.goalNum === '4') {
           mealTargetPrompt += `【不調改善】脂質${fRatioPct}%以下で胃腸負荷を最小化。調理法は蒸す・茹でる・煮るを優先。揚げ物・炒め物は禁止。\n`;
+        }
+        // 「揚げ物はたまに食べたい」選択時
+        if (selectedSub === '揚げ物はたまに食べたい') {
+          mealTargetPrompt += `【揚げ物について】揚げ物を完全禁止にしないこと。「週1〜2回なら揚げ物もOK。ただし今日は上記のメニューで脂質を抑えて、揚げ物は別の日に楽しみましょう」のように一言添えること。\n`;
         }
       }
     }
