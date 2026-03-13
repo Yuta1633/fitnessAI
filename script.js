@@ -512,8 +512,12 @@ async function showQuestionStep(questions) {
         nutritionContext.mealTarget = target;
         mealTargetPrompt = `\n\n【この食事の目標PFC（システム計算済み）】\n` +
           `約${target.cal}kcal | P${target.p}g | F${target.f}g | C${target.c}g\n` +
-          `(1日目安: ${target.dailyCal}kcal${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n` +
+          `(1日目安: ${target.dailyCal}kcal | 1日P目標: ${target.dailyP}g${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n` +
           `各候補のカロリーはこの目標の±15%以内、Pは±20%以内で提案すること。\n`;
+        // 筋肥大目的(goal 2)の夜食事: タンパク質を強調
+        if (target.goalNum === '2' && nutritionContext.timeOfDay === '夜') {
+          mealTargetPrompt += `【筋肥大・夜の食事】この食事でP${target.p}g以上を確保すること。1日合計P${target.dailyP}g（体重×2g）達成のため、高タンパク食材（鶏胸肉・鮭・卵・豆腐等）を中心に提案すること。カゼインタンパク質（乳製品）も有効。\n`;
+        }
       }
     }
     conversationHistory.push({ role: 'user', content: summary + mealTargetPrompt });
@@ -2873,14 +2877,16 @@ function finalizeStreamingMessage(div, text) {
 }
 
 /**
- * 栄養提案テキストの[ITEMS:]タグをPFCバッジに置換し、冒頭に1食目安を挿入
- * ローカルDB即時表示 → 外部API非同期更新
+ * 栄養提案テキストの「・食材 量（調理法）」行を解析し、
+ * 候補ごとにPFCをDB計算して「約○kcal｜P○g F○g C○g」で表示
  */
 function renderNutritionWithPFC(text, containerDiv) {
   const NDB = window.NutritionDB;
   // AIが直接出力してしまったPFC数値行を除去
   text = text.replace(/[（(]\s*(?:全体の)?目安[:：]?\s*約?\d+.*?kcal.*?[）)]/g, '');
   text = text.replace(/[（(]\s*約\d+kcal[｜|]P\d+g\s*F\d+g\s*C\d+g\s*[）)]/g, '');
+  // 旧形式の[ITEMS:]タグも除去
+  text = text.replace(/\[ITEMS:[^\]]*\]/g, '');
   let html = '';
 
   // 1食目安の計算（目標体重・期限ベース）
@@ -2898,49 +2904,100 @@ function renderNutritionWithPFC(text, containerDiv) {
     html += '<br>';
   }
 
-  // テキストを行ごとに処理し、[ITEMS:]タグをPFCバッジに置換
+  // テキストを行ごとに処理し、「・食材 量（調理法）」をパース
   const lines = text.split('\n');
-  const itemsPattern = /\[ITEMS:\s*([^\]]+)\]/;
-  let badgeIndex = 0;
+  // 食材行パターン: ・食材名 量（調理法）or ・食材名 量
+  const foodLinePattern = /^・(.+?)\s+([\d./半]+\s*(?:g|ml|切れ?|個|本|杯|枚|パック|缶|皿|食|人前|玉|丁|粒|[大小]さじ[\d./]*)?)\s*(?:[（(]([^）)]+)[）)])?$/;
+  const foodLinePattern2 = /^・(.+?)\s+([大小]さじ[\d./]+)\s*(?:[（(]([^）)]+)[）)])?$/;
+  let currentItems = [];      // 現在の候補の食材リスト
+  let currentCookingMap = {}; // index → 調理法名
+  let inCandidate = false;    // 候補セクション内か
+
+  function flushCandidate() {
+    if (currentItems.length === 0) return;
+    // PFC計算（contextTextなしで呼び、旧detectCookingOilAdjustmentを使わない）
+    const pfc = NDB.calculateItemsPFC(currentItems);
+    // 調理法による補正（各食材の調理法を個別に適用）
+    let cookingFAdj = 0, cookingCalAdj = 0;
+    for (let i = 0; i < currentItems.length; i++) {
+      const method = currentCookingMap[i];
+      if (!method) continue;
+      const cm = NDB.COOKING_METHODS[method];
+      if (!cm) continue;
+      // この食材のカロリーを取得して補正
+      const detail = pfc.details && pfc.details[i];
+      if (detail) {
+        cookingCalAdj += detail.cal * (cm.calMult - 1.0);
+        cookingFAdj += cm.fAdd;
+      }
+    }
+    const totalCal = Math.round(pfc.cal + cookingCalAdj);
+    const totalF = Math.round(pfc.f + cookingFAdj);
+    const totalP = pfc.p;
+    const totalC = pfc.c;
+
+    // PFC行を挿入
+    html += `<div class="pfc-line">`;
+    html += `<span class="pfc-cal">約${totalCal}kcal</span>`;
+    html += `<span class="pfc-sep">｜</span>`;
+    html += `<span class="pfc-p">P${totalP}g</span> `;
+    html += `<span class="pfc-f">F${totalF}g</span> `;
+    html += `<span class="pfc-c">C${totalC}g</span>`;
+    html += `</div>`;
+    if (pfc.estimated && pfc.estimated.length > 0) {
+      html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
+    }
+    currentItems = [];
+    currentCookingMap = {};
+  }
 
   for (const line of lines) {
-    const itemsMatch = line.match(itemsPattern);
-    if (itemsMatch) {
-      const itemsStr = itemsMatch[1];
-      const items = itemsStr.split(',').map(item => {
-        const trimmed = item.trim();
-        // パターン1: "鶏胸肉 150g" "卵 2個" (数値が先)
-        const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ小さじ]*)\s*$/);
-        if (parts) {
-          return { name: parts[1].trim(), amount: parts[2].trim() };
-        }
-        // パターン2: "味噌 大さじ1" "サラダ油 小さじ1" (単位が先)
-        const parts2 = trimmed.match(/^(.+?)\s+([大小]さじ[\d./]+)\s*$/);
-        if (parts2) {
-          return { name: parts2[1].trim(), amount: parts2[2].trim() };
-        }
-        return { name: trimmed, amount: '1' };
-      });
+    const trimmed = line.trim();
 
-      // ローカルDBで計算
-      const pfc = NDB.calculateItemsPFC(items);
-      const r = NDB.calculatePFCRange(pfc);
-      html += `<div class="pfc-badge pfc-badge-item">`;
-      html += `<div class="pfc-badge-values">`;
-      html += `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> `;
-      html += `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> `;
-      html += `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> `;
-      html += `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
-      html += `</div>`;
-      if (pfc.estimated && pfc.estimated.length > 0) {
-        html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
-      }
-      html += `</div>`;
-      badgeIndex++;
-    } else {
+    // 候補ヘッダー検出（▼ で始まる行）
+    if (/^▼\s/.test(trimmed)) {
+      // 前の候補のPFCを出力
+      flushCandidate();
+      inCandidate = true;
       html += escapeHtml(line) + '<br>';
+      continue;
     }
+
+    // 食材行の検出
+    if (inCandidate && trimmed.startsWith('・')) {
+      // パターン2: 大さじ/小さじ優先
+      let match = trimmed.match(foodLinePattern2);
+      if (!match) {
+        match = trimmed.match(foodLinePattern);
+      }
+      if (match) {
+        const foodName = match[1].trim();
+        const amount = match[2].trim();
+        const cookingMethod = match[3] ? match[3].trim() : null;
+        const idx = currentItems.length;
+        currentItems.push({ name: foodName, amount: amount });
+        if (cookingMethod && NDB.COOKING_METHODS[cookingMethod]) {
+          currentCookingMap[idx] = cookingMethod;
+        }
+        html += escapeHtml(line) + '<br>';
+        continue;
+      }
+    }
+
+    // 候補セクション内で食材行以外が来たらPFCを出力
+    // （説明文、空行、【セクション、番号リスト等）
+    if (inCandidate && currentItems.length > 0 && !trimmed.startsWith('・')) {
+      flushCandidate();
+      if (/^【/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+        inCandidate = false;
+      }
+    }
+
+    html += escapeHtml(line) + '<br>';
   }
+
+  // 最後の候補のPFC出力
+  flushCandidate();
 
   return html;
 }
