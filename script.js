@@ -431,6 +431,9 @@ const QUESTIONS = {
 let questionAnswers = [];
 let currentQuestionIndex = 0;
 
+// 栄養提案のコンテキスト（PFC計算用）
+let nutritionContext = { timeOfDay: null, hunger: null };
+
 function addOtherInput(btnGroup, div, onSubmit) {
   const otherBtn = document.createElement('button');
   otherBtn.className = 'option-btn';
@@ -464,6 +467,11 @@ function addOtherInput(btnGroup, div, onSubmit) {
 
 async function showQuestionStep(questions) {
   if (currentQuestionIndex >= questions.length) {
+    // 栄養質問の場合、回答を保存（PFC計算用）
+    if (selectedMethod === 'nutrition' && questionAnswers.length >= 3) {
+      nutritionContext.timeOfDay = questionAnswers[0]; // 朝/昼/夕方/夜/間食
+      nutritionContext.hunger = questionAnswers[2];    // かなり空腹/少し空腹/そこまで空腹じゃない/なんとなく食べたい
+    }
     const summary = questionAnswers
       .map((ans, i) => `${questions[i].label} → ${ans}`)
       .join('\n');
@@ -576,6 +584,7 @@ async function showQuestionStep(questions) {
 function showNutritionQuestions() {
   questionAnswers = [];
   currentQuestionIndex = 0;
+  nutritionContext = { timeOfDay: null, hunger: null };
   showQuestionStep(QUESTIONS.nutrition);
 }
 
@@ -1040,19 +1049,40 @@ function addMessage(role, text) {
     // トレーニングプランの場合は構造化レンダリング
     if (isTrainingPlan(text)) {
       div.innerHTML = renderTrainingContent(text);
-    } else {
-      const { cleanText, options } = parseOptions(text);
-      div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
+    } else if (isNutritionResponse(text) && window.NutritionDB) {
+      // 栄養提案: [ITEMS:]→PFCバッジ変換
+      const { cleanText: textWithoutOpts, options } = parseOptions(text);
+      const processed = renderNutritionWithPFC(textWithoutOpts);
+      div.innerHTML = processed;
 
       let finalOpts = options;
-      if (finalOpts.length === 0 && isNutritionResponse(text)) {
+      if (finalOpts.length === 0) {
         finalOpts = [
           { number: '1', label: '第一候補のレシピを見る' },
           { number: '2', label: '第二候補のレシピを見る' },
           { number: '3', label: 'これならOKのレシピを見る' }
         ];
       }
+      if (finalOpts.length > 0) {
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'option-buttons';
+        finalOpts.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = `${opt.number}. ${opt.label}`;
+          btn.addEventListener('click', () => {
+            chatInput.value = `${opt.number}. ${opt.label}`;
+            sendUserMessage();
+          });
+          btnGroup.appendChild(btn);
+        });
+        div.appendChild(btnGroup);
+      }
+    } else {
+      const { cleanText, options } = parseOptions(text);
+      div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
 
+      let finalOpts = options;
       if (finalOpts.length > 0) {
         const btnGroup = document.createElement('div');
         btnGroup.className = 'option-buttons';
@@ -1257,7 +1287,7 @@ async function generateResponse() {
   let userCtx = cachedUserContext || '';
   try { if (!userCtx) userCtx = await buildUserContext(); } catch (e) { console.warn('コンテキスト構築失敗:', e); }
   const goalLabel = { '1': '体脂肪減少', '2': '筋肥大', '3': '体力向上', '4': '不調改善', '5': '見た目改善' };
-  const goalTag = `【現在の目的番号: ${selectedGoal}「${goalLabel[selectedGoal] || ''}」】\nPFC計算では目的${selectedGoal}の係数を使うこと。\n`;
+  const goalTag = `【現在の目的番号: ${selectedGoal}「${goalLabel[selectedGoal] || ''}」】\n`;
   const finalPrompt = `${userCtx}\n${goalTag}${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
   conversationHistory.push({ role: 'user', content: finalPrompt });
 
@@ -2734,12 +2764,49 @@ function finalizeStreamingMessage(div, text) {
     return;
   }
 
+  // 栄養提案の場合: [ITEMS:]タグをパースしてPFCバッジに置換
+  const isNutrition = isNutritionResponse(text);
+  let processedText = text;
+
+  if (isNutrition && window.NutritionDB) {
+    // まずオプションを元テキストから抽出、その後PFCレンダリング
+    const { cleanText: textWithoutOptions, options } = parseOptions(text);
+    processedText = renderNutritionWithPFC(textWithoutOptions);
+    div.innerHTML = processedText; // すでにHTMLが含まれている
+
+    let finalOptions = options;
+    if (finalOptions.length === 0) {
+      finalOptions = [
+        { number: '1', label: '第一候補のレシピを見る' },
+        { number: '2', label: '第二候補のレシピを見る' },
+        { number: '3', label: 'これならOKのレシピを見る' }
+      ];
+    }
+    if (finalOptions.length > 0) {
+      const btnGroup = document.createElement('div');
+      btnGroup.className = 'option-buttons';
+      finalOptions.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = `${opt.number}. ${opt.label}`;
+        btn.addEventListener('click', () => {
+          chatInput.value = `${opt.number}. ${opt.label}`;
+          sendUserMessage();
+        });
+        btnGroup.appendChild(btn);
+      });
+      div.appendChild(btnGroup);
+    }
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    return;
+  }
+
   const { cleanText, options } = parseOptions(text);
   div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
 
   // 選択肢ボタンを表示（AIが出力した場合 or 栄養提案の場合にレシピボタンを強制追加）
   let finalOptions = options;
-  if (finalOptions.length === 0 && isNutritionResponse(text)) {
+  if (finalOptions.length === 0 && isNutrition) {
     finalOptions = [
       { number: '1', label: '第一候補のレシピを見る' },
       { number: '2', label: '第二候補のレシピを見る' },
@@ -2763,6 +2830,85 @@ function finalizeStreamingMessage(div, text) {
     div.appendChild(btnGroup);
   }
   chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
+/**
+ * 栄養提案テキストの[ITEMS:]タグをPFCバッジに置換し、冒頭に1食目安を挿入
+ */
+function renderNutritionWithPFC(text) {
+  const NDB = window.NutritionDB;
+  // AIが直接出力してしまったPFC数値行を除去
+  text = text.replace(/[（(]\s*(?:全体の)?目安[:：]?\s*約?\d+.*?kcal.*?[）)]/g, '');
+  text = text.replace(/[（(]\s*約\d+kcal[｜|]P\d+g\s*F\d+g\s*C\d+g\s*[）)]/g, '');
+  let html = '';
+
+  // 1食目安の計算（ユーザーデータから）
+  let mealTarget = null;
+  if (nutritionContext.timeOfDay && cachedUserContext) {
+    const weightMatch = cachedUserContext.match(/現在の体重:\s*([\d.]+)kg/);
+    const bfMatch = cachedUserContext.match(/体脂肪率:\s*([\d.]+)%/);
+    const goalBFMatch = cachedUserContext.match(/目標体脂肪率:\s*([\d.]+)%/);
+    if (weightMatch) {
+      const weight = parseFloat(weightMatch[1]);
+      const currentBF = bfMatch ? parseFloat(bfMatch[1]) : null;
+      const targetBF = goalBFMatch ? parseFloat(goalBFMatch[1]) : null;
+      // 空腹度をそのまま使う（HUNGER_ADJUSTMENTのキーと一致させる）
+      const hungerKey = nutritionContext.hunger || '少し空腹';
+      mealTarget = NDB.calculateMealTarget({
+        weight,
+        goalNum: selectedGoal,
+        currentBF,
+        targetBF,
+        timeOfDay: nutritionContext.timeOfDay,
+        hunger: hungerKey
+      });
+    }
+  }
+
+  // 冒頭に1食目安バッジを挿入
+  if (mealTarget) {
+    const timeLabel = nutritionContext.timeOfDay || '';
+    const hungerLabel = nutritionContext.hunger || '';
+    html += NDB.createPFCBadgeHTML(mealTarget, `📊 あなたの1食の目安（${timeLabel}・${hungerLabel}）`);
+    html += '<br>';
+  }
+
+  // テキストを行ごとに処理し、[ITEMS:]タグをPFCバッジに置換
+  const lines = text.split('\n');
+  const itemsPattern = /\[ITEMS:\s*([^\]]+)\]/;
+
+  for (const line of lines) {
+    const itemsMatch = line.match(itemsPattern);
+    if (itemsMatch) {
+      // [ITEMS:]タグをパースしてPFC計算
+      const itemsStr = itemsMatch[1];
+      const items = itemsStr.split(',').map(item => {
+        const trimmed = item.trim();
+        const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ]*)\s*$/);
+        if (parts) {
+          return { name: parts[1].trim(), amount: parts[2].trim() };
+        }
+        return { name: trimmed, amount: '1' };
+      });
+      const pfc = NDB.calculateItemsPFC(items);
+      const r = NDB.calculatePFCRange(pfc);
+      html += `<div class="pfc-badge pfc-badge-item">`;
+      html += `<div class="pfc-badge-values">`;
+      html += `<span class="pfc-cal">約${r.cal.min}~${r.cal.max}kcal</span> `;
+      html += `<span class="pfc-p">P${r.p.min}~${r.p.max}g</span> `;
+      html += `<span class="pfc-f">F${r.f.min}~${r.f.max}g</span> `;
+      html += `<span class="pfc-c">C${r.c.min}~${r.c.max}g</span>`;
+      html += `</div>`;
+      if (pfc.unknowns.length > 0) {
+        html += `<div class="pfc-unknown">※不明食材: ${escapeHtml(pfc.unknowns.join(', '))}</div>`;
+      }
+      html += `</div>`;
+    } else {
+      html += escapeHtml(line) + '<br>';
+    }
+  }
+
+  return html;
 }
 
 function isNutritionResponse(text) {

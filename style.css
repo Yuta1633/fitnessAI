@@ -2745,6 +2745,65 @@ body {
 }
 
 /* ============================================================
+   PFC Badges
+   ============================================================ */
+.pfc-badge {
+  background: linear-gradient(135deg, rgba(200,241,53,0.10), rgba(200,241,53,0.04));
+  border: 1px solid rgba(200,241,53,0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 8px 0;
+  display: inline-block;
+  width: 100%;
+}
+
+.pfc-badge-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.pfc-badge-values {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pfc-cal {
+  color: var(--white);
+}
+
+.pfc-p {
+  color: #5bb5f5;
+}
+
+.pfc-f {
+  color: #f5a623;
+}
+
+.pfc-c {
+  color: #7dd87d;
+}
+
+.pfc-badge-item {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.10);
+}
+
+.pfc-badge-item .pfc-badge-values {
+  font-size: 13px;
+}
+
+.pfc-unknown {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
    Additional Animations
    ============================================================ */
 @keyframes fadeIn {

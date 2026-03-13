@@ -636,6 +636,7 @@
     </button>
   </nav>
 
+<script src="nutrition-db.js"></script>
 <script src="prompts.js"></script>
 <script type="module" src="script.js"></script>
 <script>
@@ -784,7 +785,7 @@ window.addEventListener('message', function(e) {
 // PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=34').then(reg => {
+    navigator.serviceWorker.register('/service-worker.js?v=35').then(reg => {
       reg.update();
     }).catch(() => {});
   });

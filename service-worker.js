@@ -1,10 +1,11 @@
-const CACHE_NAME = 'fitai-v34';
+const CACHE_NAME = 'fitai-v35';
 const PRECACHE_URLS = [
   '/',
   '/style.css',
   '/script.js',
   '/prompts.js',
-  '/supabase.js'
+  '/supabase.js',
+  '/nutrition-db.js'
 ];
 
 // インストール時にキャッシュ
