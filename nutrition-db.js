@@ -1010,9 +1010,12 @@ function calculateMealTarget(params) {
   let mealF = (mealCal * coeff.fRatio) / 9;
   let mealC = (mealCal * coeff.cRatio) / 4;
 
+  // 丸めてからcalをP*4+F*9+C*4で再計算（PFC合計=100%を保証）
+  const rP = Math.round(mealP), rF = Math.round(mealF), rC = Math.round(mealC);
+  const rCal = rP * 4 + rF * 9 + rC * 4;
+
   return {
-    cal: Math.round(mealCal), p: Math.round(mealP),
-    f: Math.round(mealF), c: Math.round(mealC),
+    cal: rCal, p: rP, f: rF, c: rC,
     dailyCal: Math.round(dailyCal), dailyP: Math.round(dailyP),
     deficit, goalNum,
     pRatio: coeff.pRatio, fRatio: coeff.fRatio, cRatio: coeff.cRatio
@@ -1161,9 +1164,10 @@ function buildExampleMeal(goalNum, target) {
     const pfc = calculateItemsPFC(items);
     const cal = pfc.cal;
     if (cal === 0) continue;
-    const actualPPct = Math.round((pfc.p * 4 / cal) * 100);
-    const actualFPct = Math.round((pfc.f * 9 / cal) * 100);
-    const actualCPct = Math.round((pfc.c * 4 / cal) * 100);
+    const pfcCal = pfc.p * 4 + pfc.f * 9 + pfc.c * 4;
+    const actualPPct = pfcCal > 0 ? Math.round((pfc.p * 4 / pfcCal) * 100) : 0;
+    const actualFPct = pfcCal > 0 ? Math.round((pfc.f * 9 / pfcCal) * 100) : 0;
+    const actualCPct = 100 - actualPPct - actualFPct;
 
     text += `例）`;
     for (const m of meal) {

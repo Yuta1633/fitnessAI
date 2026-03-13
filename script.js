@@ -509,7 +509,7 @@ async function showQuestionStep(questions) {
         nutritionContext.mealTarget = target;
         const pRatioPct = Math.round((target.pRatio || 0.25) * 100);
         const fRatioPct = Math.round((target.fRatio || 0.25) * 100);
-        const cRatioPct = Math.round((target.cRatio || 0.50) * 100);
+        const cRatioPct = 100 - pRatioPct - fRatioPct; // 合計100%を保証
         // PFC目標を最も目立つ形で注入
         const pMin = pRatioPct - 5, pMax = pRatioPct + 5;
         const fMin = fRatioPct - 5, fMax = fRatioPct + 5;
@@ -2970,10 +2970,14 @@ function renderNutritionWithPFC(text, containerDiv) {
     const totalP = pfc.p;
     const totalC = pfc.c;
 
-    // PFC比率を計算
-    const pPct = totalCal > 0 ? Math.round((totalP * 4 / totalCal) * 100) : 0;
-    const fPct = totalCal > 0 ? Math.round((totalF * 9 / totalCal) * 100) : 0;
-    const cPct = totalCal > 0 ? Math.round((totalC * 4 / totalCal) * 100) : 0;
+    // PFC比率を計算（P*4+F*9+C*4ベースで合計100%を保証）
+    const pfcCal = totalP * 4 + totalF * 9 + totalC * 4;
+    let pPct = 0, fPct = 0, cPct = 0;
+    if (pfcCal > 0) {
+      pPct = Math.round((totalP * 4 / pfcCal) * 100);
+      fPct = Math.round((totalF * 9 / pfcCal) * 100);
+      cPct = 100 - pPct - fPct; // 残りをCに割り当てて合計100%を保証
+    }
 
     // PFC行を挿入
     html += `<div class="pfc-line">`;
