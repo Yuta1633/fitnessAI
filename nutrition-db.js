@@ -1109,14 +1109,10 @@ function buildFoodPFCTable(goalNum) {
 
 // 目標PFCから逆算したメニュー設計プロンプトを生成
 function buildPFCTargetPrompt(goalNum, target) {
-  let text = `\n以下の食材リストは確定です。変更禁止。\n` +
-    `あなたがやることは①料理名をつける②科学的根拠を1〜2行書く、この2つだけです。\n` +
-    `食材・グラム数は一切変えないこと。\n\n`;
+  let text = `【以下の食材リストは確定・変更禁止】\n` +
+    `料理名と根拠を[]の中に書くだけでよい。食材・量は絶対に変えないこと。\n\n`;
 
   text += buildExampleMeal(goalNum, target);
-
-  text += `\n【食材PFC早見表（100gあたり）】\n`;
-  text += buildFoodPFCTable(goalNum);
 
   return text;
 }
@@ -1153,7 +1149,9 @@ function buildExampleMeal(goalNum, target) {
   };
 
   const goalPatterns = patterns[goalNum] || patterns['1'];
+  const labels = ['第一候補', '第二候補', 'これならOK'];
   let text = '';
+  let idx = 0;
 
   for (let i = 0; i < goalPatterns.length; i++) {
     const pattern = goalPatterns[i];
@@ -1180,13 +1178,14 @@ function buildExampleMeal(goalNum, target) {
     const actualFPct = pfcCal > 0 ? Math.round((pfc.f * 9 / pfcCal) * 100) : 0;
     const actualCPct = 100 - actualPPct - actualFPct;
 
-    const labels = ['第一', '第二', '第三'];
-    text += `\n▼ ${labels[i] || '第' + (i+1)}候補の食材（変更禁止）\n`;
+    text += `▼ ${labels[idx]}：[ここに料理名を書く]\n`;
     for (const m of meal) {
       const cookStr = m.cook ? `（${m.cook}）` : '';
       text += `・${m.name} ${m.amount}g${cookStr}\n`;
     }
     text += `→ ${cal}kcal P${pfc.p}g F${pfc.f}g C${pfc.c}g（P${actualPPct}% F${actualFPct}% C${actualCPct}%）\n`;
+    text += `[ここに科学的根拠を1〜2行書く]\n\n`;
+    idx++;
   }
 
   return text;
