@@ -1109,7 +1109,8 @@ function buildFoodPFCTable(goalNum) {
 
 // 目標PFCから逆算したメニュー設計プロンプトを生成
 function buildPFCTargetPrompt(goalNum, target) {
-  let text = `\n【食材PFC早見表（100gあたり）】\n`;
+  let text = `【以下の食材リストは変更禁止。料理名と根拠の説明だけ追加すること】\n`;
+  text += `\n【食材PFC早見表（100gあたり）】\n`;
   text += buildFoodPFCTable(goalNum);
 
   text += `\n【PFC比率が合う具体例（参考にすること）】\n`;
@@ -1148,7 +1149,8 @@ function buildExampleMeal(goalNum, target) {
   const goalPatterns = patterns[goalNum] || patterns['1'];
   let text = '';
 
-  for (const pattern of goalPatterns) {
+  for (let i = 0; i < goalPatterns.length; i++) {
+    const pattern = goalPatterns[i];
     // 食材のPFCを取得
     const foods = [];
     for (const p of pattern) {
@@ -1172,22 +1174,13 @@ function buildExampleMeal(goalNum, target) {
     const actualFPct = pfcCal > 0 ? Math.round((pfc.f * 9 / pfcCal) * 100) : 0;
     const actualCPct = 100 - actualPPct - actualFPct;
 
-    text += `例）`;
+    text += `\n【候補${i+1}の食材リスト（この通りに使うこと）】\n`;
     for (const m of meal) {
       const cookStr = m.cook ? `（${m.cook}）` : '';
-      // 量の表示を適切に
-      const servingInfo = SERVING_SIZES[m.name];
-      let amountStr = m.amount + 'g';
-      if (servingInfo && !servingInfo.unitName.includes('g')) {
-        const units = Math.round(m.amount / servingInfo.standard * 10) / 10;
-        if (units === Math.round(units)) {
-          amountStr = m.amount + 'g';
-        }
-      }
-      text += `${m.name} ${amountStr}${cookStr} + `;
+      text += `・${m.name} ${m.amount}g${cookStr}\n`;
     }
-    text = text.slice(0, -3); // 最後の " + " を除去
-    text += `\n  → ${cal}kcal P${pfc.p}g(${actualPPct}%) F${pfc.f}g(${actualFPct}%) C${pfc.c}g(${actualCPct}%)\n`;
+    text += `→ 計算値: ${cal}kcal P${pfc.p}g(${actualPPct}%) F${pfc.f}g(${actualFPct}%) C${pfc.c}g(${actualCPct}%)\n`;
+    text += `この食材リストをそのまま使い、料理名と根拠だけ追加すること。食材・量の変更禁止。\n\n`;
   }
 
   return text;
