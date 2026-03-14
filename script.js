@@ -495,6 +495,47 @@ async function showQuestionStep(questions) {
       .join('\n');
     addMessage('user', summary);
 
+    // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
+    if (selectedMethod === 'nutrition' && window.NutritionDB) {
+      const timeOfDay = questionAnswers[0];   // STEP1: 時間帯
+      const location = questionAnswers[1];    // STEP2: 状況
+      const hunger = questionAnswers[3];      // STEP4: 空腹感
+
+      // 体重・体脂肪率を取得（直近記録から）
+      let weight = 60; // デフォルト
+      let currentBF = null;
+      if (cachedUserContext) {
+        const weightMatch = cachedUserContext.match(/現在の体重: ([\d.]+)kg/);
+        const bfMatch = cachedUserContext.match(/体脂肪率: ([\d.]+)%/);
+        if (weightMatch) weight = parseFloat(weightMatch[1]);
+        if (bfMatch) currentBF = parseFloat(bfMatch[1]);
+      }
+
+      // PFC目標を計算
+      const target = window.NutritionDB.calculateMealTarget({
+        weight,
+        goalNum: selectedGoal,
+        currentBF,
+        targetBF: null,
+        timeOfDay,
+        hunger
+      });
+
+      // MEAL_DBから3品選ぶ
+      const meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location);
+
+      if (meals.length > 0) {
+        const mealInfo = meals.map((m, i) => {
+          const label = i === 0 ? '第一候補' : i === 1 ? '第二候補' : 'これならOK';
+          return `▼ ${label}: ${m.name}
+食材: ${m.ingredients.join('、')}
+栄養: 約${m.cal}kcal｜P${m.p}g F${m.f}g C${m.c}g`;
+        }).join('\n\n');
+
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n上記3品の料理名と、なぜこの料理がユーザーの目的・状況に適しているかの科学的根拠を1〜2行で書いてください。食材・量・PFCは変更禁止です。`;
+      }
+    }
+
     conversationHistory.push({ role: 'user', content: summary });
     questionAnswers = [];
     currentQuestionIndex = 0;
