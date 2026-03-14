@@ -982,47 +982,44 @@ function getGoalCoefficients(goalNum) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, goalWeight, daysLeft, timeOfDay, hunger, size } = params;
+  const { weight, bodyFat, goalNum, goalWeight, daysLeft, timeOfDay, hunger, size } = params;
   const coeff = getGoalCoefficients(goalNum);
   const timeRatio = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
   const sizeMult = SIZE_ADJUSTMENT[size] || 1.0;
 
-  // 1日の目標カロリー
-  let dailyCal = weight * coeff.calPerKg, deficit = 0;
-  if (goalWeight && daysLeft && daysLeft > 0) {
+  // 除脂肪体重ベース（体脂肪率が記録されている場合）
+  const leanWeight = (bodyFat && bodyFat > 0 && bodyFat < 60)
+    ? weight * (1 - bodyFat / 100)
+    : weight;
+
+  // 1日の目標カロリー（除脂肪体重ベース）
+  let dailyCal = leanWeight * coeff.calPerKg;
+  let deficit = 0;
+
+  // 目標と目的が合致している場合のみ目標体重を加味
+  const isAligned =
+    ((goalNum === '1' || goalNum === '5') && goalWeight && goalWeight < weight) ||
+    (goalNum === '2' && goalWeight && goalWeight > weight);
+
+  if (isAligned && daysLeft && daysLeft > 0) {
     let dailyDiff = (weight - goalWeight) * 7700 / daysLeft;
-    dailyDiff = Math.max(-500, Math.min(750, dailyDiff));
-    // 今日の目的が脂肪減少(1)または体型整える(5)の場合、
-    // 目標体重が現体重より重くてもカロリーを増やさない
-    const goalNum = params.goalNum;
-    if ((goalNum === '1' || goalNum === '5') && dailyDiff < 0) {
-      dailyDiff = 0;
-    }
-    dailyCal = Math.max(dailyCal - dailyDiff, weight * 20);
+    dailyDiff = Math.max(-500, Math.min(500, dailyDiff));
+    dailyCal = Math.max(dailyCal - dailyDiff, leanWeight * 20);
     deficit = Math.round(dailyDiff);
   }
 
-  // PFCをカロリー比率から算出
-  const dailyP = (dailyCal * coeff.pRatio) / 4;  // 1g = 4kcal
-  const dailyF = (dailyCal * coeff.fRatio) / 9;  // 1g = 9kcal
-  const dailyC = (dailyCal * coeff.cRatio) / 4;  // 1g = 4kcal
-
-  // 1食分 = 1日カロリー × 時間帯配分 × 空腹感係数 × サイズ倍率
-  // PFCは1食カロリーから目標比率で直接算出（PFC比率を維持）
   const totalMult = timeRatio * hungerMult * sizeMult;
   let mealCal = dailyCal * totalMult;
-  let mealP = (mealCal * coeff.pRatio) / 4;
-  let mealF = (mealCal * coeff.fRatio) / 9;
-  let mealC = (mealCal * coeff.cRatio) / 4;
 
-  // 丸めてからcalをP*4+F*9+C*4で再計算（PFC合計=100%を保証）
-  const rP = Math.round(mealP), rF = Math.round(mealF), rC = Math.round(mealC);
+  const rP = Math.round((mealCal * coeff.pRatio) / 4);
+  const rF = Math.round((mealCal * coeff.fRatio) / 9);
+  const rC = Math.round((mealCal * coeff.cRatio) / 4);
   const rCal = rP * 4 + rF * 9 + rC * 4;
 
   return {
     cal: rCal, p: rP, f: rF, c: rC,
-    dailyCal: Math.round(dailyCal), dailyP: Math.round(dailyP),
+    dailyCal: Math.round(dailyCal), dailyP: Math.round((dailyCal * coeff.pRatio) / 4),
     deficit, goalNum,
     pRatio: coeff.pRatio, fRatio: coeff.fRatio, cRatio: coeff.cRatio
   };
