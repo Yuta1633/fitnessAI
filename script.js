@@ -514,18 +514,20 @@ async function showQuestionStep(questions) {
         const pMin = pRatioPct - 5, pMax = pRatioPct + 5;
         const fMin = fRatioPct - 5, fMax = fRatioPct + 5;
         const cMin = cRatioPct - 5, cMax = cRatioPct + 5;
-        mealTargetPrompt = `\n\n` +
-          `===================================\n` +
-          `【PFC目標（厳守）】\n` +
-          `約${target.cal}kcal | P${target.p}g | F${target.f}g | C${target.c}g\n` +
-          `目標比率: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%\n` +
-          `許容範囲: P${pMin}〜${pMax}% / F${fMin}〜${fMax}% / C${cMin}〜${cMax}%\n` +
-          `===================================\n` +
-          `【全3候補でこの比率を必ず守ること。範囲外の候補は出力禁止。】\n` +
-          `・P${target.p}gを満たすにはタンパク質食材を十分に入れる（鶏胸肉150g以上 or 魚200g以上）\n` +
-          `・C${target.c}gに合わせて主食量を調整（白米は${Math.round(target.c / 0.371)}g以下が目安）\n` +
-          `・F${target.f}gを確保するため油脂食材を必ず入れる（オリーブオイル大さじ1=F12g / アーモンド10粒=F8g / アボカド40g=F7g）\n` +
-          `(1日目安: ${target.dailyCal}kcal | 1日P目標: ${target.dailyP}g${target.deficit ? ` / 1日赤字: ${target.deficit}kcal` : ''})\n`;
+        mealTargetPrompt =
+          `【PFC目標（絶対厳守）】\n` +
+          `${target.cal}kcal / P${target.p}g / F${target.f}g / C${target.c}g\n` +
+          `比率: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%（許容±5%: P${pMin}〜${pMax}% F${fMin}〜${fMax}% C${cMin}〜${cMax}%）\n` +
+          `1日目安: ${target.dailyCal}kcal / 1日P: ${target.dailyP}g${target.deficit ? ` / 赤字目標: -${target.deficit}kcal/日` : ''}\n` +
+          `\n` +
+          `【食材量の決め方（必ずこの順で）】\n` +
+          `① タンパク質: P${target.p}gを確保 → 例）鶏胸肉なら${Math.round(target.p * 0.87 / 0.233)}g、サーモンなら${Math.round(target.p * 0.87 / 0.208)}g、タラなら${Math.round(target.p * 0.87 / 0.178)}g\n` +
+          `② 脂質: F${target.f}gを確保 → 食材由来の脂質を引いた残りをオリーブオイル等で補う\n` +
+          `③ 炭水化物: C${target.c}gを確保 → 白米なら${Math.round(target.c / 0.371)}g、玄米なら${Math.round(target.c / 0.345)}g\n` +
+          `\n` +
+          `⚠️ 自分でPFCを計算しないこと。上記グラム数に食材量を合わせるだけでよい。\n` +
+          `\n` +
+          `---\n`;
 
         // 目的別の食材優先指示
         const foodPriority = {
@@ -554,7 +556,7 @@ async function showQuestionStep(questions) {
         }
       }
     }
-    conversationHistory.push({ role: 'user', content: summary + mealTargetPrompt });
+    conversationHistory.push({ role: 'user', content: mealTargetPrompt + summary });
     questionAnswers = [];
     currentQuestionIndex = 0;
     loadingIndicator.classList.remove('hidden');
