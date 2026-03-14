@@ -450,7 +450,7 @@ const QUESTIONS = {
       '体がだるい',
       '猫背を改善したい', '肩の位置を整えたい', '脚のむくみをとりたい', '腰回りをすっきりさせたい', '見た目に影響する体のこりをとりたい'
     ],
-  recovery_part: { label: '④ ケアしたい部位は？', options: ['首・肩', '背中・腰', '脚・ふくらはぎ', '腕・肘', '全身・疲労全般'] }
+  recovery_part: { label: '③ ケアしたい部位は？', options: ['首・肩', '背中・腰', '脚・ふくらはぎ', '腕・肘', '全身・疲労全般'] }
 };
 
 let questionAnswers = [];
@@ -635,7 +635,7 @@ async function showQuestionStepTraining(questions) {
       questionAnswers = [];
       currentQuestionIndex = 0;
       trainingPhase = 'split';
-      await showQuestionStepFinal([...baseAnswers, ...questionAnswers], extraQuestions, splitChoice);
+      showExtraTrainingQuestions(extraQuestions, splitChoice, questions);
     } else {
       await callAIWithAnswers(questions, questionAnswers);
     }
