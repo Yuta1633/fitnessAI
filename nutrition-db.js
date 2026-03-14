@@ -993,6 +993,12 @@ function calculateMealTarget(params) {
   if (goalWeight && daysLeft && daysLeft > 0) {
     let dailyDiff = (weight - goalWeight) * 7700 / daysLeft;
     dailyDiff = Math.max(-500, Math.min(750, dailyDiff));
+    // 今日の目的が脂肪減少(1)または体型整える(5)の場合、
+    // 目標体重が現体重より重くてもカロリーを増やさない
+    const goalNum = params.goalNum;
+    if ((goalNum === '1' || goalNum === '5') && dailyDiff < 0) {
+      dailyDiff = 0;
+    }
     dailyCal = Math.max(dailyCal - dailyDiff, weight * 20);
     deficit = Math.round(dailyDiff);
   }
