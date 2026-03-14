@@ -472,7 +472,7 @@ function buildPFCTargetHeader(target) {
   const tunaG     = Math.round(target.p * 0.87 / 0.264);
   const riceG     = Math.round(target.c / 0.371);
   const brownRiceG = Math.round(target.c / 0.345);
-  return (
+  let header =
     `【PFC目標（絶対厳守）】\n` +
     `${target.cal}kcal / P${target.p}g / F${target.f}g / C${target.c}g\n` +
     `比率: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%（許容±5%: P${pMin}〜${pMax}% F${fMin}〜${fMax}% C${cMin}〜${cMax}%）\n` +
@@ -489,8 +489,20 @@ function buildPFCTargetHeader(target) {
     `\n` +
     `⚠️ PFC目標は自分で計算しないこと。上記グラム数に食材量を合わせるだけでよい。\n` +
     `⚠️ 3候補すべてが許容範囲内に収まること。\n` +
-    `---\n`
-  );
+    `---\n` +
+    `\n上記【食材PFC早見表】と【PFC比率が合う具体例】を必ず参考にして、` +
+    `食材の種類と量を決めること。例と異なる食材を使う場合も必ず同じ計算手順で量を逆算すること。\n` +
+    `---\n`;
+
+  // nutrition-db.jsのソルバーで3候補を事前計算
+  if (window.NutritionDB && window.NutritionDB.buildPFCTargetPrompt) {
+    const solvedMeals = window.NutritionDB.buildPFCTargetPrompt(target.goalNum, target);
+    if (solvedMeals) {
+      header += solvedMeals;
+    }
+  }
+
+  return header;
 }
 
 function addOtherInput(btnGroup, div, onSubmit) {
