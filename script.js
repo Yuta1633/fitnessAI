@@ -431,79 +431,6 @@ const QUESTIONS = {
 let questionAnswers = [];
 let currentQuestionIndex = 0;
 
-// 栄養提案のコンテキスト（PFC計算用）
-let nutritionContext = { timeOfDay: null, hunger: null, mealTarget: null };
-
-/**
- * cachedUserContext と nutritionContext から目標PFCを計算
- */
-function calcMealTargetFromContext() {
-  if (!cachedUserContext || !window.NutritionDB) return null;
-  const NDB = window.NutritionDB;
-  const weightMatch = cachedUserContext.match(/現在の体重:\s*([\d.]+)kg/);
-  if (!weightMatch) return null;
-
-  const weight = parseFloat(weightMatch[1]);
-  const goalWeightMatch = cachedUserContext.match(/目標体重:\s*([\d.]+)kg/);
-  const daysLeftMatch = cachedUserContext.match(/残り(\d+)日/);
-
-  return NDB.calculateMealTarget({
-    weight,
-    goalNum: selectedGoal,
-    goalWeight: goalWeightMatch ? parseFloat(goalWeightMatch[1]) : null,
-    daysLeft: daysLeftMatch ? parseInt(daysLeftMatch[1]) : null,
-    timeOfDay: nutritionContext.timeOfDay,
-    hunger: nutritionContext.hunger || '少し空腹',
-    size: nutritionContext.size || '普通'
-  });
-}
-
-function buildPFCTargetHeader(target) {
-  if (!target) return '';
-  const pRatioPct = Math.round((target.pRatio || 0.25) * 100);
-  const fRatioPct = Math.round((target.fRatio || 0.25) * 100);
-  const cRatioPct = 100 - pRatioPct - fRatioPct;
-  const pMin = pRatioPct - 5, pMax = pRatioPct + 5;
-  const fMin = fRatioPct - 5, fMax = fRatioPct + 5;
-  const cMin = cRatioPct - 5, cMax = cRatioPct + 5;
-  const chickenG  = Math.round(target.p * 0.87 / 0.233);
-  const codG      = Math.round(target.p * 0.87 / 0.178);
-  const salmonG   = Math.round(target.p * 0.87 / 0.208);
-  const tunaG     = Math.round(target.p * 0.87 / 0.264);
-  const riceG     = Math.round(target.c / 0.371);
-  const brownRiceG = Math.round(target.c / 0.345);
-  let header =
-    `【PFC目標（絶対厳守）】\n` +
-    `${target.cal}kcal / P${target.p}g / F${target.f}g / C${target.c}g\n` +
-    `比率: P${pRatioPct}% F${fRatioPct}% C${cRatioPct}%（許容±5%: P${pMin}〜${pMax}% F${fMin}〜${fMax}% C${cMin}〜${cMax}%）\n` +
-    `1日目安: ${target.dailyCal}kcal / 1日P: ${target.dailyP}g${target.deficit ? ` / 目標赤字: -${target.deficit}kcal/日` : ''}\n` +
-    `\n` +
-    `【食材量の逆算手順（この順で必ず実行）】\n` +
-    `ステップ1 タンパク質 P${target.p}gを確保:\n` +
-    `  鶏胸肉→${chickenG}g / タラ→${codG}g / サーモン→${salmonG}g / マグロ赤身→${tunaG}g\n` +
-    `ステップ2 脂質 F${target.f}gを確保（絶対に超えないこと）:\n` +
-    `  食材由来の脂質を合計し、目標F${target.f}gとの差分だけ油脂食材で補う\n` +
-    `  差分がマイナス（食材だけで超過）の場合は油脂食材を使わない\n` +
-    `ステップ3 炭水化物 C${target.c}gを確保:\n` +
-    `  白米→${riceG}g / 玄米→${brownRiceG}g\n` +
-    `\n` +
-    `⚠️ PFC目標は自分で計算しないこと。上記グラム数に食材量を合わせるだけでよい。\n` +
-    `⚠️ 3候補すべてが許容範囲内に収まること。\n` +
-    `---\n` +
-    `\n上記【食材PFC早見表】と【PFC比率が合う具体例】を必ず参考にして、` +
-    `食材の種類と量を決めること。例と異なる食材を使う場合も必ず同じ計算手順で量を逆算すること。\n` +
-    `---\n`;
-
-  // nutrition-db.jsのソルバーで3候補を事前計算
-  if (window.NutritionDB && window.NutritionDB.buildPFCTargetPrompt) {
-    const solvedMeals = window.NutritionDB.buildPFCTargetPrompt(target.goalNum, target);
-    if (solvedMeals) {
-      header += solvedMeals;
-    }
-  }
-
-  return header;
-}
 
 function addOtherInput(btnGroup, div, onSubmit) {
   const otherBtn = document.createElement('button');
@@ -538,54 +465,12 @@ function addOtherInput(btnGroup, div, onSubmit) {
 
 async function showQuestionStep(questions) {
   if (currentQuestionIndex >= questions.length) {
-    // 栄養質問の場合、回答を保存（PFC計算用）
-    if (selectedMethod === 'nutrition' && questionAnswers.length >= 3) {
-      nutritionContext.timeOfDay = questionAnswers[0]; // 朝/昼/夕方/夜/間食
-      nutritionContext.hunger = questionAnswers[2];    // かなり空腹/少し空腹/そこまで空腹じゃない/なんとなく食べたい
-    }
     const summary = questionAnswers
       .map((ans, i) => `${questions[i].label} → ${ans}`)
       .join('\n');
     addMessage('user', summary);
 
-    // 栄養提案の場合: 目標PFCを計算してAIに渡す
-    let mealTargetHeader = '';
-    if (selectedMethod === 'nutrition' && nutritionContext.timeOfDay && window.NutritionDB) {
-      const target = calcMealTargetFromContext();
-      if (target) {
-        nutritionContext.mealTarget = target;
-        const NDB = window.NutritionDB;
-        mealTargetHeader = buildPFCTargetHeader(target);
-
-        // 目的別の食材優先指示
-        const foodPriority = {
-          '1': '【食材優先】高タンパク低脂質食材を優先: 鶏胸肉・鶏ささみ・タラ・豆腐・卵白・白身魚。脂質の多い食材（豚バラ・牛バラ等）は避ける。\n',
-          '2': '【食材優先】高タンパク高炭水化物食材を優先: 鶏胸肉・鶏もも肉・牛もも肉・卵・白米・さつまいも。炭水化物をしっかり確保すること。\n',
-          '3': '【食材優先】炭水化物多め＋良質タンパク: 白米・玄米・オートミール・鮭・サバ・バナナ・果物。持久力のためグリコーゲン補充を重視。\n',
-          '4': '【食材優先】消化の良い食材のみ使用: 白米（おかゆ）・うどん・豆腐・タラ・卵・バナナ。脂質の多い食材・揚げ物・刺激物は禁止。\n',
-          '5': '【食材優先】高タンパク低カロリー食材を優先: 鶏胸肉・鶏ささみ・タラ・豆腐・野菜・玄米・卵。脂質を抑えつつタンパク質を確保。\n'
-        };
-        mealTargetHeader += foodPriority[target.goalNum] || '';
-
-        // PFC逆算メニュー設計プロンプトを注入
-        mealTargetHeader += NDB.buildPFCTargetPrompt(target.goalNum, target);
-
-        // 筋肥大目的(goal 2)の夜食事: タンパク質を強調
-        if (target.goalNum === '2' && nutritionContext.timeOfDay === '夜') {
-          mealTargetHeader += `【筋肥大・夜の食事】この食事でP${target.p}g以上を確保すること。1日合計P${target.dailyP}g達成のため、高タンパク食材（鶏胸肉・鮭・卵・豆腐等）を中心に提案すること。カゼインタンパク質（乳製品）も有効。\n`;
-        }
-        // 不調改善の場合: 消化優先の追加指示
-        if (target.goalNum === '4') {
-          const fRatioPct = Math.round((target.fRatio || 0.25) * 100);
-          mealTargetHeader += `【不調改善】脂質${fRatioPct}%以下で胃腸負荷を最小化。調理法は蒸す・茹でる・煮るを優先。揚げ物・炒め物は禁止。\n`;
-        }
-        // 「揚げ物はたまに食べたい」選択時
-        if (selectedSub === '揚げ物はたまに食べたい') {
-          mealTargetHeader += `【揚げ物について】揚げ物を完全禁止にしないこと。「週1〜2回なら揚げ物もOK。ただし今日は上記のメニューで脂質を抑えて、揚げ物は別の日に楽しみましょう」のように一言添えること。\n`;
-        }
-      }
-    }
-    conversationHistory.push({ role: 'user', content: mealTargetHeader + summary });
+    conversationHistory.push({ role: 'user', content: summary });
     questionAnswers = [];
     currentQuestionIndex = 0;
     loadingIndicator.classList.remove('hidden');
@@ -693,7 +578,6 @@ async function showQuestionStep(questions) {
 function showNutritionQuestions() {
   questionAnswers = [];
   currentQuestionIndex = 0;
-  nutritionContext = { timeOfDay: null, hunger: null, mealTarget: null };
   showQuestionStep(QUESTIONS.nutrition);
 }
 
@@ -2953,21 +2837,6 @@ function renderNutritionWithPFC(text, containerDiv) {
   // 旧形式の[ITEMS:]タグも除去
   text = text.replace(/\[ITEMS:[^\]]*\]/g, '');
   let html = '';
-
-  // 1食目安の計算（目標体重・期限ベース）
-  const mealTarget = nutritionContext.mealTarget || calcMealTargetFromContext();
-
-  // 冒頭に1食目安バッジを挿入
-  if (mealTarget) {
-    const timeLabel = nutritionContext.timeOfDay || '';
-    const hungerLabel = nutritionContext.hunger || '';
-    let targetLabel = `📊 あなたの1食の目安（${timeLabel}・${hungerLabel}）`;
-    if (mealTarget.deficit > 0) {
-      targetLabel += `<span class="pfc-deficit">※目標逆算: -${mealTarget.deficit}kcal/日</span>`;
-    }
-    html += NDB.createPFCBadgeHTML(mealTarget, targetLabel);
-    html += '<br>';
-  }
 
   // テキストを行ごとに処理し、「・食材 量（調理法）」をパース
   const lines = text.split('\n');
