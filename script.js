@@ -1530,6 +1530,9 @@ goalSection.querySelectorAll('button').forEach(btn => {
     selectedGoal   = btn.dataset.goal;
     selectedMethod = null;
     selectedSub    = null;
+    questionAnswers = [];
+    currentQuestionIndex = 0;
+    conversationHistory = [];
     highlightButton(goalSection, btn);
     updateStepIndicator(2);
     showSection(methodSection);
@@ -1561,6 +1564,10 @@ resetBtn.addEventListener('click', () => {
   selectedMethod = null;
   selectedSub    = null;
   conversationHistory = [];
+  questionAnswers = [];
+  currentQuestionIndex = 0;
+  trainingPhase = 'base';
+  baseAnswers = [];
   hideSection(methodSection);
   hideSection(subSection);
   hideSection(aiResponse);
