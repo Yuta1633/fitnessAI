@@ -2798,177 +2798,79 @@ body {
 }
 
 /* ============================================================
-   AI栄養レスポンス カードスタイル
+   栄養提案カード - Pattern A
    ============================================================ */
-
-/* 候補カード */
 .nutrition-card {
-  background: #111;
-  border: 1px solid #2a2a2a;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 12px;
-  transition: border-color 0.2s ease;
+  border-left: 3px solid #c8f135;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #161616;
+  border-radius: 0 8px 8px 0;
 }
+.nutrition-card.second { border-left-color: #4fc3f7; }
+.nutrition-card.third { border-left-color: #555; }
 
-.nutrition-card:first-of-type {
-  border-color: #c8f135;
-  box-shadow: 0 0 16px rgba(200, 241, 53, 0.08);
-}
-
-.nutrition-card-label {
+.nutrition-rank {
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.15em;
   color: #c8f135;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-}
-
-.nutrition-card-label.second {
-  color: #4fc3f7;
-}
-
-.nutrition-card-label.third {
-  color: #888;
-}
-
-.nutrition-card:nth-of-type(2) {
-  border-color: #1a3a4a;
-}
-
-.nutrition-card-name {
-  font-size: 16px;
   font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 3px;
+}
+.nutrition-rank.second { color: #4fc3f7; }
+.nutrition-rank.third { color: #888; }
+
+.nutrition-name {
+  font-size: 14px;
   color: #fff;
-  margin-bottom: 10px;
-  line-height: 1.4;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-/* PFCバッジ行 */
 .pfc-line {
   display: flex;
-  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin: 8px 0;
-  padding: 8px 10px;
-  background: #1a1a1a;
-  border-radius: 8px;
+  align-items: center;
+  margin-bottom: 5px;
 }
+.pfc-cal { font-size: 11px; font-weight: 600; color: #c8f135; background: rgba(200,241,53,0.12); padding: 2px 6px; border-radius: 4px; }
+.pfc-sep { display: none; }
+.pfc-p   { font-size: 11px; font-weight: 600; color: #f59e0b; background: rgba(245,158,11,0.12); padding: 2px 6px; border-radius: 4px; }
+.pfc-f   { font-size: 11px; font-weight: 600; color: #f87171; background: rgba(248,113,113,0.12); padding: 2px 6px; border-radius: 4px; }
+.pfc-c   { font-size: 11px; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.12); padding: 2px 6px; border-radius: 4px; }
+.pfc-ratio { font-size: 10px; color: #555; }
+.pfc-estimated { font-size: 11px; color: #555; margin-top: 2px; }
 
-.pfc-cal {
-  font-size: 13px;
-  font-weight: 700;
-  color: #c8f135;
-}
-
-.pfc-sep {
-  color: #444;
-  font-size: 12px;
-}
-
-.pfc-p {
-  font-size: 12px;
-  font-weight: 600;
-  color: #f59e0b;
-  background: rgba(245,158,11,0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.pfc-f {
-  font-size: 12px;
-  font-weight: 600;
-  color: #f87171;
-  background: rgba(248,113,113,0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.pfc-c {
-  font-size: 12px;
-  font-weight: 600;
-  color: #4fc3f7;
-  background: rgba(79,195,247,0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.pfc-ratio {
-  font-size: 11px;
-  color: #555;
-  margin-left: 2px;
-}
-
-.pfc-estimated {
-  font-size: 11px;
-  color: #555;
-  margin-top: 2px;
-}
-
-/* 根拠テキスト */
 .nutrition-reason {
-  font-size: 12px;
-  color: #888;
-  line-height: 1.6;
+  font-size: 11px;
+  color: #777;
+  line-height: 1.5;
+}
+
+.nutrition-avoid {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(248,113,113,0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(248,113,113,0.2);
+}
+.nutrition-avoid-label {
+  font-size: 10px;
+  color: #f87171;
+  font-weight: 700;
+  margin-bottom: 3px;
+  letter-spacing: 0.1em;
+}
+.nutrition-avoid-content { font-size: 11px; color: #999; }
+
+.nutrition-footer {
+  font-size: 11px;
+  color: #555;
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid #1e1e1e;
-}
-
-/* 避けるもの・理由セクション */
-.nutrition-avoid {
-  background: rgba(248,113,113,0.06);
-  border: 1px solid rgba(248,113,113,0.2);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-top: 12px;
-}
-
-.nutrition-avoid-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #f87171;
-  margin-bottom: 6px;
-}
-
-.nutrition-avoid-content {
-  font-size: 13px;
-  color: #ccc;
-}
-
-.nutrition-footer {
-  font-size: 12px;
-  color: #555;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #1e1e1e;
   line-height: 1.6;
-}
-
-/* 自由返答のチャットスタイル */
-.chat-message.assistant {
-  background: #111;
-  border: 1px solid #1e1e1e;
-  border-radius: 14px;
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #ddd;
-}
-
-.chat-message.user {
-  background: #1a2a1a;
-  border: 1px solid rgba(200,241,53,0.2);
-  border-radius: 14px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: #c8f135;
-  text-align: right;
-  margin-left: auto;
-  max-width: 85%;
 }
 
 .pfc-unknown, .pfc-estimated {

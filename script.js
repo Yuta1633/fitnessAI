@@ -3088,19 +3088,16 @@ function renderNutritionWithPFC(text, containerDiv) {
 
     // 候補ヘッダー検出（▼ で始まる行）
     if (/^▼\s/.test(trimmed)) {
-      // 前の候補のPFCを出力
-      flushCandidate();
+      if (inCandidate) flushCandidate();
       inCandidate = true;
-      // カード開始
-      const isFirst = !html.includes('nutrition-card');
-      const isSecond = html.includes('nutrition-card') && !html.includes('nutrition-card second') && !html.includes('nutrition-card third');
+      const cardCount = (html.match(/nutrition-card/g) || []).length;
       let cardClass = 'nutrition-card third';
-      let labelClass = 'nutrition-card-label third';
-      let labelText = 'BEST CHOICE';
-      if (isFirst) { cardClass = 'nutrition-card'; labelClass = 'nutrition-card-label'; labelText = '🥇 BEST CHOICE'; }
-      else if (isSecond) { cardClass = 'nutrition-card second'; labelClass = 'nutrition-card-label second'; labelText = '🥈 SECOND'; }
-      else { labelText = '🥉 これならOK'; }
-      html += `<div class="${cardClass}"><div class="${labelClass}">${labelText}</div><div class="nutrition-card-name">${escapeHtml(trimmed.replace(/^▼\s/, ''))}</div>`;
+      let rankClass = 'nutrition-rank third';
+      let rankText = 'OK CHOICE';
+      if (cardCount === 0) { cardClass = 'nutrition-card'; rankClass = 'nutrition-rank'; rankText = '1ST CHOICE'; }
+      else if (cardCount === 2) { cardClass = 'nutrition-card second'; rankClass = 'nutrition-rank second'; rankText = '2ND CHOICE'; }
+      const nameText = trimmed.replace(/^▼\s*(第一候補:|第二候補:|これならOK:)?\s*/, '').trim();
+      html += `<div class="${cardClass}"><div class="${rankClass}">${rankText}</div><div class="nutrition-name">${escapeHtml(nameText)}</div>`;
       continue;
     }
 
@@ -3135,18 +3132,20 @@ function renderNutritionWithPFC(text, containerDiv) {
     }
 
     if (trimmed.startsWith('【避けるもの】')) {
-      html += `<div class="nutrition-avoid"><div class="nutrition-avoid-label">⚠ 避けるもの</div><div class="nutrition-avoid-content">`;
+      if (inCandidate) { flushCandidate(); inCandidate = false; }
       const content = trimmed.replace('【避けるもの】', '').trim();
-      if (content) html += escapeHtml(content);
-      html += `</div></div>`;
+      html += `<div class="nutrition-avoid"><div class="nutrition-avoid-label">避けるもの</div><div class="nutrition-avoid-content">${escapeHtml(content)}</div></div>`;
       continue;
     }
 
     if (trimmed.startsWith('【理由】')) {
-      html += `<div class="nutrition-footer">`;
       const content = trimmed.replace('【理由】', '').trim();
-      if (content) html += escapeHtml(content);
-      html += `</div>`;
+      html += `<div class="nutrition-footer">${escapeHtml(content)}</div>`;
+      continue;
+    }
+
+    if (inCandidate && trimmed && !trimmed.startsWith('・') && !trimmed.startsWith('▼') && !trimmed.startsWith('【')) {
+      html += `<div class="nutrition-reason">${escapeHtml(trimmed)}</div>`;
       continue;
     }
 
