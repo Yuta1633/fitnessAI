@@ -75,7 +75,7 @@ export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const isStream = url.searchParams.get('stream') === 'true';
 
-  const models = ['claude-sonnet-4-20250514', 'claude-haiku-4-5-20251001'];
+  const models = ['claude-haiku-4-5-20251001', 'claude-haiku-4-5-20251001'];
 
   // ストリーミングモード
   if (isStream) {
