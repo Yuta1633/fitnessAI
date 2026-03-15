@@ -567,27 +567,28 @@ async function showQuestionStep(questions) {
           const weeklyLoss = weight ? (weight * 0.007).toFixed(1) : '0.5';
           const dailyDeficit = 300;
           if (selectedSub === '食欲がコントロールできない') {
-            scienceAdvice = `食欲抑制には食物繊維とタンパク質を優先。満腹感を高めることで自然とカロリー収支-${dailyDeficit}kcalを実現（Slavin 2005）。目標まで${Math.abs(gap)}kg、週${weeklyLoss}kgペースが筋肉量を保つ最適速度（ACSM推奨）。`;
+            scienceAdvice = `食欲抑制には食物繊維とタンパク質を優先。満腹感を高めることで自然とカロリー収支-${dailyDeficit}kcalを実現（Slavin 2005）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}週${weeklyLoss}kgペースが筋肉量を保つ最適速度（ACSM推奨）。`;
           } else if (selectedSub === '夜食べすぎてしまう') {
-            scienceAdvice = `夜間の過食は概日リズムを乱し脂肪蓄積を促進（Garaulet et al. 2013）。夜は炭水化物を抑えタンパク質を多めに。目標まで${Math.abs(gap)}kg、週${weeklyLoss}kgペース推奨。`;
+            scienceAdvice = `夜間の過食は概日リズムを乱し脂肪蓄積を促進（Garaulet et al. 2013）。夜は炭水化物を抑えタンパク質を多めに。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}週${weeklyLoss}kgペース推奨。`;
           } else if (selectedSub === '脂肪がなかなか落ちない') {
-            scienceAdvice = `停滞期は代謝適応が原因。カロリー収支-${dailyDeficit}kcalを維持しつつタンパク質を体重×1.6〜2.2gに増やすと筋肉を守りながら脂肪を落とせる（Morton et al. 2018）。目標まで${Math.abs(gap)}kg。`;
+            scienceAdvice = `停滞期は代謝適応が原因。カロリー収支-${dailyDeficit}kcalを維持しつつタンパク質を体重×1.6〜2.2gに増やすと筋肉を守りながら脂肪を落とせる（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
+
           } else {
-            scienceAdvice = `脂肪減少の最適ペースは週${weeklyLoss}kg（体重の0.7%）。カロリー収支-${dailyDeficit}kcalを維持（ACSM推奨）。目標まで${Math.abs(gap)}kg。`;
+            scienceAdvice = `脂肪減少の最適ペースは週${weeklyLoss}kg（体重の0.7%）。カロリー収支-${dailyDeficit}kcalを維持（ACSM推奨）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
         } else if (selectedGoal === '2') {
           // 筋肉をつけたい
           // 科学的根拠: 週0.25〜0.5kg増量が脂肪増加を最小限に抑えた筋肥大の最適ペース（Helms et al. 2014）
           if (selectedSub === '最短で大きくなりたい') {
-            scienceAdvice = `最短筋肥大にはカロリー+400〜500kcal/日、週0.5〜0.8kg増量ペースが有効（Helms et al. 2014）。目標まで+${gap}kg。ただし脂肪増加も増えるため、体脂肪率15%超えたら減量フェーズへの切り替えを推奨。`;
+            scienceAdvice = `最短筋肥大にはカロリー+400〜500kcal/日、週0.5〜0.8kg増量ペースが有効（Helms et al. 2014）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}ただし脂肪増加も増えるため、体脂肪率15%超えたら減量フェーズへの切り替えを推奨。`;
           } else if (selectedSub === '脂肪をつけずに大きくなりたい') {
-            scienceAdvice = `リーンバルクにはカロリー+200〜300kcal/日、週0.2〜0.3kg増量ペースが推奨（Barakat et al. 2020）。目標まで+${gap}kg、急がず脂肪増加を抑えながら進めること。`;
+            scienceAdvice = `リーンバルクにはカロリー+200〜300kcal/日、週0.2〜0.3kg増量ペースが推奨（Barakat et al. 2020）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}急がず脂肪増加を抑えながら進めること。`;
           } else if (selectedSub === '体重が増えない') {
-            scienceAdvice = `体重が増えない場合はカロリーが足りていない可能性が高い。+500kcal/日から始め、2週間で0.3kg以上増えなければ+200kcalずつ追加（NSCA推奨）。目標まで+${gap}kg。`;
+            scienceAdvice = `体重が増えない場合はカロリーが足りていない可能性が高い。+500kcal/日から始め、2週間で0.3kg以上増えなければ+200kcalずつ追加（NSCA推奨）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           } else if (selectedSub === '消化が追いつかない') {
-            scienceAdvice = `消化不良時は食事回数を4〜5回に分けて1食あたりのボリュームを下げることで吸収率が上がる（Burke et al. 2011）。目標まで+${gap}kg、焦らず消化できる量から増やすこと。`;
+            scienceAdvice = `消化不良時は食事回数を4〜5回に分けて1食あたりのボリュームを下げることで吸収率が上がる（Burke et al. 2011）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}焦らず消化できる量から増やすこと。`;
           } else {
-            scienceAdvice = `筋肥大の最適ペースは週0.25〜0.5kg増量（Helms et al. 2014）。カロリー+300〜500kcal/日を維持。目標まで+${gap}kg。`;
+            scienceAdvice = `筋肥大の最適ペースは週0.25〜0.5kg増量（Helms et al. 2014）。カロリー+300〜500kcal/日を維持。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           }
         } else if (selectedGoal === '3') {
           // 体力を上げたい
@@ -615,11 +616,11 @@ async function showQuestionStep(questions) {
           // 科学的根拠: 体型改善には脂肪減少+筋維持の組み合わせが最も効果的（Barakat et al. 2020）
           const weeklyLoss = weight ? (weight * 0.005).toFixed(1) : '0.4';
           if (selectedSub === 'お腹を引き締めたい') {
-            scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。目標まで${Math.abs(gap)}kg。`;
+            scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else if (selectedSub === '下半身が気になる') {
-            scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。カロリー収支-200〜300kcalを維持しつつタンパク質を体重×1.6g確保。目標まで${Math.abs(gap)}kg。`;
+            scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。カロリー収支-200〜300kcalを維持しつつタンパク質を体重×1.6g確保。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else {
-            scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。目標まで${Math.abs(gap)}kg。`;
+            scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
         }
 
