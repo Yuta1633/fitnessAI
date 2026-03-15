@@ -390,16 +390,21 @@ const QUESTIONS = {
       options: ['朝', '昼', '夕方', '夜', '間食']
     },
     {
-      label: '② 今日の食事の状況は？',
+      label: '② 今日の食事の場所は？',
       options: [
         '家で食べる', '外食にしたい', 'コンビニ',
-        'スーパー・惣菜', 'お弁当を作る', 'デリバリー',
-        '揚げ物を食べたい', 'お酒を飲みたい', '間食したい',
-        '食べる時間があまりない', '節約したい'
+        'スーパー・惣菜', 'お弁当を作る', 'デリバリー'
       ]
     },
     {
-      label: '③ プロテインは飲んでいますか？',
+      label: '③ 食べ方・気分は？',
+      options: [
+        '特になし', '揚げ物を食べたい', 'お酒を飲みたい',
+        '間食したい', '食べる時間があまりない', '節約したい'
+      ]
+    },
+    {
+      label: '④ プロテインは飲んでいますか？',
       options: [
         '飲んでいない',
         '飲んでいる（1日1回）',
@@ -408,7 +413,7 @@ const QUESTIONS = {
       ]
     },
     {
-      label: '④ 今の空腹感は？',
+      label: '⑤ 今の空腹感は？',
       options: [
         'かなり空腹', '少し空腹', 'そこまで空腹じゃない', 'なんとなく食べたい'
       ]
@@ -508,17 +513,18 @@ async function showQuestionStep(questions) {
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
       const timeOfDay = questionAnswers[0];   // STEP1: 時間帯
-      const location = questionAnswers[1];    // STEP2: 状況
-      const hunger = questionAnswers[3];      // STEP4: 空腹感
-      const proteinSupp = questionAnswers[2]; // STEP3: プロテイン
+      const location = questionAnswers[1];    // STEP2: 場所
+      const mood = questionAnswers[2];        // STEP3: 気分
+      const proteinSupp = questionAnswers[3]; // STEP4: プロテイン
+      const hunger = questionAnswers[4];      // STEP5: 空腹感
 
-      // プロテイン補給量を計算（1回あたり約24g）
+      // プロテイン補給量を計算
       let proteinFromSupp = 0;
       if (proteinSupp === '飲んでいる（1日1回）') proteinFromSupp = 24;
       if (proteinSupp === '飲んでいる（1日2回）') proteinFromSupp = 48;
       if (proteinSupp === '飲んでいる（1日3回以上）') proteinFromSupp = 72;
 
-      // 体重・体脂肪率・目標体重を取得（直近記録から）
+      // 体重・体脂肪率・目標体重を取得
       let weight = 60;
       let currentBF = null;
       let goalWeight = null;
@@ -531,13 +537,12 @@ async function showQuestionStep(questions) {
         if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
       }
 
-      // 目的②（筋肉をつけたい）かつ目標体重が現在より高い場合のみ目標体重を使う
+      // 目的②かつ目標体重が高い場合のみ目標体重で計算
       const calcWeight = (selectedGoal === '2' && goalWeight && goalWeight > weight)
         ? goalWeight
         : weight;
 
-      // PFC目標計算後にプロテイン分を差し引く
-      // （既にプロテインで補えている分は食事で不要）
+      // PFC目標を計算
       const target = window.NutritionDB.calculateMealTarget({
         weight: calcWeight,
         goalNum: selectedGoal,
@@ -547,12 +552,12 @@ async function showQuestionStep(questions) {
         hunger
       });
 
-      // 1食あたりのプロテイン補充分を按分して差し引く
+      // プロテイン分を1食あたりに按分して差し引く
       const proteinPerMeal = Math.round(proteinFromSupp / 3);
       const adjustedP = Math.max(10, target.p - proteinPerMeal);
 
-      // selectMealsにはP調整済みの値を渡す
-      const meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location);
+      // MEAL_DBから3品選ぶ（moodを追加）
+      const meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood);
 
       if (meals.length > 0) {
         const mealInfo = meals.map((m, i) => {
@@ -584,8 +589,6 @@ async function showQuestionStep(questions) {
         const gap = goalWeight && weight ? parseFloat((goalWeight - weight).toFixed(1)) : 0;
 
         if (selectedGoal === '1') {
-          // 脂肪を落としたい
-          // 科学的根拠: 週0.5〜1%体重減少が筋肉量を保ちながら脂肪を落とす最適ペース（ACSM推奨）
           const weeklyLoss = weight ? (weight * 0.007).toFixed(1) : '0.5';
           const dailyDeficit = 300;
           if (selectedSub === '食欲がコントロールできない') {
@@ -594,13 +597,10 @@ async function showQuestionStep(questions) {
             scienceAdvice = `夜間の過食は概日リズムを乱し脂肪蓄積を促進（Garaulet et al. 2013）。夜は炭水化物を抑えタンパク質を多めに。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}週${weeklyLoss}kgペース推奨。`;
           } else if (selectedSub === '脂肪がなかなか落ちない') {
             scienceAdvice = `停滞期は代謝適応が原因。カロリー収支-${dailyDeficit}kcalを維持しつつタンパク質を体重×1.6〜2.2gに増やすと筋肉を守りながら脂肪を落とせる（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-
           } else {
             scienceAdvice = `脂肪減少の最適ペースは週${weeklyLoss}kg（体重の0.7%）。カロリー収支-${dailyDeficit}kcalを維持（ACSM推奨）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
         } else if (selectedGoal === '2') {
-          // 筋肉をつけたい
-          // 科学的根拠: 週0.25〜0.5kg増量が脂肪増加を最小限に抑えた筋肥大の最適ペース（Helms et al. 2014）
           if (selectedSub === '最短で大きくなりたい') {
             scienceAdvice = `最短筋肥大にはカロリー+400〜500kcal/日、週0.5〜0.8kg増量ペースが有効（Helms et al. 2014）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}ただし脂肪増加も増えるため、体脂肪率15%超えたら減量フェーズへの切り替えを推奨。`;
           } else if (selectedSub === '脂肪をつけずに大きくなりたい') {
@@ -613,8 +613,6 @@ async function showQuestionStep(questions) {
             scienceAdvice = `筋肥大の最適ペースは週0.25〜0.5kg増量（Helms et al. 2014）。カロリー+300〜500kcal/日を維持。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           }
         } else if (selectedGoal === '3') {
-          // 体力を上げたい
-          // 科学的根拠: 持久力向上には炭水化物60%以上が推奨（Burke et al. 2011）
           if (selectedSub === 'すぐ疲れる' || selectedSub === '午後にエネルギーが切れる') {
             scienceAdvice = `エネルギー切れの主因は糖質不足または血糖値の乱高下。GI値の低い炭水化物を中心に1食あたり体重×1g以上の炭水化物を確保すると持続的なエネルギーが得られる（Burke et al. 2011）。`;
           } else if (selectedSub === 'スタミナをつけたい') {
@@ -623,7 +621,6 @@ async function showQuestionStep(questions) {
             scienceAdvice = `体力向上には炭水化物60%以上の食事構成が科学的に推奨されている（Burke et al. 2011）。このメニューでエネルギー基盤を整えること。`;
           }
         } else if (selectedGoal === '4') {
-          // 不調改善
           if (selectedSub === '胃腸が弱い') {
             scienceAdvice = `消化機能が低下している場合、食物繊維は水溶性（オートミール・海藻など）を優先し、不溶性（生野菜・ブランなど）は控えめに。発酵食品（納豆・味噌）は腸内環境改善に有効（Quigley 2013）。`;
           } else if (selectedSub === 'むくみやすい') {
@@ -634,8 +631,6 @@ async function showQuestionStep(questions) {
             scienceAdvice = `不調改善には抗炎症作用のある食材（青魚・緑黄色野菜・発酵食品）を中心に、消化に負担をかけない食事構成が推奨される（Calder 2017）。`;
           }
         } else if (selectedGoal === '5') {
-          // 体型を整えたい
-          // 科学的根拠: 体型改善には脂肪減少+筋維持の組み合わせが最も効果的（Barakat et al. 2020）
           const weeklyLoss = weight ? (weight * 0.005).toFixed(1) : '0.4';
           if (selectedSub === 'お腹を引き締めたい') {
             scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
@@ -646,7 +641,7 @@ async function showQuestionStep(questions) {
           }
         }
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給状況:「${proteinSupp}」（1食あたり約${proteinPerMeal}gを食事で補う必要を減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
       }
     }
 
