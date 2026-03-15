@@ -1392,7 +1392,7 @@ async function generateResponse() {
     .from('service_settings')
     .select('value')
     .eq('key', 'service_active')
-    .single();
+    .maybeSingle();
 
   console.log('サービス状態:', serviceData, serviceError);
 
