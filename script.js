@@ -514,8 +514,10 @@ async function showQuestionStep(questions) {
         if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
       }
 
-      // 目標体重が現在より高い（増量目的）場合は目標体重ベースで計算
-      const calcWeight = (goalWeight && goalWeight > weight) ? goalWeight : weight;
+      // 目的②（筋肉をつけたい）かつ目標体重が現在より高い場合のみ目標体重を使う
+      const calcWeight = (selectedGoal === '2' && goalWeight && goalWeight > weight)
+        ? goalWeight
+        : weight;
 
       // PFC目標を計算
       const target = window.NutritionDB.calculateMealTarget({
