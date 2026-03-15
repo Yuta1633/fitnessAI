@@ -112,8 +112,14 @@ async function buildUserContext() {
         ctx += `目標までの差: 体重${gap > 0 ? '+' : ''}${gap}kg`;
       }
       if (goal.goal_body_fat && latest.body_fat) {
-        const gap = (latest.body_fat - goal.goal_body_fat).toFixed(1);
-        ctx += ` / 体脂肪率${gap > 0 ? '+' : ''}${gap}%`;
+        const bfGap = parseFloat((latest.body_fat - goal.goal_body_fat).toFixed(1));
+        if (bfGap > 0) {
+          ctx += ` / 体脂肪率: 現在${latest.body_fat}% 目標${goal.goal_body_fat}%（あと${bfGap}%減少が必要）`;
+        } else if (bfGap < 0) {
+          ctx += ` / 体脂肪率: 現在${latest.body_fat}% 目標${goal.goal_body_fat}%（目標達成済み）`;
+        } else {
+          ctx += ` / 体脂肪率: 現在${latest.body_fat}% 目標${goal.goal_body_fat}%（目標達成済み）`;
+        }
       }
       ctx += '\n';
     }
@@ -628,7 +634,7 @@ async function showQuestionStep(questions) {
           }
         }
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。食材・量・PFCは変更禁止です。`;
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
       }
     }
 
