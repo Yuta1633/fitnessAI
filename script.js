@@ -510,6 +510,13 @@ async function showQuestionStep(questions) {
       const timeOfDay = questionAnswers[0];   // STEP1: 時間帯
       const location = questionAnswers[1];    // STEP2: 状況
       const hunger = questionAnswers[3];      // STEP4: 空腹感
+      const proteinSupp = questionAnswers[2]; // STEP3: プロテイン
+
+      // プロテイン補給量を計算（1回あたり約24g）
+      let proteinFromSupp = 0;
+      if (proteinSupp === '飲んでいる（1日1回）') proteinFromSupp = 24;
+      if (proteinSupp === '飲んでいる（1日2回）') proteinFromSupp = 48;
+      if (proteinSupp === '飲んでいる（1日3回以上）') proteinFromSupp = 72;
 
       // 体重・体脂肪率・目標体重を取得（直近記録から）
       let weight = 60;
@@ -529,7 +536,8 @@ async function showQuestionStep(questions) {
         ? goalWeight
         : weight;
 
-      // PFC目標を計算
+      // PFC目標計算後にプロテイン分を差し引く
+      // （既にプロテインで補えている分は食事で不要）
       const target = window.NutritionDB.calculateMealTarget({
         weight: calcWeight,
         goalNum: selectedGoal,
@@ -539,8 +547,12 @@ async function showQuestionStep(questions) {
         hunger
       });
 
-      // MEAL_DBから3品選ぶ
-      const meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location);
+      // 1食あたりのプロテイン補充分を按分して差し引く
+      const proteinPerMeal = Math.round(proteinFromSupp / 3);
+      const adjustedP = Math.max(10, target.p - proteinPerMeal);
+
+      // selectMealsにはP調整済みの値を渡す
+      const meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location);
 
       if (meals.length > 0) {
         const mealInfo = meals.map((m, i) => {
@@ -634,7 +646,7 @@ async function showQuestionStep(questions) {
           }
         }
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給状況:「${proteinSupp}」（1食あたり約${proteinPerMeal}gを食事で補う必要を減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
       }
     }
 
@@ -3115,7 +3127,11 @@ function renderNutritionWithPFC(text, containerDiv) {
 }
 
 function isNutritionResponse(text) {
-  return text.includes('第一候補') && text.includes('第二候補') && text.includes('これならOK');
+  return (
+    (text.includes('第一候補') || text.includes('**第一候補**')) &&
+    (text.includes('第二候補') || text.includes('**第二候補**')) &&
+    (text.includes('これならOK') || text.includes('**これならOK**'))
+  );
 }
 
 // ============================================================
