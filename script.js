@@ -501,19 +501,25 @@ async function showQuestionStep(questions) {
       const location = questionAnswers[1];    // STEP2: 状況
       const hunger = questionAnswers[3];      // STEP4: 空腹感
 
-      // 体重・体脂肪率を取得（直近記録から）
-      let weight = 60; // デフォルト
+      // 体重・体脂肪率・目標体重を取得（直近記録から）
+      let weight = 60;
       let currentBF = null;
+      let goalWeight = null;
       if (cachedUserContext) {
         const weightMatch = cachedUserContext.match(/現在の体重: ([\d.]+)kg/);
         const bfMatch = cachedUserContext.match(/体脂肪率: ([\d.]+)%/);
+        const goalWeightMatch = cachedUserContext.match(/目標体重: ([\d.]+)kg/);
         if (weightMatch) weight = parseFloat(weightMatch[1]);
         if (bfMatch) currentBF = parseFloat(bfMatch[1]);
+        if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
       }
+
+      // 目標体重が現在より高い（増量目的）場合は目標体重ベースで計算
+      const calcWeight = (goalWeight && goalWeight > weight) ? goalWeight : weight;
 
       // PFC目標を計算
       const target = window.NutritionDB.calculateMealTarget({
-        weight,
+        weight: calcWeight,
         goalNum: selectedGoal,
         currentBF,
         targetBF: null,
