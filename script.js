@@ -646,7 +646,7 @@ async function showQuestionStep(questions) {
 栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
         }).join('\n\n');
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい`;
       }
     }
 
