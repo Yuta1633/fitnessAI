@@ -3093,9 +3093,9 @@ function renderNutritionWithPFC(text, containerDiv) {
       const cardCount = (html.match(/nutrition-card/g) || []).length;
       let cardClass = 'nutrition-card third';
       let rankClass = 'nutrition-rank third';
-      let rankText = 'OK CHOICE';
-      if (cardCount === 0) { cardClass = 'nutrition-card'; rankClass = 'nutrition-rank'; rankText = '1ST CHOICE'; }
-      else if (cardCount === 1) { cardClass = 'nutrition-card second'; rankClass = 'nutrition-rank second'; rankText = '2ND CHOICE'; }
+      let rankText = 'これならOK';
+      if (cardCount === 0) { cardClass = 'nutrition-card'; rankClass = 'nutrition-rank'; rankText = '第一候補'; }
+      else if (cardCount === 1) { cardClass = 'nutrition-card second'; rankClass = 'nutrition-rank second'; rankText = '第二候補'; }
       const nameText = trimmed.replace(/^▼\s*(第一候補:|第二候補:|これならOK:)?\s*/, '').trim();
       html += `<div class="${cardClass}"><div class="${rankClass}">${rankText}</div><div class="nutrition-name">${escapeHtml(nameText)}</div>`;
       continue;
