@@ -544,7 +544,86 @@ async function showQuestionStep(questions) {
 栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
         }).join('\n\n');
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n上記3品の料理名と、なぜこの料理がユーザーの目的・状況に適しているかの科学的根拠を1〜2行で書いてください。食材・量・PFCは変更禁止です。`;
+        let goalGapText = '';
+        let scienceAdvice = '';
+
+        if (goalWeight && weight) {
+          const gap = parseFloat((goalWeight - weight).toFixed(1));
+          if (gap > 0) {
+            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと+${gap}kg増量が必要）`;
+          } else if (gap < 0) {
+            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと${Math.abs(gap)}kg減量が必要）`;
+          } else {
+            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（目標体重に到達済み）`;
+          }
+        }
+
+        // 目的×サブ×目標差分から科学的アドバイスを生成
+        const gap = goalWeight && weight ? parseFloat((goalWeight - weight).toFixed(1)) : 0;
+
+        if (selectedGoal === '1') {
+          // 脂肪を落としたい
+          // 科学的根拠: 週0.5〜1%体重減少が筋肉量を保ちながら脂肪を落とす最適ペース（ACSM推奨）
+          const weeklyLoss = weight ? (weight * 0.007).toFixed(1) : '0.5';
+          const dailyDeficit = 300;
+          if (selectedSub === '食欲がコントロールできない') {
+            scienceAdvice = `食欲抑制には食物繊維とタンパク質を優先。満腹感を高めることで自然とカロリー収支-${dailyDeficit}kcalを実現（Slavin 2005）。目標まで${Math.abs(gap)}kg、週${weeklyLoss}kgペースが筋肉量を保つ最適速度（ACSM推奨）。`;
+          } else if (selectedSub === '夜食べすぎてしまう') {
+            scienceAdvice = `夜間の過食は概日リズムを乱し脂肪蓄積を促進（Garaulet et al. 2013）。夜は炭水化物を抑えタンパク質を多めに。目標まで${Math.abs(gap)}kg、週${weeklyLoss}kgペース推奨。`;
+          } else if (selectedSub === '脂肪がなかなか落ちない') {
+            scienceAdvice = `停滞期は代謝適応が原因。カロリー収支-${dailyDeficit}kcalを維持しつつタンパク質を体重×1.6〜2.2gに増やすと筋肉を守りながら脂肪を落とせる（Morton et al. 2018）。目標まで${Math.abs(gap)}kg。`;
+          } else {
+            scienceAdvice = `脂肪減少の最適ペースは週${weeklyLoss}kg（体重の0.7%）。カロリー収支-${dailyDeficit}kcalを維持（ACSM推奨）。目標まで${Math.abs(gap)}kg。`;
+          }
+        } else if (selectedGoal === '2') {
+          // 筋肉をつけたい
+          // 科学的根拠: 週0.25〜0.5kg増量が脂肪増加を最小限に抑えた筋肥大の最適ペース（Helms et al. 2014）
+          if (selectedSub === '最短で大きくなりたい') {
+            scienceAdvice = `最短筋肥大にはカロリー+400〜500kcal/日、週0.5〜0.8kg増量ペースが有効（Helms et al. 2014）。目標まで+${gap}kg。ただし脂肪増加も増えるため、体脂肪率15%超えたら減量フェーズへの切り替えを推奨。`;
+          } else if (selectedSub === '脂肪をつけずに大きくなりたい') {
+            scienceAdvice = `リーンバルクにはカロリー+200〜300kcal/日、週0.2〜0.3kg増量ペースが推奨（Barakat et al. 2020）。目標まで+${gap}kg、急がず脂肪増加を抑えながら進めること。`;
+          } else if (selectedSub === '体重が増えない') {
+            scienceAdvice = `体重が増えない場合はカロリーが足りていない可能性が高い。+500kcal/日から始め、2週間で0.3kg以上増えなければ+200kcalずつ追加（NSCA推奨）。目標まで+${gap}kg。`;
+          } else if (selectedSub === '消化が追いつかない') {
+            scienceAdvice = `消化不良時は食事回数を4〜5回に分けて1食あたりのボリュームを下げることで吸収率が上がる（Burke et al. 2011）。目標まで+${gap}kg、焦らず消化できる量から増やすこと。`;
+          } else {
+            scienceAdvice = `筋肥大の最適ペースは週0.25〜0.5kg増量（Helms et al. 2014）。カロリー+300〜500kcal/日を維持。目標まで+${gap}kg。`;
+          }
+        } else if (selectedGoal === '3') {
+          // 体力を上げたい
+          // 科学的根拠: 持久力向上には炭水化物60%以上が推奨（Burke et al. 2011）
+          if (selectedSub === 'すぐ疲れる' || selectedSub === '午後にエネルギーが切れる') {
+            scienceAdvice = `エネルギー切れの主因は糖質不足または血糖値の乱高下。GI値の低い炭水化物を中心に1食あたり体重×1g以上の炭水化物を確保すると持続的なエネルギーが得られる（Burke et al. 2011）。`;
+          } else if (selectedSub === 'スタミナをつけたい') {
+            scienceAdvice = `持久力向上には1日の炭水化物摂取量を体重×5〜7gに増やすことが推奨（ACSM 2016）。このメニューで炭水化物をしっかり確保することでグリコーゲン貯蔵量が増加します。`;
+          } else {
+            scienceAdvice = `体力向上には炭水化物60%以上の食事構成が科学的に推奨されている（Burke et al. 2011）。このメニューでエネルギー基盤を整えること。`;
+          }
+        } else if (selectedGoal === '4') {
+          // 不調改善
+          if (selectedSub === '胃腸が弱い') {
+            scienceAdvice = `消化機能が低下している場合、食物繊維は水溶性（オートミール・海藻など）を優先し、不溶性（生野菜・ブランなど）は控えめに。発酵食品（納豆・味噌）は腸内環境改善に有効（Quigley 2013）。`;
+          } else if (selectedSub === 'むくみやすい') {
+            scienceAdvice = `むくみの主因はナトリウム過多とカリウム不足。カリウムを多く含む食材（豆類・海藻・魚）を積極的に摂ることで細胞内外の水分バランスが整う（He & MacGregor 2010）。`;
+          } else if (selectedSub === '便秘しやすい') {
+            scienceAdvice = `便秘改善には食物繊維25g/日以上＋水分2L/日が基準（WHO推奨）。不溶性食物繊維（全粒穀物・ブロッコリー）と水溶性食物繊維（海藻・豆類）をバランスよく摂ること。`;
+          } else {
+            scienceAdvice = `不調改善には抗炎症作用のある食材（青魚・緑黄色野菜・発酵食品）を中心に、消化に負担をかけない食事構成が推奨される（Calder 2017）。`;
+          }
+        } else if (selectedGoal === '5') {
+          // 体型を整えたい
+          // 科学的根拠: 体型改善には脂肪減少+筋維持の組み合わせが最も効果的（Barakat et al. 2020）
+          const weeklyLoss = weight ? (weight * 0.005).toFixed(1) : '0.4';
+          if (selectedSub === 'お腹を引き締めたい') {
+            scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。目標まで${Math.abs(gap)}kg。`;
+          } else if (selectedSub === '下半身が気になる') {
+            scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。カロリー収支-200〜300kcalを維持しつつタンパク質を体重×1.6g確保。目標まで${Math.abs(gap)}kg。`;
+          } else {
+            scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。目標まで${Math.abs(gap)}kg。`;
+          }
+        }
+
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n上記3品の料理名と、上記の科学的アドバイスを踏まえた根拠を1〜2行で書いてください。食材・量・PFCは変更禁止です。`;
       }
     }
 
