@@ -559,34 +559,26 @@ async function showQuestionStep(questions) {
       // MEAL_DBから3品選ぶ（moodを追加）
       const meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood);
 
-      if (meals.length > 0) {
-        const mealInfo = meals.map((m, i) => {
-          const label = i === 0 ? '第一候補' : i === 1 ? '第二候補' : 'これならOK';
-          const pfcCal = m.p * 4 + m.f * 9 + m.c * 4;
-          const pPct = pfcCal > 0 ? Math.round((m.p * 4 / pfcCal) * 100) : 0;
-          const fPct = pfcCal > 0 ? Math.round((m.f * 9 / pfcCal) * 100) : 0;
-          const cPct = 100 - pPct - fPct;
-          return `▼ ${label}: ${m.name}
-食材: ${m.ingredients.join('、')}
-栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
-        }).join('\n\n');
+      if (meals.length === 0) {
+        console.log('MEAL_DB: 該当なし', { selectedGoal, location, mood });
+      }
 
-        let goalGapText = '';
-        let scienceAdvice = '';
-
-        if (goalWeight && weight) {
-          const gap = parseFloat((goalWeight - weight).toFixed(1));
-          if (gap > 0) {
-            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと+${gap}kg増量が必要）`;
-          } else if (gap < 0) {
-            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと${Math.abs(gap)}kg減量が必要）`;
-          } else {
-            goalGapText = `現在${weight}kg → 目標${goalWeight}kg（目標体重に到達済み）`;
-          }
+      // goalGapTextを生成
+      let goalGapText = '';
+      if (goalWeight && weight) {
+        const gapVal = parseFloat((goalWeight - weight).toFixed(1));
+        if (gapVal > 0) {
+          goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと+${gapVal}kg増量が必要）`;
+        } else if (gapVal < 0) {
+          goalGapText = `現在${weight}kg → 目標${goalWeight}kg（あと${Math.abs(gapVal)}kg減量が必要）`;
+        } else {
+          goalGapText = `現在${weight}kg → 目標${goalWeight}kg（目標体重に到達済み）`;
         }
+      }
 
-        // 目的×サブ×目標差分から科学的アドバイスを生成
-        const gap = goalWeight && weight ? parseFloat((goalWeight - weight).toFixed(1)) : 0;
+      // 目的×サブ×目標差分から科学的アドバイスを生成
+      let scienceAdvice = '';
+      const gap = goalWeight && weight ? parseFloat((goalWeight - weight).toFixed(1)) : 0;
 
         if (selectedGoal === '1') {
           const weeklyLoss = weight ? (weight * 0.007).toFixed(1) : '0.5';
@@ -639,7 +631,20 @@ async function showQuestionStep(questions) {
           } else {
             scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
-        }
+      }
+
+      // mealInfoを生成してプロンプトに追加
+      if (meals.length > 0) {
+        const mealInfo = meals.map((m, i) => {
+          const label = i === 0 ? '第一候補' : i === 1 ? '第二候補' : 'これならOK';
+          const pfcCal = m.p * 4 + m.f * 9 + m.c * 4;
+          const pPct = pfcCal > 0 ? Math.round((m.p * 4 / pfcCal) * 100) : 0;
+          const fPct = pfcCal > 0 ? Math.round((m.f * 9 / pfcCal) * 100) : 0;
+          const cPct = 100 - pPct - fPct;
+          return `▼ ${label}: ${m.name}
+食材: ${m.ingredients.join('、')}
+栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
+        }).join('\n\n');
 
         conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止。AIが独自に食材を追加・変更・削除することは禁止。料理名の言い換えも禁止。`;
       }
