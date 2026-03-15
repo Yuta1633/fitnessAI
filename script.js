@@ -1297,35 +1297,37 @@ function createSubButtons(goal, method) {
     subButtons.appendChild(btn);
   });
 
-  const otherBtn = document.createElement('button');
-  otherBtn.className = 'choice-btn';
-  otherBtn.style.borderStyle = 'dashed';
-  otherBtn.innerHTML = `<span class="btn-text">${escapeHtml('その他（自由入力）')}</span><span class="btn-arrow">→</span>`;
-  otherBtn.addEventListener('click', () => {
-    otherBtn.style.display = 'none';
-    const inputWrap = document.createElement('div');
-    inputWrap.style.cssText = 'display:flex; gap:8px; padding:8px 0;';
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '自由に入力してください';
-    input.style.cssText = 'flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#fff; font-size:14px;';
-    const submitBtn = document.createElement('button');
-    submitBtn.textContent = '決定';
-    submitBtn.style.cssText = 'padding:10px 16px; border-radius:8px; border:none; background:#c8f135; color:#000; font-weight:700; cursor:pointer; font-size:14px;';
-    submitBtn.addEventListener('click', () => {
-      const val = input.value.trim();
-      if (!val) return;
-      selectedSub = val;
-      highlightButton(subSection, otherBtn);
-      generateResponse();
+  if (selectedMethod !== 'nutrition') {
+    const otherBtn = document.createElement('button');
+    otherBtn.className = 'choice-btn';
+    otherBtn.style.borderStyle = 'dashed';
+    otherBtn.innerHTML = `<span class="btn-text">${escapeHtml('その他（自由入力）')}</span><span class="btn-arrow">→</span>`;
+    otherBtn.addEventListener('click', () => {
+      otherBtn.style.display = 'none';
+      const inputWrap = document.createElement('div');
+      inputWrap.style.cssText = 'display:flex; gap:8px; padding:8px 0;';
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = '自由に入力してください';
+      input.style.cssText = 'flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#fff; font-size:14px;';
+      const submitBtn = document.createElement('button');
+      submitBtn.textContent = '決定';
+      submitBtn.style.cssText = 'padding:10px 16px; border-radius:8px; border:none; background:#c8f135; color:#000; font-weight:700; cursor:pointer; font-size:14px;';
+      submitBtn.addEventListener('click', () => {
+        const val = input.value.trim();
+        if (!val) return;
+        selectedSub = val;
+        highlightButton(subSection, otherBtn);
+        generateResponse();
+      });
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitBtn.click(); });
+      inputWrap.appendChild(input);
+      inputWrap.appendChild(submitBtn);
+      subButtons.appendChild(inputWrap);
+      input.focus();
     });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitBtn.click(); });
-    inputWrap.appendChild(input);
-    inputWrap.appendChild(submitBtn);
-    subButtons.appendChild(inputWrap);
-    input.focus();
-  });
-  subButtons.appendChild(otherBtn);
+    subButtons.appendChild(otherBtn);
+  }
 }
 
 function escapeHtml(str) {
