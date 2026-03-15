@@ -744,11 +744,13 @@ async function showQuestionStep(questions) {
     btnGroup.appendChild(btn);
   });
 
-  addOtherInput(btnGroup, div, (val) => {
-    questionAnswers.push(val);
-    currentQuestionIndex++;
-    showQuestionStep(questions);
-  });
+  if (selectedMethod !== 'nutrition') {
+    addOtherInput(btnGroup, div, (val) => {
+      questionAnswers.push(val);
+      currentQuestionIndex++;
+      showQuestionStep(questions);
+    });
+  }
 
   div.appendChild(btnGroup);
   chatHistory.appendChild(div);
