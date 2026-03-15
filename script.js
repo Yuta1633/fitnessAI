@@ -71,9 +71,13 @@ async function buildUserContext() {
   let ctx = '【ユーザープロフィール】\n';
 
   if (bodyRecords && bodyRecords.length > 0) {
+    const latestWeight = bodyRecords.find(r => r.weight != null);
+    const latestBF = bodyRecords.find(r => r.body_fat != null);
+    const latestWeightVal = latestWeight ? latestWeight.weight : null;
+    const latestBFVal = latestBF ? latestBF.body_fat : null;
+    ctx += `現在の体重: ${latestWeightVal ? latestWeightVal + 'kg' : '未記録'}`;
+    ctx += ` / 体脂肪率: ${latestBFVal ? latestBFVal + '%' : '未記録'}`;
     const latest = bodyRecords[0];
-    ctx += `現在の体重: ${latest.weight ? latest.weight + 'kg' : '未記録'}`;
-    ctx += ` / 体脂肪率: ${latest.body_fat ? latest.body_fat + '%' : '未記録'}`;
     ctx += ` (${latest.recorded_at || '日付不明'})\n`;
     if (bodyRecords.length > 1) {
       const prev = bodyRecords[1];
