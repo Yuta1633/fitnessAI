@@ -527,9 +527,13 @@ async function showQuestionStep(questions) {
       if (meals.length > 0) {
         const mealInfo = meals.map((m, i) => {
           const label = i === 0 ? '第一候補' : i === 1 ? '第二候補' : 'これならOK';
+          const pfcCal = m.p * 4 + m.f * 9 + m.c * 4;
+          const pPct = pfcCal > 0 ? Math.round((m.p * 4 / pfcCal) * 100) : 0;
+          const fPct = pfcCal > 0 ? Math.round((m.f * 9 / pfcCal) * 100) : 0;
+          const cPct = 100 - pPct - fPct;
           return `▼ ${label}: ${m.name}
 食材: ${m.ingredients.join('、')}
-栄養: 約${m.cal}kcal｜P${m.p}g F${m.f}g C${m.c}g`;
+栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
         }).join('\n\n');
 
         conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n上記3品の料理名と、なぜこの料理がユーザーの目的・状況に適しているかの科学的根拠を1〜2行で書いてください。食材・量・PFCは変更禁止です。`;
