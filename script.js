@@ -3078,6 +3078,7 @@ function renderNutritionWithPFC(text, containerDiv) {
     if (pfc.estimated && pfc.estimated.length > 0) {
       html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
     }
+    html += `</div>`; // nutrition-card閉じ
     currentItems = [];
     currentCookingMap = {};
   }
@@ -3090,7 +3091,16 @@ function renderNutritionWithPFC(text, containerDiv) {
       // 前の候補のPFCを出力
       flushCandidate();
       inCandidate = true;
-      html += escapeHtml(line) + '<br>';
+      // カード開始
+      const isFirst = !html.includes('nutrition-card');
+      const isSecond = html.includes('nutrition-card') && !html.includes('nutrition-card second') && !html.includes('nutrition-card third');
+      let cardClass = 'nutrition-card third';
+      let labelClass = 'nutrition-card-label third';
+      let labelText = 'BEST CHOICE';
+      if (isFirst) { cardClass = 'nutrition-card'; labelClass = 'nutrition-card-label'; labelText = '🥇 BEST CHOICE'; }
+      else if (isSecond) { cardClass = 'nutrition-card second'; labelClass = 'nutrition-card-label second'; labelText = '🥈 SECOND'; }
+      else { labelText = '🥉 これならOK'; }
+      html += `<div class="${cardClass}"><div class="${labelClass}">${labelText}</div><div class="nutrition-card-name">${escapeHtml(trimmed.replace(/^▼\s/, ''))}</div>`;
       continue;
     }
 
@@ -3122,6 +3132,22 @@ function renderNutritionWithPFC(text, containerDiv) {
       if (/^【/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
         inCandidate = false;
       }
+    }
+
+    if (trimmed.startsWith('【避けるもの】')) {
+      html += `<div class="nutrition-avoid"><div class="nutrition-avoid-label">⚠ 避けるもの</div><div class="nutrition-avoid-content">`;
+      const content = trimmed.replace('【避けるもの】', '').trim();
+      if (content) html += escapeHtml(content);
+      html += `</div></div>`;
+      continue;
+    }
+
+    if (trimmed.startsWith('【理由】')) {
+      html += `<div class="nutrition-footer">`;
+      const content = trimmed.replace('【理由】', '').trim();
+      if (content) html += escapeHtml(content);
+      html += `</div>`;
+      continue;
     }
 
     html += escapeHtml(line) + '<br>';

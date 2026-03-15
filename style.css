@@ -2797,30 +2797,178 @@ body {
   font-size: 13px;
 }
 
+/* ============================================================
+   AI栄養レスポンス カードスタイル
+   ============================================================ */
+
+/* 候補カード */
+.nutrition-card {
+  background: #111;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.nutrition-card:first-of-type {
+  border-color: #c8f135;
+  box-shadow: 0 0 16px rgba(200, 241, 53, 0.08);
+}
+
+.nutrition-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #c8f135;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.nutrition-card-label.second {
+  color: #4fc3f7;
+}
+
+.nutrition-card-label.third {
+  color: #888;
+}
+
+.nutrition-card:nth-of-type(2) {
+  border-color: #1a3a4a;
+}
+
+.nutrition-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+/* PFCバッジ行 */
 .pfc-line {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: 14px;
-  font-weight: 600;
-  background: linear-gradient(135deg, rgba(200,241,53,0.08), rgba(200,241,53,0.02));
-  border: 1px solid rgba(200,241,53,0.20);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  margin: 4px 0 8px 0;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: #1a1a1a;
+  border-radius: 8px;
+}
+
+.pfc-cal {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c8f135;
 }
 
 .pfc-sep {
-  color: var(--muted);
-  font-weight: 400;
+  color: #444;
+  font-size: 12px;
+}
+
+.pfc-p {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pfc-f {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(248,113,113,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pfc-c {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4fc3f7;
+  background: rgba(79,195,247,0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .pfc-ratio {
+  font-size: 11px;
+  color: #555;
+  margin-left: 2px;
+}
+
+.pfc-estimated {
+  font-size: 11px;
+  color: #555;
+  margin-top: 2px;
+}
+
+/* 根拠テキスト */
+.nutrition-reason {
   font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-  margin-left: 4px;
+  color: #888;
+  line-height: 1.6;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #1e1e1e;
+}
+
+/* 避けるもの・理由セクション */
+.nutrition-avoid {
+  background: rgba(248,113,113,0.06);
+  border: 1px solid rgba(248,113,113,0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+
+.nutrition-avoid-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #f87171;
+  margin-bottom: 6px;
+}
+
+.nutrition-avoid-content {
+  font-size: 13px;
+  color: #ccc;
+}
+
+.nutrition-footer {
+  font-size: 12px;
+  color: #555;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #1e1e1e;
+  line-height: 1.6;
+}
+
+/* 自由返答のチャットスタイル */
+.chat-message.assistant {
+  background: #111;
+  border: 1px solid #1e1e1e;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #ddd;
+}
+
+.chat-message.user {
+  background: #1a2a1a;
+  border: 1px solid rgba(200,241,53,0.2);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #c8f135;
+  text-align: right;
+  margin-left: auto;
+  max-width: 85%;
 }
 
 .pfc-unknown, .pfc-estimated {
