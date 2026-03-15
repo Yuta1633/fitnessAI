@@ -312,7 +312,70 @@ const MEAL_DB = [
 
   { id:'g5b01', name:'低カロリー引き締め弁当', ingredients:['鶏ささみ 150g（蒸す）', '白米 100g', 'ブロッコリー 80g', 'ミニトマト 5個'], cal:320, p:34, f:4, c:36, goals:['5'], locations:['お弁当を作る'] },
   { id:'g5b02', name:'和風ダイエット弁当', ingredients:['マグロ赤身 100g', '白米 100g', 'わかめ 20g', '卵焼き 1個'], cal:360, p:30, f:8, c:40, goals:['5'], locations:['お弁当を作る'] },
-  { id:'g5b03', name:'豆腐ハンバーグ弁当', ingredients:['木綿豆腐 150g（ハンバーグ）', '白米 100g', 'ほうれん草 80g', 'トマト 50g'], cal:340, p:22, f:10, c:40, goals:['5'], locations:['お弁当を作る'] }
+  { id:'g5b03', name:'豆腐ハンバーグ弁当', ingredients:['木綿豆腐 150g（ハンバーグ）', '白米 100g', 'ほうれん草 80g', 'トマト 50g'], cal:340, p:22, f:10, c:40, goals:['5'], locations:['お弁当を作る'] },
+
+  // 全目的 × 揚げ物を食べたい
+  { id:'g1f01', name:'唐揚げ（少なめ）＋サラダ＋白米少なめ', ingredients:['唐揚げ 3個', 'サラダ 1皿', '白米 100g'], cal:420, p:24, f:16, c:44, goals:['1'], locations:['揚げ物を食べたい'] },
+  { id:'g1f02', name:'アジフライ定食（ライス少なめ）', ingredients:['アジフライ 2枚', '白米 100g', '味噌汁 1杯', 'キャベツ千切り'], cal:440, p:22, f:16, c:48, goals:['1'], locations:['揚げ物を食べたい'] },
+  { id:'g1f03', name:'海老天そば', ingredients:['そば 1食', '海老天 2本', '出汁'], cal:460, p:20, f:12, c:62, goals:['1'], locations:['揚げ物を食べたい'] },
+
+  { id:'g2f01', name:'唐揚げ定食（ライス大盛）', ingredients:['唐揚げ 5個', '白米 200g', '味噌汁 1杯', 'キャベツ'], cal:720, p:38, f:24, c:84, goals:['2'], locations:['揚げ物を食べたい'] },
+  { id:'g2f02', name:'カツ丼', ingredients:['豚カツ 150g', '卵 2個', '白米 180g', '出汁'], cal:750, p:40, f:24, c:88, goals:['2'], locations:['揚げ物を食べたい'] },
+  { id:'g2f03', name:'エビフライ定食（ライス大盛）', ingredients:['エビフライ 4本', '白米 200g', '味噌汁 1杯'], cal:680, p:36, f:20, c:86, goals:['2'], locations:['揚げ物を食べたい'] },
+
+  { id:'g3f01', name:'天ぷらうどん', ingredients:['うどん 1玉', '天ぷら盛り合わせ', '出汁'], cal:560, p:18, f:14, c:84, goals:['3'], locations:['揚げ物を食べたい'] },
+  { id:'g3f02', name:'チキンカツ定食', ingredients:['チキンカツ 150g', '白米 150g', '味噌汁 1杯', 'キャベツ'], cal:620, p:32, f:20, c:76, goals:['3'], locations:['揚げ物を食べたい'] },
+  { id:'g3f03', name:'コロッケ2個＋白米＋味噌汁', ingredients:['コロッケ 2個', '白米 150g', '味噌汁 1杯'], cal:540, p:16, f:18, c:76, goals:['3'], locations:['揚げ物を食べたい'] },
+
+  { id:'g4f01', name:'豆腐カツ＋白米＋味噌汁', ingredients:['豆腐カツ 150g', '白米 120g', '味噌汁 1杯'], cal:440, p:20, f:14, c:54, goals:['4'], locations:['揚げ物を食べたい'] },
+  { id:'g4f02', name:'白身魚フライ定食', ingredients:['白身魚フライ 2枚', '白米 120g', '味噌汁 1杯', 'キャベツ'], cal:460, p:24, f:14, c:54, goals:['4'], locations:['揚げ物を食べたい'] },
+  { id:'g4f03', name:'ちくわ磯部揚げ＋うどん', ingredients:['ちくわ磯部揚げ 3本', 'うどん 1玉', '出汁'], cal:480, p:18, f:12, c:70, goals:['4'], locations:['揚げ物を食べたい'] },
+
+  { id:'g5f01', name:'蒸し鶏＋少量の唐揚げ＋サラダ', ingredients:['蒸し鶏 100g', '唐揚げ 2個', 'サラダ 1皿', '白米 80g'], cal:400, p:30, f:14, c:36, goals:['5'], locations:['揚げ物を食べたい'] },
+  { id:'g5f02', name:'アジフライ1枚＋白米少なめ＋サラダ', ingredients:['アジフライ 1枚', '白米 80g', 'サラダ 1皿', '味噌汁 1杯'], cal:360, p:20, f:12, c:42, goals:['5'], locations:['揚げ物を食べたい'] },
+  { id:'g5f03', name:'海老天2本＋そば', ingredients:['海老天 2本', 'そば 1食', '出汁'], cal:400, p:18, f:10, c:56, goals:['5'], locations:['揚げ物を食べたい'] },
+
+  // 全目的 × お酒を飲みたい
+  { id:'g1a01', name:'枝豆＋鶏ささみ刺し＋豆腐', ingredients:['枝豆 100g', '鶏ささみ 100g', '豆腐 150g'], cal:320, p:36, f:8, c:12, goals:['1'], locations:['お酒を飲みたい'] },
+  { id:'g1a02', name:'刺し身盛り合わせ＋わかめサラダ', ingredients:['刺し身 150g', 'わかめサラダ 1皿'], cal:280, p:30, f:6, c:10, goals:['1'], locations:['お酒を飲みたい'] },
+  { id:'g1a03', name:'焼き鳥（塩）5本＋キャベツ', ingredients:['焼き鳥 塩 5本', 'キャベツ 100g'], cal:300, p:28, f:8, c:14, goals:['1'], locations:['お酒を飲みたい'] },
+
+  { id:'g2a01', name:'焼き鳥（塩）7本＋枝豆＋白米', ingredients:['焼き鳥 塩 7本', '枝豆 100g', '白米 150g'], cal:560, p:42, f:12, c:58, goals:['2'], locations:['お酒を飲みたい'] },
+  { id:'g2a02', name:'牛タン＋白米＋スープ', ingredients:['牛タン 150g', '白米 150g', 'テールスープ'], cal:580, p:36, f:22, c:56, goals:['2'], locations:['お酒を飲みたい'] },
+  { id:'g2a03', name:'馬刺し＋枝豆＋おにぎり2個', ingredients:['馬刺し 100g', '枝豆 100g', 'おにぎり 2個'], cal:520, p:38, f:8, c:64, goals:['2'], locations:['お酒を飲みたい'] },
+
+  { id:'g3a01', name:'焼き鳥盛り合わせ＋おにぎり', ingredients:['焼き鳥 5本', 'おにぎり 1個', '枝豆 80g'], cal:440, p:28, f:12, c:50, goals:['3'], locations:['お酒を飲みたい'] },
+  { id:'g3a02', name:'刺し身＋冷奴＋おにぎり', ingredients:['刺し身 120g', '豆腐 150g', 'おにぎり 1個'], cal:400, p:30, f:8, c:44, goals:['3'], locations:['お酒を飲みたい'] },
+  { id:'g3a03', name:'蒸し鶏＋枝豆＋白米', ingredients:['蒸し鶏 120g', '枝豆 100g', '白米 120g'], cal:420, p:34, f:8, c:46, goals:['3'], locations:['お酒を飲みたい'] },
+
+  { id:'g4a01', name:'湯豆腐＋焼き鳥（塩）3本', ingredients:['豆腐 200g', '焼き鳥 塩 3本', '出汁'], cal:280, p:24, f:8, c:14, goals:['4'], locations:['お酒を飲みたい'] },
+  { id:'g4a02', name:'刺し身（白身中心）＋わかめスープ', ingredients:['白身魚 150g', 'わかめスープ 1杯'], cal:240, p:28, f:4, c:8, goals:['4'], locations:['お酒を飲みたい'] },
+  { id:'g4a03', name:'冷奴＋納豆＋枝豆', ingredients:['豆腐 150g', '納豆 1パック', '枝豆 80g'], cal:260, p:22, f:10, c:14, goals:['4'], locations:['お酒を飲みたい'] },
+
+  { id:'g5a01', name:'サラダチキン＋枝豆＋刺し身', ingredients:['サラダチキン 100g', '枝豆 80g', '刺し身 80g'], cal:280, p:34, f:6, c:10, goals:['5'], locations:['お酒を飲みたい'] },
+  { id:'g5a02', name:'焼き鳥（塩）5本＋サラダ', ingredients:['焼き鳥 塩 5本', 'サラダ 1皿'], cal:280, p:26, f:8, c:14, goals:['5'], locations:['お酒を飲みたい'] },
+  { id:'g5a03', name:'刺し身盛り＋冷奴＋わかめ', ingredients:['刺し身 150g', '豆腐 100g', 'わかめ 20g'], cal:260, p:30, f:6, c:10, goals:['5'], locations:['お酒を飲みたい'] },
+
+  // 全目的 × 間食したい
+  { id:'g1n01', name:'ゆで卵2個＋チーズ1枚', ingredients:['ゆで卵 2個', 'チーズ 1枚'], cal:230, p:18, f:14, c:2, goals:['1'], locations:['間食したい'] },
+  { id:'g1n02', name:'ギリシャヨーグルト＋ナッツ少量', ingredients:['ギリシャヨーグルト 100g', 'ミックスナッツ 20g'], cal:200, p:12, f:10, c:12, goals:['1'], locations:['間食したい'] },
+  { id:'g1n03', name:'サラダチキンバー＋野菜スティック', ingredients:['サラダチキン 80g', '野菜スティック 100g'], cal:150, p:20, f:2, c:8, goals:['1'], locations:['間食したい'] },
+
+  { id:'g2n01', name:'プロテインバー＋バナナ', ingredients:['プロテインバー 1本', 'バナナ 1本'], cal:340, p:22, f:8, c:48, goals:['2'], locations:['間食したい'] },
+  { id:'g2n02', name:'おにぎり2個＋ゆで卵', ingredients:['おにぎり 2個', 'ゆで卵 1個'], cal:440, p:20, f:6, c:72, goals:['2'], locations:['間食したい'] },
+  { id:'g2n03', name:'チーズ2枚＋ナッツ＋バナナ', ingredients:['チーズ 2枚', 'ミックスナッツ 30g', 'バナナ 1本'], cal:360, p:16, f:18, c:36, goals:['2'], locations:['間食したい'] },
+
+  { id:'g3n01', name:'バナナ＋おにぎり1個', ingredients:['バナナ 1本', 'おにぎり 1個'], cal:280, p:6, f:2, c:60, goals:['3'], locations:['間食したい'] },
+  { id:'g3n02', name:'カステラ1切れ＋牛乳', ingredients:['カステラ 1切れ', '牛乳 200ml'], cal:300, p:10, f:8, c:46, goals:['3'], locations:['間食したい'] },
+  { id:'g3n03', name:'ドライフルーツ＋ナッツ', ingredients:['ドライフルーツ 30g', 'ミックスナッツ 20g'], cal:220, p:4, f:10, c:28, goals:['3'], locations:['間食したい'] },
+
+  { id:'g4n01', name:'ヨーグルト＋はちみつ＋バナナ', ingredients:['ヨーグルト 100g', 'はちみつ 10g', 'バナナ 半本'], cal:180, p:4, f:2, c:36, goals:['4'], locations:['間食したい'] },
+  { id:'g4n02', name:'甘酒＋ナッツ少量', ingredients:['甘酒 150ml', 'ミックスナッツ 15g'], cal:180, p:4, f:6, c:26, goals:['4'], locations:['間食したい'] },
+  { id:'g4n03', name:'豆乳＋バナナ', ingredients:['豆乳 200ml', 'バナナ 1本'], cal:220, p:10, f:4, c:36, goals:['4'], locations:['間食したい'] },
+
+  { id:'g5n01', name:'ゆで卵1個＋サラダチキン', ingredients:['ゆで卵 1個', 'サラダチキン 80g'], cal:180, p:24, f:6, c:2, goals:['5'], locations:['間食したい'] },
+  { id:'g5n02', name:'ギリシャヨーグルト＋ベリー', ingredients:['ギリシャヨーグルト 100g', 'ブルーベリー 50g'], cal:140, p:10, f:0, c:18, goals:['5'], locations:['間食したい'] },
+  { id:'g5n03', name:'チーズ1枚＋ナッツ＋野菜スティック', ingredients:['チーズ 1枚', 'ミックスナッツ 20g', '野菜スティック 80g'], cal:180, p:8, f:12, c:8, goals:['5'], locations:['間食したい'] }
 ];
 
 // ============================================================
