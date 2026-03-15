@@ -3095,9 +3095,29 @@ function renderNutritionWithPFC(text, containerDiv) {
       let rankClass = 'nutrition-rank third';
       let rankText = 'OK CHOICE';
       if (cardCount === 0) { cardClass = 'nutrition-card'; rankClass = 'nutrition-rank'; rankText = '1ST CHOICE'; }
-      else if (cardCount === 2) { cardClass = 'nutrition-card second'; rankClass = 'nutrition-rank second'; rankText = '2ND CHOICE'; }
+      else if (cardCount === 1) { cardClass = 'nutrition-card second'; rankClass = 'nutrition-rank second'; rankText = '2ND CHOICE'; }
       const nameText = trimmed.replace(/^▼\s*(第一候補:|第二候補:|これならOK:)?\s*/, '').trim();
       html += `<div class="${cardClass}"><div class="${rankClass}">${rankText}</div><div class="nutrition-name">${escapeHtml(nameText)}</div>`;
+      continue;
+    }
+
+    if (inCandidate && trimmed.startsWith('食材:')) {
+      html += `<div class="nutrition-ingredient" style="font-size:11px;color:#666;margin-bottom:4px;">${escapeHtml(trimmed)}</div>`;
+      continue;
+    }
+
+    if (inCandidate && trimmed.startsWith('栄養:')) {
+      const m = trimmed.match(/約(\d+)kcal[｜|]P(\d+)g\((\d+)%\)\s*F(\d+)g\((\d+)%\)\s*C(\d+)g\((\d+)%\)/);
+      if (m) {
+        html += `<div class="pfc-line">`;
+        html += `<span class="pfc-cal">${m[1]}kcal</span>`;
+        html += `<span class="pfc-p">P${m[2]}g ${m[3]}%</span>`;
+        html += `<span class="pfc-f">F${m[4]}g ${m[5]}%</span>`;
+        html += `<span class="pfc-c">C${m[6]}g ${m[7]}%</span>`;
+        html += `</div>`;
+      } else {
+        html += `<div style="font-size:11px;color:#666;margin-bottom:4px;">${escapeHtml(trimmed)}</div>`;
+      }
       continue;
     }
 
