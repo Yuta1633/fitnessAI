@@ -1332,13 +1332,6 @@ function createSubButtons(goal, method) {
     btn.innerHTML = `<span class="btn-text">${escapeHtml(opt)}</span><span class="btn-arrow">→</span>`;
     btn.addEventListener('click', () => {
       selectedSub = opt;
-      conversationHistory = [];
-      questionAnswers = [];
-      currentQuestionIndex = 0;
-      trainingPhase = 'base';
-      baseAnswers = [];
-      chatHistory.innerHTML = '';
-      chatInputArea.classList.add('hidden');
       highlightButton(subSection, btn);
       generateResponse();
     });
@@ -1457,7 +1450,7 @@ async function generateResponse() {
     .from('blocked_users')
     .select('user_id')
     .eq('user_id', session.user.id)
-    .maybeSingle();
+    .single();
 
   if (blockData) {
     alert('ご利用が制限されています。管理者にお問い合わせください。');
@@ -1602,14 +1595,6 @@ methodSection.querySelectorAll('button').forEach(btn => {
   btn.addEventListener('click', () => {
     selectedMethod = btn.dataset.method;
     selectedSub    = null;
-    conversationHistory = [];
-    questionAnswers = [];
-    currentQuestionIndex = 0;
-    trainingPhase = 'base';
-    baseAnswers = [];
-    chatHistory.innerHTML = '';
-    chatInputArea.classList.add('hidden');
-    resetBtn.classList.add('hidden');
     highlightButton(methodSection, btn);
     updateStepIndicator(3);
     createSubButtons(selectedGoal, selectedMethod);
