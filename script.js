@@ -1332,6 +1332,13 @@ function createSubButtons(goal, method) {
     btn.innerHTML = `<span class="btn-text">${escapeHtml(opt)}</span><span class="btn-arrow">→</span>`;
     btn.addEventListener('click', () => {
       selectedSub = opt;
+      conversationHistory = [];
+      questionAnswers = [];
+      currentQuestionIndex = 0;
+      trainingPhase = 'base';
+      baseAnswers = [];
+      chatHistory.innerHTML = '';
+      chatInputArea.classList.add('hidden');
       highlightButton(subSection, btn);
       generateResponse();
     });
@@ -1575,9 +1582,14 @@ goalSection.querySelectorAll('button').forEach(btn => {
     selectedGoal   = btn.dataset.goal;
     selectedMethod = null;
     selectedSub    = null;
+    conversationHistory = [];
     questionAnswers = [];
     currentQuestionIndex = 0;
-    conversationHistory = [];
+    trainingPhase = 'base';
+    baseAnswers = [];
+    chatHistory.innerHTML = '';
+    chatInputArea.classList.add('hidden');
+    resetBtn.classList.add('hidden');
     highlightButton(goalSection, btn);
     updateStepIndicator(2);
     showSection(methodSection);
@@ -1590,6 +1602,14 @@ methodSection.querySelectorAll('button').forEach(btn => {
   btn.addEventListener('click', () => {
     selectedMethod = btn.dataset.method;
     selectedSub    = null;
+    conversationHistory = [];
+    questionAnswers = [];
+    currentQuestionIndex = 0;
+    trainingPhase = 'base';
+    baseAnswers = [];
+    chatHistory.innerHTML = '';
+    chatInputArea.classList.add('hidden');
+    resetBtn.classList.add('hidden');
     highlightButton(methodSection, btn);
     updateStepIndicator(3);
     createSubButtons(selectedGoal, selectedMethod);
