@@ -3224,18 +3224,10 @@ loadDashboard = async function() {
 // チェックインゲート
 // ============================================================
 function showAfterCheckin() {
-  const existing = getTodayCheckin();
   const checkinGate = document.getElementById('checkin-gate');
-
-  if (existing) {
-    if (checkinGate) checkinGate.style.display = 'none';
-    mainContent.style.display = 'block';
-    loadDashboard();
-    renderCheckinSummary(existing);
-  } else {
-    mainContent.style.display = 'none';
-    if (checkinGate) checkinGate.style.display = 'flex';
-  }
+  if (checkinGate) checkinGate.style.display = 'none';
+  mainContent.style.display = 'block';
+  loadDashboard();
 }
 
 function renderCheckinSummary(checkin) {
