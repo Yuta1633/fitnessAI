@@ -556,8 +556,25 @@ async function showQuestionStep(questions) {
       const proteinPerMeal = Math.round(proteinFromSupp / 3);
       const adjustedP = Math.max(10, target.p - proteinPerMeal);
 
-      // MEAL_DBから3品選ぶ（moodを追加）
-      const meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood);
+      // ── 被り防止: LocalStorageから表示済みIDを取得 ──
+      const _comboKey = userKey(`shown_meals_${selectedGoal}_${encodeURIComponent(location)}_${encodeURIComponent(mood)}`);
+      let _shownIds = JSON.parse(localStorage.getItem(_comboKey) || '[]');
+
+      // 除外して3品選択。結果が0件なら全件リセットして再取得
+      let meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, _shownIds);
+      if (meals.length === 0) {
+        // 全候補を出し切った → リセット
+        _shownIds = [];
+        localStorage.removeItem(_comboKey);
+        meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, []);
+        console.log('MEAL_DB: 全候補を出し切ったためリセット', { selectedGoal, location, mood });
+      }
+
+      // 今回表示したIDを保存
+      if (meals.length > 0) {
+        const _newShownIds = [...new Set([..._shownIds, ...meals.map(m => m.id)])];
+        localStorage.setItem(_comboKey, JSON.stringify(_newShownIds));
+      }
 
       if (meals.length === 0) {
         console.log('MEAL_DB: 該当なし', { selectedGoal, location, mood });
@@ -1196,7 +1213,6 @@ function parseOptions(text) {
   }
 
   // 全行が短い（選択肢らしい）場合のみオプション扱い
-  // 長い行が1つでもあればコンテンツ（レシピ手順等）とみなす
   const MAX_OPTION_LENGTH = 40;
   const allShort = optionIndices.every(idx => lines[idx].trim().length <= MAX_OPTION_LENGTH);
 
@@ -1849,14 +1865,12 @@ async function loadDashboard() {
 }
 
 async function loadGoal(userId) {
-  // target_dateカラムがない環境にも対応
   let { data, error } = await supabase
     .from('user_goals')
     .select('goal_weight, goal_body_fat, target_date')
     .eq('user_id', userId)
     .maybeSingle();
   if (error) {
-    // target_dateカラムがなければフォールバック
     const res = await supabase
       .from('user_goals')
       .select('goal_weight, goal_body_fat')
@@ -2629,7 +2643,6 @@ function showNameInputModal(userId) {
 
   skipBtn.addEventListener('click', closeOnboarding);
 
-  // ログイン後に初回のみ表示
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session && !localStorage.getItem(userKey('fitai_onboarding_done'))) {
       modal.style.display = 'flex';
@@ -2654,7 +2667,6 @@ function hideDashboardSkeleton() {
   if (dashboard) dashboard.style.display = 'block';
 }
 
-// loadDashboardの先頭でスケルトン表示するようにパッチ
 const _originalLoadDashboard = loadDashboard;
 loadDashboard = async function() {
   showDashboardSkeleton();
@@ -2708,7 +2720,6 @@ async function loadChatHistoryList() {
   }).join('');
 }
 
-// チャット履歴の詳細表示
 window.showHistoryDetail = async function(chatId) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
@@ -2771,7 +2782,6 @@ async function loadProgressChart() {
   const chartCard = document.getElementById('chart-card');
   if (!chartCard) return;
 
-  // 体重・体脂肪率データ
   const { data: bodyRecords } = await supabase
     .from('body_records')
     .select('weight, body_fat, recorded_at, created_at')
@@ -2779,7 +2789,6 @@ async function loadProgressChart() {
     .order('created_at', { ascending: true })
     .limit(90);
 
-  // 利用頻度データ
   const { data: usageData } = await supabase
     .from('usage_limits')
     .select('date, count')
@@ -2941,22 +2950,19 @@ function updateStreamingMessage(div, text) {
 function finalizeStreamingMessage(div, text) {
   div.classList.remove('streaming-cursor');
 
-  // トレーニングプランの場合は構造化レンダリング
   if (isTrainingPlan(text)) {
     div.innerHTML = renderTrainingContent(text);
     chatHistory.scrollTop = chatHistory.scrollHeight;
     return;
   }
 
-  // 栄養提案の場合: [ITEMS:]タグをパースしてPFCバッジに置換
   const isNutrition = isNutritionResponse(text);
   let processedText = text;
 
   if (isNutrition && window.NutritionDB) {
-    // まずオプションを元テキストから抽出、その後PFCレンダリング
     const { cleanText: textWithoutOptions, options } = parseOptions(text);
     processedText = renderNutritionWithPFC(textWithoutOptions);
-    div.innerHTML = processedText; // すでにHTMLが含まれている
+    div.innerHTML = processedText;
 
     let finalOptions = options;
     if (finalOptions.length === 0) {
@@ -2988,7 +2994,6 @@ function finalizeStreamingMessage(div, text) {
   const { cleanText, options } = parseOptions(text);
   div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
 
-  // 選択肢ボタンを表示（AIが出力した場合 or 栄養提案の場合にレシピボタンを強制追加）
   let finalOptions = options;
   if (finalOptions.length === 0 && isNutrition) {
     finalOptions = [
@@ -3016,40 +3021,29 @@ function finalizeStreamingMessage(div, text) {
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
-/**
- * 栄養提案テキストの「・食材 量（調理法）」行を解析し、
- * 候補ごとにPFCをDB計算して「約○kcal｜P○g F○g C○g」で表示
- */
 function renderNutritionWithPFC(text, containerDiv) {
   const NDB = window.NutritionDB;
-  // AIが直接出力してしまったPFC数値行を除去
   text = text.replace(/[（(]\s*(?:全体の)?目安[:：]?\s*約?\d+.*?kcal.*?[）)]/g, '');
   text = text.replace(/[（(]\s*約\d+kcal[｜|]P\d+g\s*F\d+g\s*C\d+g\s*[）)]/g, '');
-  // 旧形式の[ITEMS:]タグも除去
   text = text.replace(/\[ITEMS:[^\]]*\]/g, '');
   let html = '';
 
-  // テキストを行ごとに処理し、「・食材 量（調理法）」をパース
   const lines = text.split('\n');
-  // 食材行パターン: ・食材名 量（調理法）or ・食材名 量
   const foodLinePattern = /^・(.+?)\s+([\d./半]+\s*(?:g|ml|切れ?|個|本|杯|枚|パック|缶|皿|食|人前|玉|丁|粒|[大小]さじ[\d./]*)?)\s*(?:[（(]([^）)]+)[）)])?$/;
   const foodLinePattern2 = /^・(.+?)\s+([大小]さじ[\d./]+)\s*(?:[（(]([^）)]+)[）)])?$/;
-  let currentItems = [];      // 現在の候補の食材リスト
-  let currentCookingMap = {}; // index → 調理法名
-  let inCandidate = false;    // 候補セクション内か
+  let currentItems = [];
+  let currentCookingMap = {};
+  let inCandidate = false;
 
   function flushCandidate() {
     if (currentItems.length === 0) return;
-    // PFC計算（contextTextなしで呼び、旧detectCookingOilAdjustmentを使わない）
     const pfc = NDB.calculateItemsPFC(currentItems);
-    // 調理法による補正（各食材の調理法を個別に適用）
     let cookingFAdj = 0, cookingCalAdj = 0;
     for (let i = 0; i < currentItems.length; i++) {
       const method = currentCookingMap[i];
       if (!method) continue;
       const cm = NDB.COOKING_METHODS[method];
       if (!cm) continue;
-      // この食材のカロリーを取得して補正
       const detail = pfc.details && pfc.details[i];
       if (detail) {
         cookingCalAdj += detail.cal * (cm.calMult - 1.0);
@@ -3061,16 +3055,14 @@ function renderNutritionWithPFC(text, containerDiv) {
     const totalP = pfc.p;
     const totalC = pfc.c;
 
-    // PFC比率を計算（P*4+F*9+C*4ベースで合計100%を保証）
     const pfcCal = totalP * 4 + totalF * 9 + totalC * 4;
     let pPct = 0, fPct = 0, cPct = 0;
     if (pfcCal > 0) {
       pPct = Math.round((totalP * 4 / pfcCal) * 100);
       fPct = Math.round((totalF * 9 / pfcCal) * 100);
-      cPct = 100 - pPct - fPct; // 残りをCに割り当てて合計100%を保証
+      cPct = 100 - pPct - fPct;
     }
 
-    // PFC行を挿入
     html += `<div class="pfc-line">`;
     html += `<span class="pfc-cal">約${totalCal}kcal</span>`;
     html += `<span class="pfc-sep">｜</span>`;
@@ -3082,7 +3074,7 @@ function renderNutritionWithPFC(text, containerDiv) {
     if (pfc.estimated && pfc.estimated.length > 0) {
       html += `<div class="pfc-estimated">※推定含む: ${escapeHtml(pfc.estimated.join(', '))}</div>`;
     }
-    html += `</div>`; // nutrition-card閉じ
+    html += `</div>`;
     currentItems = [];
     currentCookingMap = {};
   }
@@ -3090,7 +3082,6 @@ function renderNutritionWithPFC(text, containerDiv) {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // 候補ヘッダー検出（▼ で始まる行）
     if (/^▼\s/.test(trimmed)) {
       if (inCandidate) flushCandidate();
       inCandidate = true;
@@ -3125,9 +3116,7 @@ function renderNutritionWithPFC(text, containerDiv) {
       continue;
     }
 
-    // 食材行の検出
     if (inCandidate && trimmed.startsWith('・')) {
-      // パターン2: 大さじ/小さじ優先
       let match = trimmed.match(foodLinePattern2);
       if (!match) {
         match = trimmed.match(foodLinePattern);
@@ -3146,8 +3135,6 @@ function renderNutritionWithPFC(text, containerDiv) {
       }
     }
 
-    // 候補セクション内で食材行以外が来たらPFCを出力
-    // （説明文、空行、【セクション、番号リスト等）
     if (inCandidate && currentItems.length > 0 && !trimmed.startsWith('・')) {
       flushCandidate();
       if (/^【/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
@@ -3176,7 +3163,6 @@ function renderNutritionWithPFC(text, containerDiv) {
     html += escapeHtml(line) + '<br>';
   }
 
-  // 最後の候補のPFC出力
   flushCandidate();
 
   return html;
@@ -3199,7 +3185,6 @@ function isNutritionResponse(text) {
   const closeBtn = document.getElementById('notification-close-btn');
   if (!banner || !enableBtn || !closeBtn) return;
 
-  // PWA対応 + 通知未許可 + まだ閉じていない場合に表示
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session && 'Notification' in window && Notification.permission === 'default' && !localStorage.getItem(userKey('fitai_notif_dismissed'))) {
       setTimeout(() => banner.classList.add('show'), 3000);
@@ -3230,10 +3215,8 @@ function isNutritionResponse(text) {
 const _originalLoadDashboard2 = loadDashboard;
 loadDashboard = async function() {
   await _originalLoadDashboard2();
-  // 非同期で追加データを読み込み
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
-  // ユーザーコンテキストをプリロード
   buildUserContext().catch(console.error);
 };
 
@@ -3245,13 +3228,11 @@ function showAfterCheckin() {
   const checkinGate = document.getElementById('checkin-gate');
 
   if (existing) {
-    // 今日チェックイン済み → そのままメイン表示
     if (checkinGate) checkinGate.style.display = 'none';
     mainContent.style.display = 'block';
     loadDashboard();
     renderCheckinSummary(existing);
   } else {
-    // 未チェックイン → ゲート表示
     mainContent.style.display = 'none';
     if (checkinGate) checkinGate.style.display = 'flex';
   }
@@ -3283,7 +3264,6 @@ function openCheckinForEdit() {
   const checkinGate = document.getElementById('checkin-gate');
   if (!checkinGate) return;
 
-  // 既存の値をラジオボタンに復元
   const existing = getTodayCheckin();
   if (existing) {
     if (existing.focus) {
@@ -3326,12 +3306,9 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   saveTodayCheckin(checkinData);
   cachedUserContext = null;
 
-  // ゲートを閉じてメインを表示
   const checkinGate = document.getElementById('checkin-gate');
   if (checkinGate) checkinGate.style.display = 'none';
   mainContent.style.display = 'block';
   loadDashboard();
   renderCheckinSummary(checkinData);
 });
-
-
