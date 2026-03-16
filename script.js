@@ -1425,7 +1425,7 @@ async function generateResponse() {
     .from('blocked_users')
     .select('user_id')
     .eq('user_id', session.user.id)
-    .single();
+    .maybeSingle();
 
   if (blockData) {
     alert('ご利用が制限されています。管理者にお問い合わせください。');
