@@ -561,12 +561,12 @@ async function showQuestionStep(questions) {
       let _shownIds = JSON.parse(localStorage.getItem(_comboKey) || '[]');
 
       // 除外して3品選択。結果が0件なら全件リセットして再取得
-      let meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, _shownIds);
+      let meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay);
       if (meals.length === 0) {
         // 全候補を出し切った → リセット
         _shownIds = [];
         localStorage.removeItem(_comboKey);
-        meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, []);
+        meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, [], timeOfDay);
         console.log('MEAL_DB: 全候補を出し切ったためリセット', { selectedGoal, location, mood });
       }
 
@@ -650,44 +650,17 @@ async function showQuestionStep(questions) {
           }
       }
 
-      // 食材量をスケーリングする関数
-      function scaleMeal(m, targetCal) {
-        const ratio = targetCal / m.cal;
-
-        // 食材の数値をスケーリング
-        const scaledIngredients = m.ingredients.map(ing => {
-          // g/ml → 5g単位で丸める
-          return ing.replace(/([\d.]+)\s*(g|ml)/g, (_, num, unit) => {
-            const scaled = Math.round(parseFloat(num) * ratio / 5) * 5;
-            return `${Math.max(5, scaled)}${unit}`;
-          // 個/本/杯/枚/パック/缶/皿/食/玉 → 整数（最低1）
-          }).replace(/([\d.]+)\s*(個|本|杯|枚|パック|缶|皿|食|玉|切れ)/g, (_, num, unit) => {
-            const scaled = Math.max(1, Math.round(parseFloat(num) * ratio));
-            return `${scaled}${unit}`;
-          });
-        });
-
-        // PFCをスケーリング
-        const scaledCal = Math.round(m.cal * ratio);
-        const scaledP = Math.round(m.p * ratio);
-        const scaledF = Math.round(m.f * ratio);
-        const scaledC = Math.round(m.c * ratio);
-
-        return { ...m, ingredients: scaledIngredients, cal: scaledCal, p: scaledP, f: scaledF, c: scaledC };
-      }
-
       // mealInfoを生成してプロンプトに追加
       if (meals.length > 0) {
         const mealInfo = meals.map((m, i) => {
           const label = i === 0 ? '第一候補' : i === 1 ? '第二候補' : 'これならOK';
-          const scaled = scaleMeal(m, target.cal);
-          const pfcCal = scaled.p * 4 + scaled.f * 9 + scaled.c * 4;
-          const pPct = pfcCal > 0 ? Math.round((scaled.p * 4 / pfcCal) * 100) : 0;
-          const fPct = pfcCal > 0 ? Math.round((scaled.f * 9 / pfcCal) * 100) : 0;
+          const pfcCal = m.p * 4 + m.f * 9 + m.c * 4;
+          const pPct = pfcCal > 0 ? Math.round((m.p * 4 / pfcCal) * 100) : 0;
+          const fPct = pfcCal > 0 ? Math.round((m.f * 9 / pfcCal) * 100) : 0;
           const cPct = 100 - pPct - fPct;
-          return `▼ ${label}: ${scaled.name}
-食材: ${scaled.ingredients.join('、')}
-栄養: 約${scaled.cal}kcal｜P${scaled.p}g(${pPct}%) F${scaled.f}g(${fPct}%) C${scaled.c}g(${cPct}%)`;
+          return `▼ ${label}: ${m.name}
+食材: ${m.ingredients.join('、')}
+栄養: 約${m.cal}kcal｜P${m.p}g(${pPct}%) F${m.f}g(${fPct}%) C${m.c}g(${cPct}%)`;
         }).join('\n\n');
 
         conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
@@ -3251,10 +3224,18 @@ loadDashboard = async function() {
 // チェックインゲート
 // ============================================================
 function showAfterCheckin() {
+  const existing = getTodayCheckin();
   const checkinGate = document.getElementById('checkin-gate');
-  if (checkinGate) checkinGate.style.display = 'none';
-  mainContent.style.display = 'block';
-  loadDashboard();
+
+  if (existing) {
+    if (checkinGate) checkinGate.style.display = 'none';
+    mainContent.style.display = 'block';
+    loadDashboard();
+    renderCheckinSummary(existing);
+  } else {
+    mainContent.style.display = 'none';
+    if (checkinGate) checkinGate.style.display = 'flex';
+  }
 }
 
 function renderCheckinSummary(checkin) {
