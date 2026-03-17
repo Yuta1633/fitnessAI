@@ -899,6 +899,8 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
     if (mood && mood !== '特になし') {
       return meal.mood === mood;
     }
+    // 特になし・その他のとき、お酒moodのメニューは除外
+    if (meal.mood === 'お酒を飲みたい') return false;
     return meal.locations.includes(location);
   });
 
