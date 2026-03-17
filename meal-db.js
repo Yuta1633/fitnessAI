@@ -890,7 +890,7 @@ const MEAL_DB = [
 // PFCスコアリングで目標に近い3品を選ぶ関数
 // ============================================================
 
-function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0) {
+function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null) {
   const filtered = MEAL_DB.filter(meal => {
     if (!meal.goals.includes(goal)) return false;
     if (excludeIds.includes(meal.id)) return false;
@@ -937,6 +937,22 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       if (meal.cal > 400) score += 20;
     }
     // 昼・夕方はペナルティなし（代謝ピーク帯）
+
+    // ── sub別スコア調整 ──
+    if (subWeight) {
+      // P優先: 高タンパクメニューにボーナス
+      if (subWeight.pBonus && mealPPct > 30) score -= subWeight.pBonus;
+      // F抑制: 高脂質にペナルティ
+      if (subWeight.fPenalty && mealFPct > 25) score += subWeight.fPenalty;
+      // C優先: 高炭水化物メニューにボーナス
+      if (subWeight.cBonus && mealCPct > 50) score -= subWeight.cBonus;
+      // C抑制: 高炭水化物にペナルティ
+      if (subWeight.cPenalty && mealCPct > 55) score += subWeight.cPenalty;
+      // 高カロリーボーナス（増量）
+      if (subWeight.calBonus && meal.cal > targetCal) score -= subWeight.calBonus;
+      // 低カロリーボーナス（減量）
+      if (subWeight.calPenalty && meal.cal > targetCal * 1.1) score += subWeight.calPenalty;
+    }
 
     return { meal, score };
   });
