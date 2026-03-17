@@ -857,7 +857,9 @@ async function showQuestionStep(questions) {
               return `${Math.max(5, scaled)}${unit}`;
             })
             .replace(/([\d.]+)\s*(個|本|杯|枚|パック|缶|皿|食|玉|切れ)/g, (_, num, unit) => {
-              const scaled = Math.max(1, Math.round(parseFloat(num) * ratio));
+              const original = parseFloat(num);
+              // 個数系は元の数+1まで（2本→最大3本、1食→最大2食）
+              const scaled = Math.min(original + 1, Math.max(1, Math.round(original * ratio)));
               return `${scaled}${unit}`;
             });
         });
