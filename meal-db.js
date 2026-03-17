@@ -906,9 +906,16 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
 
   if (filtered.length === 0) return [];
 
-  const targetPPct = (targetP * 4) / targetCal * 100;
-  const targetFPct = (targetF * 9) / targetCal * 100;
-  const targetCPct = (targetC * 4) / targetCal * 100;
+  // お酒moodの場合はPFC目標比率を調整（P高すぎ・C低すぎを防ぐ）
+  // お酒自体に糖質が含まれるため、P35% F25% C40%を目標にシフト
+  let targetPPct = (targetP * 4) / targetCal * 100;
+  let targetFPct = (targetF * 9) / targetCal * 100;
+  let targetCPct = (targetC * 4) / targetCal * 100;
+  if (mood === 'お酒を飲みたい') {
+    targetPPct = Math.min(targetPPct, 38);
+    targetCPct = Math.max(targetCPct, 35);
+    targetFPct = Math.min(targetFPct, 27);
+  }
 
   // 重いメニュー判定用キーワード
   const heavyWords = ['ラーメン', 'カレー', 'カツ', 'コロッケ', '唐揚げ', 'から揚げ', 'フライ', '天丼', '焼肉', 'こってり', '二郎'];
