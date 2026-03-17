@@ -404,6 +404,15 @@ const QUESTIONS = {
       ]
     },
     {
+      label: '③-2 何を飲みますか？（お酒を飲みたい場合のみ）',
+      options: [
+        'ビール（350ml）', 'ハイボール・チューハイ（350ml）',
+        '日本酒（180ml・1合）', 'ワイン（200ml）',
+        '焼酎（100ml）', 'ウイスキー（60ml）'
+      ],
+      conditionalOn: 'お酒を飲みたい'
+    },
+    {
       label: '④ プロテインは飲んでいますか？',
       options: [
         '飲んでいない',
@@ -506,17 +515,32 @@ function addOtherInput(btnGroup, div, onSubmit) {
 async function showQuestionStep(questions) {
   if (currentQuestionIndex >= questions.length) {
     const summary = questionAnswers
-      .map((ans, i) => `${questions[i].label} → ${ans}`)
+      .map((ans, i) => ans !== null ? `${questions[i].label} → ${ans}` : null)
+      .filter(Boolean)
       .join('\n');
     addMessage('user', summary);
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
-      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[2] === 'お酒を飲みたい' ? '夜' : questionAnswers[0];   // STEP1: 時間帯（間食→間食、お酒→夜に強制）
-      const location = questionAnswers[1];    // STEP2: 場所
-      const mood = questionAnswers[2];        // STEP3: 気分
-      const proteinSupp = questionAnswers[3]; // STEP4: プロテイン
-      const hunger = questionAnswers[4];      // STEP5: 空腹感
+      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[2] === 'お酒を飲みたい' ? '夜' : questionAnswers[0];
+      const location = questionAnswers[1];
+      const mood = questionAnswers[2];
+      // お酒設問はconditional（インデックス3）: nullの場合はスキップされた
+      const sakeChoice = questionAnswers[3] !== null ? questionAnswers[3] : null;
+      const proteinSupp = questionAnswers[4];
+      const hunger = questionAnswers[5];
+
+      // お酒のカロリーと種類別調整
+      const SAKE_INFO = {
+        'ビール（350ml）':           { cal: 140, cPenalty: 8,  note: 'ビール350ml（純アルコール14g・糖質12g）。プリン体を考慮し高タンパク低脂質の食事を。' },
+        'ハイボール・チューハイ（350ml）': { cal: 80,  cPenalty: 0,  note: 'ハイボール350ml（純アルコール14g）。低カロリーで食事のバランスが取りやすい。' },
+        '日本酒（180ml・1合）':       { cal: 190, cPenalty: 12, note: '日本酒1合（純アルコール22g・糖質14g）。糖質が多いため食事の炭水化物を控えること。' },
+        'ワイン（200ml）':            { cal: 150, fPenalty: 8,  note: 'ワイン200ml（純アルコール20g）。アルコールが脂肪酸化を阻害するため食事の脂質を控えること。' },
+        '焼酎（100ml）':              { cal: 100, cPenalty: 10, note: '焼酎100ml（純アルコール20g・糖質0g）。糖質ゼロなので食事でも低糖質が推奨される。' },
+        'ウイスキー（60ml）':          { cal: 130, cPenalty: 10, note: 'ウイスキー60ml（純アルコール20g・糖質0g）。蒸留酒なので食事は低糖質・高タンパクを。' },
+      };
+      const sakeInfo = sakeChoice ? SAKE_INFO[sakeChoice] : null;
+      const sakeCal = sakeInfo ? sakeInfo.cal : 0;
 
       // プロテイン補給量を計算
       let proteinFromSupp = 0;
@@ -555,6 +579,12 @@ async function showQuestionStep(questions) {
       // プロテイン分を1食あたりに按分して差し引く
       const proteinPerMeal = Math.round(proteinFromSupp / 3);
       const adjustedP = Math.max(10, target.p - proteinPerMeal);
+
+      // お酒カロリーを食事ターゲットから差し引く
+      if (sakeCal > 0) {
+        target.cal = Math.max(100, target.cal - sakeCal);
+        target.c = Math.max(5, Math.round(target.c * (target.cal / (target.cal + sakeCal))));
+      }
 
       // ── 被り防止: LocalStorageから表示済みIDを取得 ──
       const _comboKey = userKey(`shown_meals_${selectedGoal}_${encodeURIComponent(location)}_${encodeURIComponent(mood)}`);
@@ -621,6 +651,15 @@ async function showQuestionStep(questions) {
         '特になし': null,
       };
       const _subWeight = SUB_WEIGHT_MAP[selectedSub] || null;
+
+      // お酒の種類に応じてsubWeightをマージ
+      if (sakeInfo) {
+        const sakeWeight = {};
+        if (sakeInfo.cPenalty) sakeWeight.cPenalty = sakeInfo.cPenalty;
+        if (sakeInfo.fPenalty) sakeWeight.fPenalty = sakeInfo.fPenalty;
+        Object.assign(_subWeight || {}, sakeWeight);
+        if (!_subWeight) Object.assign({}, sakeWeight);
+      }
 
       let meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay, _proteinWeight, _subWeight);
       if (meals.length === 0) {
@@ -830,7 +869,10 @@ async function showQuestionStep(questions) {
 栄養: 約${scaled.cal}kcal｜P${scaled.p}g(${pPct}%) F${scaled.f}g(${fPct}%) C${scaled.c}g(${cPct}%)`;
         }).join('\n\n');
 
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・目的・目標体重・体脂肪率の矛盾指摘・確認・質問は一切禁止。ユーザーの選択をそのまま受け入れて提案すること\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
+        const sakeText = sakeInfo
+          ? `\nお酒:「${sakeChoice}」（${sakeInfo.cal}kcal）→ 食事カロリーから差し引き済み。${sakeInfo.note}`
+          : '';
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）${sakeText}\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・目的・目標体重・体脂肪率の矛盾指摘・確認・質問は一切禁止。ユーザーの選択をそのまま受け入れて提案すること\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
       }
     }
 
@@ -904,6 +946,19 @@ async function showQuestionStep(questions) {
   }
 
   const q = questions[currentQuestionIndex];
+
+  // conditionalOn: 特定の回答のときだけ表示する設問
+  if (q.conditionalOn) {
+    const prevAnswer = questionAnswers[currentQuestionIndex - 1];
+    if (prevAnswer !== q.conditionalOn) {
+      // スキップ: nullをpushして次へ
+      questionAnswers.push(null);
+      currentQuestionIndex++;
+      showQuestionStep(questions);
+      return;
+    }
+  }
+
   const div = document.createElement('div');
   div.className = 'chat-message assistant';
 

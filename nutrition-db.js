@@ -521,15 +521,15 @@ const GOAL_COEFFICIENTS = {
 
 // 目的別・時間帯別の配分率（科学的根拠ベース）
 const TIME_DISTRIBUTION = {
-  // ① 減量：朝食重視（Jakubowicz et al. 2013）、夜は抑えめ（Garaulet et al. 2013）
+  // ① 減量：朝食重視（Jakubowicz et al. 2013）、夜は抑えめ
   '1': {
-    '朝':   { cal: 0.35, p: 0.35, f: 0.30, c: 0.40 },
+    '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
     '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-    '夕方': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 },
+    '夕方': { cal: 0.15, p: 0.15, f: 0.15, c: 0.15 },
     '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.10 },
     '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
   },
-  // ② 増量：均等分散（Areta et al. 2013）、就寝前多め（Res et al. 2012）
+  // ② 増量：均等分散（Areta et al. 2013）、就寝前多め
   '2': {
     '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
     '昼':   { cal: 0.30, p: 0.30, f: 0.30, c: 0.30 },
@@ -537,15 +537,15 @@ const TIME_DISTRIBUTION = {
     '夜':   { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
     '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
   },
-  // ③ 体力向上：運動前後の炭水化物重視（Burke et al. 2011）
+  // ③ 体力向上：炭水化物重視（Burke et al. 2011）
   '3': {
     '朝':   { cal: 0.30, p: 0.25, f: 0.25, c: 0.35 },
     '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.40 },
-    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.15 },
-    '夜':   { cal: 0.10, p: 0.15, f: 0.10, c: 0.05 },
+    '夕方': { cal: 0.15, p: 0.15, f: 0.15, c: 0.15 },
+    '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.05 },
     '間食': { cal: 0.05, p: 0.10, f: 0.10, c: 0.05 }
   },
-  // ④ 不調改善：消化負担を分散、夜は消化に優しく
+  // ④ 不調改善：消化負担を分散
   '4': {
     '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
     '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
@@ -553,7 +553,7 @@ const TIME_DISTRIBUTION = {
     '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.15 },
     '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
   },
-  // ⑤ 体型を整えたい：減量寄りだが筋維持も考慮
+  // ⑤ 体型を整えたい：減量寄りだが筋維持
   '5': {
     '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
     '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
@@ -561,15 +561,6 @@ const TIME_DISTRIBUTION = {
     '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.10 },
     '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
   }
-};
-
-// デフォルト（goalNumが未指定の場合）
-const TIME_DISTRIBUTION_DEFAULT = {
-  '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
-  '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-  '夕方': { cal: 0.20, p: 0.25, f: 0.20, c: 0.20 },
-  '夜':   { cal: 0.10, p: 0.10, f: 0.15, c: 0.05 },
-  '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
 };
 
 const HUNGER_ADJUSTMENT = {
@@ -596,9 +587,8 @@ function calculateMealTarget(params) {
   const { weight, goalNum, currentBF, targetBF, timeOfDay, hunger } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
-  // 目的別の時間帯配分を使用
-  const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION_DEFAULT;
-  const timeDist = goalDist[timeOfDay] || goalDist['昼'] || TIME_DISTRIBUTION_DEFAULT['昼'];
+  const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
+  const timeDist = goalDist[timeOfDay] || goalDist['昼'];
 
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
 
