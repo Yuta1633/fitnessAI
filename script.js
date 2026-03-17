@@ -536,6 +536,10 @@ async function showQuestionStep(questions) {
       if (location === '外食にしたい' && mood === '間食したい') location = 'コンビニ';
       // お弁当×お酒は家扱い
       if (location === 'お弁当を作る' && mood === 'お酒を飲みたい') location = '家で食べる';
+      // お弁当×揚げ物・時短は家扱い（お弁当に対応メニューがないため）
+      if (location === 'お弁当を作る' && (mood === '揚げ物を食べたい' || mood === '食べる時間があまりない')) location = '家で食べる';
+      // 間食時間帯×時短はコンビニ扱い（お弁当を作る間食はない）
+      if (_rawTime === '間食' && mood === '食べる時間があまりない' && location === 'お弁当を作る') location = 'コンビニ';
       // お酒設問はconditional（インデックス3）: nullの場合はスキップされた
       const sakeChoice = questionAnswers[3] !== null ? questionAnswers[3] : null;
       const proteinSupp = questionAnswers[4];
