@@ -602,9 +602,7 @@ function calculateMealTarget(params) {
   let mealF = dailyF * timeDist.f;
   let mealC = dailyC * timeDist.c;
 
-  mealCal = mealCal * hungerMult;
-  mealF = mealF * hungerMult;
-  mealC = mealC * hungerMult;
+  // 空腹感はメニュー選択スコアリングで反映（カロリーは体格・目的で固定）
 
   return {
     cal: Math.round(mealCal),

@@ -893,7 +893,7 @@ const MEAL_DB = [
 // PFCスコアリングで目標に近い3品を選ぶ関数
 // ============================================================
 
-function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null) {
+function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null, hunger = null) {
   const filtered = MEAL_DB.filter(meal => {
     if (!meal.goals.includes(goal)) return false;
     if (excludeIds.includes(meal.id)) return false;
@@ -950,6 +950,17 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       if (meal.cal > 400) score += 20;
     }
     // 昼・夕方はペナルティなし（代謝ピーク帯）
+
+    // ── 空腹感スコア調整 ──
+    if (hunger === 'かなり空腹') {
+      // 高タンパク・高食物繊維メニューにボーナス（満腹感持続）
+      if (mealPPct > 28) score -= 8;
+    } else if (hunger === 'そこまで空腹じゃない' || hunger === 'なんとなく食べたい') {
+      // 低カロリーメニューにボーナス
+      if (meal.cal < targetCal) score -= 5;
+      // 高カロリーメニューにペナルティ
+      if (meal.cal > targetCal * 1.2) score += 8;
+    }
 
     // ── sub別スコア調整 ──
     if (subWeight) {
