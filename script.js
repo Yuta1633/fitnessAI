@@ -512,7 +512,7 @@ async function showQuestionStep(questions) {
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
-      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[0];   // STEP1: 時間帯（間食したい選択時は強制的に間食扱い）
+      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[2] === 'お酒を飲みたい' ? '夜' : questionAnswers[0];   // STEP1: 時間帯（間食→間食、お酒→夜に強制）
       const location = questionAnswers[1];    // STEP2: 場所
       const mood = questionAnswers[2];        // STEP3: 気分
       const proteinSupp = questionAnswers[3]; // STEP4: プロテイン
