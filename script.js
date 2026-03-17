@@ -512,7 +512,7 @@ async function showQuestionStep(questions) {
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
-      const timeOfDay = questionAnswers[0];   // STEP1: 時間帯
+      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[0];   // STEP1: 時間帯（間食したい選択時は強制的に間食扱い）
       const location = questionAnswers[1];    // STEP2: 場所
       const mood = questionAnswers[2];        // STEP3: 気分
       const proteinSupp = questionAnswers[3]; // STEP4: プロテイン
@@ -3114,6 +3114,11 @@ function renderNutritionWithPFC(text, containerDiv) {
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // 「第一候補」「第二候補」「これならOK」単体行はスキップ（カード内のrankTextと重複するため）
+    if (/^(第一候補|第二候補|これならOK)[\s:：]?$/.test(trimmed)) {
+      continue;
+    }
 
     if (/^▼\s/.test(trimmed)) {
       if (inCandidate) flushCandidate();
