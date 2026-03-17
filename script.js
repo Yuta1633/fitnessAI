@@ -522,9 +522,19 @@ async function showQuestionStep(questions) {
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
-      const timeOfDay = questionAnswers[2] === '間食したい' ? '間食' : questionAnswers[2] === 'お酒を飲みたい' ? '夜' : questionAnswers[0];
-      const location = questionAnswers[1];
+      // moodがDBのtimeSlotと合わない場合に強制変換
+      const _rawTime = questionAnswers[0];
+      const _mood2 = questionAnswers[2];
+      const timeOfDay = _mood2 === '間食したい' ? '間食'
+        : _mood2 === 'お酒を飲みたい' ? '夜'
+        : _rawTime === '間食' && _mood2 !== '間食したい' ? '昼'
+        : _rawTime;
       const mood = questionAnswers[2];
+      let location = questionAnswers[1];
+      // 外食×間食したいはコンビニ扱い
+      if (location === '外食にしたい' && mood === '間食したい') location = 'コンビニ';
+      // お弁当×お酒は家扱い
+      if (location === 'お弁当を作る' && mood === 'お酒を飲みたい') location = '家で食べる';
       // お酒設問はconditional（インデックス3）: nullの場合はスキップされた
       const sakeChoice = questionAnswers[3] !== null ? questionAnswers[3] : null;
       const proteinSupp = questionAnswers[4];
@@ -678,6 +688,10 @@ async function showQuestionStep(questions) {
 
       if (meals.length === 0) {
         console.log('MEAL_DB: 該当なし', { selectedGoal, location, mood });
+        loadingIndicator.classList.add('hidden');
+        addMessage('assistant', '該当するメニューが見つかりませんでした。時間帯・場所・気分の組み合わせを変えてお試しください。');
+        resetBtn.classList.remove('hidden');
+        return;
       }
 
       // goalGapTextを生成
@@ -833,6 +847,7 @@ async function showQuestionStep(questions) {
 
       // 食材量をスケーリングする関数
       function scaleMeal(m, targetCal) {
+        // スケール上限: 1.5倍まで（食材量が非現実的にならないよう制限）
         const ratio = Math.min(1.5, Math.max(0.5, targetCal / m.cal));
         const scaledIngredients = m.ingredients.map(ing => {
           return ing
