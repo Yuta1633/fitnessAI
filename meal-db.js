@@ -900,7 +900,8 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
     // 時間帯フィルタ
     if (timeOfDay && meal.timeSlot && !meal.timeSlot.includes(timeOfDay)) return false;
     if (mood && mood !== '特になし') {
-      return meal.mood === mood;
+      // moodが一致 かつ locationも一致するものだけ
+      return meal.mood === mood && meal.locations.includes(location);
     }
     // 特になし・その他のとき、お酒moodのメニューは除外
     if (meal.mood === 'お酒を飲みたい') return false;

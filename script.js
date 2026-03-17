@@ -528,6 +528,7 @@ async function showQuestionStep(questions) {
       const timeOfDay = _mood2 === '間食したい' ? '間食'
         : _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime === '間食' && _mood2 !== '間食したい' ? '昼'
+        : _rawTime === '夕方' && _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime;
       const mood = questionAnswers[2];
       let location = questionAnswers[1];
