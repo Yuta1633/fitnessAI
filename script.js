@@ -561,12 +561,15 @@ async function showQuestionStep(questions) {
       let _shownIds = JSON.parse(localStorage.getItem(_comboKey) || '[]');
 
       // 除外して3品選択。結果が0件なら全件リセットして再取得
-      let meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay);
+      // プロテイン補給時はF・Cバランスを重視したメニューを選ぶ
+      // proteinFromSuppが多いほどP比率の重みを下げ、FCバランス重視にシフト
+      const _proteinWeight = proteinFromSupp > 0 ? Math.max(0.3, 1 - (proteinFromSupp / 150)) : 1.0;
+      let meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay, _proteinWeight);
       if (meals.length === 0) {
         // 全候補を出し切った → リセット
         _shownIds = [];
         localStorage.removeItem(_comboKey);
-        meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, [], timeOfDay);
+        meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location, mood, [], timeOfDay, _proteinWeight);
         console.log('MEAL_DB: 全候補を出し切ったためリセット', { selectedGoal, location, mood });
       }
 
@@ -1450,7 +1453,7 @@ async function generateResponse() {
     .from('blocked_users')
     .select('user_id')
     .eq('user_id', session.user.id)
-    .maybeSingle();
+    .single();
 
   if (blockData) {
     alert('ご利用が制限されています。管理者にお問い合わせください。');

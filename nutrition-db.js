@@ -183,19 +183,11 @@ const FOOD_ALIASES = {
   'ツナサンド': 'サンドイッチツナ',
 };
 
-/**
- * 食材名からDBエントリを検索
- * @param {string} name - 食材名
- * @returns {object|null} - { p, f, c, cal, unit, per } or null
- */
 function lookupFood(name) {
   const normalized = name.trim();
-  // 直接一致
   if (FOOD_DB[normalized]) return { ...FOOD_DB[normalized], name: normalized };
-  // エイリアス
   const aliased = FOOD_ALIASES[normalized];
   if (aliased && FOOD_DB[aliased]) return { ...FOOD_DB[aliased], name: aliased };
-  // 部分一致（DBキーを含む or DBキーに含まれる）
   for (const key of Object.keys(FOOD_DB)) {
     if (normalized.includes(key) || key.includes(normalized)) {
       return { ...FOOD_DB[key], name: key };
@@ -204,63 +196,31 @@ function lookupFood(name) {
   return null;
 }
 
-/**
- * 量の文字列をパースして数値に変換
- * @param {string} amountStr - "150g", "2個", "1パック", "半丁" etc.
- * @param {object} foodEntry - FOOD_DBのエントリ
- * @returns {number} - 基準量に対する倍率
- */
 function parseAmount(amountStr, foodEntry) {
   const str = amountStr.trim();
-
-  // 「半丁」「半分」「1/2」
   if (/半丁|半分|1\/2/.test(str)) return 1;
-
-  // 「1丁」
   if (/1丁/.test(str)) return 2;
-
-  // グラム指定の場合
   const gMatch = str.match(/([\d.]+)\s*g/i);
   if (gMatch) {
     const grams = parseFloat(gMatch[1]);
-    if (foodEntry.unit === 'g') {
-      return grams / foodEntry.per;
-    }
-    // 個数系の食材にグラム指定された場合は、概算
+    if (foodEntry.unit === 'g') return grams / foodEntry.per;
     return grams / 100;
   }
-
-  // ml指定の場合
   const mlMatch = str.match(/([\d.]+)\s*ml/i);
   if (mlMatch) {
     const ml = parseFloat(mlMatch[1]);
-    if (foodEntry.unit === 'ml') {
-      return ml / foodEntry.per;
-    }
+    if (foodEntry.unit === 'ml') return ml / foodEntry.per;
     return ml / 200;
   }
-
-  // 数値のみ（個数系）
   const numMatch = str.match(/([\d.]+)/);
   if (numMatch) {
     const num = parseFloat(numMatch[1]);
-    if (foodEntry.unit === 'g' || foodEntry.unit === 'ml') {
-      // "150" → 150g扱い
-      return num / foodEntry.per;
-    }
-    // 個数系
+    if (foodEntry.unit === 'g' || foodEntry.unit === 'ml') return num / foodEntry.per;
     return num / foodEntry.per;
   }
-
-  // パース不能 → 1単位
   return 1;
 }
 
-/**
- * [ITEMS: food1 amount, food2 amount] タグをパースして食材リストを返す
- * @param {string} text - AI出力テキスト
- * @returns {Array<{tag: string, items: Array<{name: string, amount: string}>}>}
- */
 function parseNutritionItems(text) {
   const results = [];
   const tagPattern = /\[ITEMS:\s*([^\]]+)\]/g;
@@ -269,12 +229,8 @@ function parseNutritionItems(text) {
     const itemsStr = match[1];
     const items = itemsStr.split(',').map(item => {
       const trimmed = item.trim();
-      // "鶏胸肉 150g" or "卵 2個" or "味噌汁 1杯"
       const parts = trimmed.match(/^(.+?)\s+([\d./半]+\s*[a-zA-Zぁ-ん丁分枚個本杯パック人前玉切皿食缶大さじ]*)\s*$/);
-      if (parts) {
-        return { name: parts[1].trim(), amount: parts[2].trim() };
-      }
-      // 量なし → 1単位
+      if (parts) return { name: parts[1].trim(), amount: parts[2].trim() };
       return { name: trimmed, amount: '1' };
     });
     results.push({ tag: match[0], items });
@@ -282,41 +238,25 @@ function parseNutritionItems(text) {
   return results;
 }
 
-/**
- * 食材リストからPFCを計算
- * @param {Array<{name: string, amount: string}>} items
- * @returns {{ p: number, f: number, c: number, cal: number, details: Array, unknowns: Array }}
- */
 function calculateItemsPFC(items) {
   let totalP = 0, totalF = 0, totalC = 0, totalCal = 0;
   const details = [];
   const unknowns = [];
-
   for (const item of items) {
     const food = lookupFood(item.name);
-    if (!food) {
-      unknowns.push(item.name);
-      continue;
-    }
+    if (!food) { unknowns.push(item.name); continue; }
     const multiplier = parseAmount(item.amount, food);
     const p = Math.round(food.p * multiplier * 10) / 10;
     const f = Math.round(food.f * multiplier * 10) / 10;
     const c = Math.round(food.c * multiplier * 10) / 10;
     const cal = Math.round(food.cal * multiplier);
-    totalP += p;
-    totalF += f;
-    totalC += c;
-    totalCal += cal;
+    totalP += p; totalF += f; totalC += c; totalCal += cal;
     details.push({ name: item.name, amount: item.amount, p, f, c, cal });
   }
-
   return {
-    p: Math.round(totalP),
-    f: Math.round(totalF),
-    c: Math.round(totalC),
-    cal: Math.round(totalCal),
-    details,
-    unknowns
+    p: Math.round(totalP), f: Math.round(totalF),
+    c: Math.round(totalC), cal: Math.round(totalCal),
+    details, unknowns
   };
 }
 
@@ -324,26 +264,65 @@ function calculateItemsPFC(items) {
 // 1食目安PFC計算（ユーザーデータ×目的×時間帯×空腹度）
 // ============================================================
 
-// 目的別の係数
 const GOAL_COEFFICIENTS = {
-  // 減量: goal 1, goal 5(体脂肪率>目標)
   reduction: { calPerKg: 26, pPerKg: 1.8, fRatio: 0.22 },
-  // 筋肥大: goal 2, goal 5(体脂肪率≤目標)
-  muscle: { calPerKg: 37, pPerKg: 1.8, fRatio: 0.27 },
-  // 健康維持: goal 3, goal 4
-  health: { calPerKg: 32, pPerKg: 1.4, fRatio: 0.27 }
+  muscle:    { calPerKg: 37, pPerKg: 1.8, fRatio: 0.27 },
+  health:    { calPerKg: 32, pPerKg: 1.4, fRatio: 0.27 }
 };
 
-// 時間帯別の配分率
+// 目的別・時間帯別の配分率（科学的根拠ベース）
 const TIME_DISTRIBUTION = {
-  '朝': { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
-  '昼': { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-  '夕方': { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
-  '夜': { cal: 0.20, p: 0.30, f: 0.15, c: 0.15 },
-  '間食': { cal: 0.10, p: 0.15, f: 0.10, c: 0.05 }
+  // ① 減量：朝食重視（Jakubowicz et al. 2013）、夜は抑えめ（Garaulet et al. 2013）
+  '1': {
+    '朝':   { cal: 0.35, p: 0.35, f: 0.30, c: 0.40 },
+    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
+    '夕方': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 },
+    '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.10 },
+    '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
+  },
+  // ② 増量：均等分散（Areta et al. 2013）、就寝前多め（Res et al. 2012）
+  '2': {
+    '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
+    '昼':   { cal: 0.30, p: 0.30, f: 0.30, c: 0.30 },
+    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
+    '夜':   { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
+    '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+  },
+  // ③ 体力向上：運動前後の炭水化物重視（Burke et al. 2011）
+  '3': {
+    '朝':   { cal: 0.30, p: 0.25, f: 0.25, c: 0.35 },
+    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.40 },
+    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.15 },
+    '夜':   { cal: 0.10, p: 0.15, f: 0.10, c: 0.05 },
+    '間食': { cal: 0.05, p: 0.10, f: 0.10, c: 0.05 }
+  },
+  // ④ 不調改善：消化負担を分散、夜は消化に優しく
+  '4': {
+    '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
+    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
+    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
+    '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.15 },
+    '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+  },
+  // ⑤ 体型を整えたい：減量寄りだが筋維持も考慮
+  '5': {
+    '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
+    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
+    '夕方': { cal: 0.15, p: 0.15, f: 0.15, c: 0.15 },
+    '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.10 },
+    '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
+  }
 };
 
-// 空腹度別のカロリー補正
+// デフォルト（goalNumが未指定の場合）
+const TIME_DISTRIBUTION_DEFAULT = {
+  '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
+  '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
+  '夕方': { cal: 0.20, p: 0.25, f: 0.20, c: 0.20 },
+  '夜':   { cal: 0.10, p: 0.10, f: 0.15, c: 0.05 },
+  '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+};
+
 const HUNGER_ADJUSTMENT = {
   'かなり空腹': 1.10,
   '少し空腹': 1.0,
@@ -351,13 +330,6 @@ const HUNGER_ADJUSTMENT = {
   'なんとなく食べたい': 1.0
 };
 
-/**
- * 目的番号からcoefficient typeを判定
- * @param {string} goalNum - "1"〜"5"
- * @param {number|null} currentBF - 現在の体脂肪率
- * @param {number|null} targetBF - 目標体脂肪率
- * @returns {object} - GOAL_COEFFICIENTSのエントリ
- */
 function getGoalCoefficients(goalNum, currentBF, targetBF) {
   switch (goalNum) {
     case '1': return GOAL_COEFFICIENTS.reduction;
@@ -365,53 +337,35 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
     case '3': return GOAL_COEFFICIENTS.health;
     case '4': return GOAL_COEFFICIENTS.health;
     case '5':
-      if (currentBF && targetBF && currentBF > targetBF) {
-        return GOAL_COEFFICIENTS.reduction;
-      }
+      if (currentBF && targetBF && currentBF > targetBF) return GOAL_COEFFICIENTS.reduction;
       return GOAL_COEFFICIENTS.muscle;
     default: return GOAL_COEFFICIENTS.health;
   }
 }
 
-/**
- * 1食の目安PFCを計算
- * @param {object} params
- * @param {number} params.weight - 体重(kg)
- * @param {string} params.goalNum - 目的番号 "1"〜"5"
- * @param {number|null} params.currentBF - 現在の体脂肪率
- * @param {number|null} params.targetBF - 目標体脂肪率
- * @param {string} params.timeOfDay - 時間帯（朝/昼/夕方/夜/間食）
- * @param {string} params.hunger - 空腹度
- * @returns {{ cal: number, p: number, f: number, c: number, dailyCal: number }}
- */
 function calculateMealTarget(params) {
   const { weight, goalNum, currentBF, targetBF, timeOfDay, hunger } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
-  const timeDist = TIME_DISTRIBUTION[timeOfDay] || TIME_DISTRIBUTION['昼'];
+
+  // 目的別の時間帯配分を使用
+  const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION_DEFAULT;
+  const timeDist = goalDist[timeOfDay] || goalDist['昼'] || TIME_DISTRIBUTION_DEFAULT['昼'];
+
   const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
 
-  // STEP1: 1日の目安
   const dailyCal = weight * coeff.calPerKg;
   const dailyP = weight * coeff.pPerKg;
   const dailyF = dailyCal * coeff.fRatio / 9;
   const dailyC = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
 
-  // STEP2: 時間帯配分
   let mealCal = dailyCal * timeDist.cal;
   let mealP = dailyP * timeDist.p;
   let mealF = dailyF * timeDist.f;
   let mealC = dailyC * timeDist.c;
 
-  // STEP3: 空腹度調整（カロリーのみ。Pは減らさない）
   mealCal = mealCal * hungerMult;
-  if (hungerMult < 1.0) {
-    // 空腹でない場合: F,Cを調整、Pは維持
-    mealF = mealF * hungerMult;
-    mealC = mealC * hungerMult;
-  } else if (hungerMult > 1.0) {
-    mealF = mealF * hungerMult;
-    mealC = mealC * hungerMult;
-  }
+  mealF = mealF * hungerMult;
+  mealC = mealC * hungerMult;
 
   return {
     cal: Math.round(mealCal),
@@ -422,26 +376,18 @@ function calculateMealTarget(params) {
   };
 }
 
-/**
- * PFCの範囲を計算（±margin%、最低でも絶対値minAbsの幅を保証）
- */
 function calculatePFCRange(pfc, marginPercent = 10, minAbs = { cal: 30, p: 3, f: 2, c: 5 }) {
   function range(val, key) {
     const margin = Math.max(Math.round(val * marginPercent / 100), minAbs[key]);
     return { min: Math.max(0, val - margin), max: val + margin };
   }
   return {
-    cal: range(pfc.cal, 'cal'),
-    p: range(pfc.p, 'p'),
-    f: range(pfc.f, 'f'),
-    c: range(pfc.c, 'c'),
+    cal: range(pfc.cal, 'cal'), p: range(pfc.p, 'p'),
+    f: range(pfc.f, 'f'), c: range(pfc.c, 'c'),
     unknowns: pfc.unknowns || []
   };
 }
 
-/**
- * PFCバッジのHTMLを生成（範囲表示）
- */
 function createPFCBadgeHTML(pfc, label) {
   const r = calculatePFCRange(pfc);
   return `<div class="pfc-badge">
@@ -455,7 +401,6 @@ function createPFCBadgeHTML(pfc, label) {
 </div>`;
 }
 
-// グローバルに公開
 window.NutritionDB = {
   FOOD_DB,
   lookupFood,
@@ -468,5 +413,6 @@ window.NutritionDB = {
   createPFCBadgeHTML,
   TIME_DISTRIBUTION,
   HUNGER_ADJUSTMENT,
-  GOAL_COEFFICIENTS
+  GOAL_COEFFICIENTS,
+  COOKING_METHODS: {}
 };
