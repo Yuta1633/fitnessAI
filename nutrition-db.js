@@ -138,7 +138,6 @@ const FOOD_DB = {
   '親子丼': { p: 30, f: 15, c: 90, cal: 620, unit: '杯', per: 1 },
   'カレーライス': { p: 15, f: 15, c: 100, cal: 600, unit: '食', per: 1 },
   'サラダ': { p: 2, f: 3, c: 6, cal: 50, unit: '皿', per: 1 },
-  // 追加食材
   'バナナ': { p: 1, f: 0.2, c: 22, cal: 90, unit: '本', per: 1 },
   'きゅうり': { p: 1, f: 0.1, c: 3, cal: 14, unit: 'g', per: 100 },
   '大根': { p: 0.5, f: 0.1, c: 4, cal: 18, unit: 'g', per: 100 },
@@ -225,8 +224,6 @@ const FOOD_DB = {
   '干し芋': { p: 1, f: 0.5, c: 33, cal: 135, unit: 'g', per: 50 },
   'わらびもち': { p: 0, f: 0, c: 18, cal: 70, unit: 'g', per: 80 },
   'ようかん': { p: 1, f: 0, c: 25, cal: 105, unit: '本', per: 45 },
-
-  // 追加食材（第2弾）
   'ごまだれ': { p: 0, f: 2, c: 3, cal: 28, unit: '大さじ', per: 1 },
   'ごまだれ少量': { p: 0, f: 1, c: 2, cal: 15, unit: '回', per: 1 },
   '根菜煮物': { p: 3, f: 2, c: 15, cal: 90, unit: 'g', per: 100 },
@@ -283,8 +280,6 @@ const FOOD_DB = {
   'なると': { p: 2, f: 0.3, c: 3, cal: 22, unit: '枚', per: 2 },
   '煮干し': { p: 5, f: 1, c: 0, cal: 30, unit: 'g', per: 10 },
   'きりたんぽ': { p: 3, f: 0.3, c: 30, cal: 135, unit: '本', per: 1 },
-
-  // 追加食材（第3弾・残り全部）
   '牛こま': { p: 18, f: 12, c: 0, cal: 185, unit: 'g', per: 100 },
   '海鮮丼': { p: 25, f: 5, c: 60, cal: 380, unit: '杯', per: 1 },
   '牛ステーキ': { p: 22, f: 15, c: 0, cal: 230, unit: 'g', per: 100 },
@@ -369,7 +364,6 @@ const FOOD_DB = {
   'ビスケット': { p: 2, f: 4, c: 18, cal: 115, unit: 'g', per: 25 },
   'ラム': { p: 18, f: 15, c: 0, cal: 215, unit: 'g', per: 100 },
   'タイ': { p: 20, f: 4, c: 0, cal: 120, unit: 'g', per: 100 },
-
 };
 
 // 食材名エイリアス → 正規名への解決
@@ -513,61 +507,73 @@ function calculateItemsPFC(items) {
 // 1食目安PFC計算（ユーザーデータ×目的×時間帯×空腹度）
 // ============================================================
 
+// ── 目的別の基礎係数 ──
+// calPerKg: 1日の目標カロリー / kg（体重ベース）
+// pPerKg:   1日のタンパク質目標 / kg
+// fRatio:   脂質が1日カロリーに占める割合
 const GOAL_COEFFICIENTS = {
-  reduction: { calPerKg: 26, pPerKg: 1.8, fRatio: 0.22 },
-  muscle:    { calPerKg: 37, pPerKg: 1.8, fRatio: 0.27 },
-  health:    { calPerKg: 32, pPerKg: 1.4, fRatio: 0.27 }
+  reduction: { calPerKg: 28, pPerKg: 1.8, fRatio: 0.22 },  // 減量（適度な赤字）
+  muscle:    { calPerKg: 38, pPerKg: 2.0, fRatio: 0.27 },  // 増量（適度な余剰）
+  health:    { calPerKg: 33, pPerKg: 1.5, fRatio: 0.27 }   // 維持・体力・不調
 };
 
-// 目的別・時間帯別の配分率（科学的根拠ベース）
+// ── 目的別・時間帯別の1食あたり配分率 ──
+// 科学的根拠：
+//   朝食重視   → Jakubowicz et al. 2013（朝高カロリーで体重管理が有利）
+//   均等分散   → Areta et al. 2013（筋タンパク合成は均等分散が最適）
+//   夕食適量   → Garaulet et al. 2013（夜の過食は脂肪蓄積を促進）
+//   夕方は軽く  → 間食・軽食レベルを想定
+//   間食は最小  → 100〜200kcal程度を想定
 const TIME_DISTRIBUTION = {
-  // ① 減量：朝食重視（Jakubowicz et al. 2013）、夜は適度に抑制
+  // ① 減量：朝食重視・夜は適度
   '1': {
-    '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
-    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-    '夕方': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 },
-    '夜':   { cal: 0.20, p: 0.25, f: 0.20, c: 0.15 },
-    '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
+    '朝':   { cal: 0.28, p: 0.28, f: 0.25, c: 0.30 },
+    '昼':   { cal: 0.35, p: 0.32, f: 0.35, c: 0.38 },
+    '夕方': { cal: 0.12, p: 0.12, f: 0.12, c: 0.12 },
+    '夜':   { cal: 0.32, p: 0.35, f: 0.30, c: 0.25 },
+    '間食': { cal: 0.08, p: 0.08, f: 0.08, c: 0.08 }
   },
-  // ② 増量：均等分散（Areta et al. 2013）、就寝前多め
+  // ② 増量：均等分散・夜も十分に
   '2': {
     '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
     '昼':   { cal: 0.30, p: 0.30, f: 0.30, c: 0.30 },
-    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
-    '夜':   { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
-    '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+    '夕方': { cal: 0.15, p: 0.15, f: 0.15, c: 0.15 },
+    '夜':   { cal: 0.28, p: 0.28, f: 0.28, c: 0.28 },
+    '間食': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 }
   },
   // ③ 体力向上：炭水化物重視（Burke et al. 2011）
   '3': {
-    '朝':   { cal: 0.30, p: 0.25, f: 0.25, c: 0.35 },
-    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.40 },
-    '夕方': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 },
-    '夜':   { cal: 0.20, p: 0.25, f: 0.20, c: 0.10 },
-    '間食': { cal: 0.05, p: 0.10, f: 0.10, c: 0.05 }
+    '朝':   { cal: 0.28, p: 0.25, f: 0.25, c: 0.32 },
+    '昼':   { cal: 0.35, p: 0.30, f: 0.32, c: 0.40 },
+    '夕方': { cal: 0.12, p: 0.12, f: 0.12, c: 0.12 },
+    '夜':   { cal: 0.30, p: 0.30, f: 0.28, c: 0.28 },
+    '間食': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 }
   },
-  // ④ 不調改善：消化負担を分散
+  // ④ 不調改善：消化負担を分散・夜も消化に配慮
   '4': {
     '朝':   { cal: 0.25, p: 0.25, f: 0.25, c: 0.25 },
-    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-    '夕方': { cal: 0.20, p: 0.20, f: 0.20, c: 0.20 },
-    '夜':   { cal: 0.15, p: 0.20, f: 0.15, c: 0.15 },
-    '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.38 },
+    '夕方': { cal: 0.12, p: 0.12, f: 0.12, c: 0.12 },
+    '夜':   { cal: 0.28, p: 0.30, f: 0.25, c: 0.25 },
+    '間食': { cal: 0.08, p: 0.08, f: 0.08, c: 0.08 }
   },
   // ⑤ 体型を整えたい：減量寄りだが筋維持
   '5': {
-    '朝':   { cal: 0.30, p: 0.30, f: 0.25, c: 0.35 },
-    '昼':   { cal: 0.35, p: 0.30, f: 0.35, c: 0.35 },
-    '夕方': { cal: 0.10, p: 0.10, f: 0.10, c: 0.10 },
-    '夜':   { cal: 0.20, p: 0.25, f: 0.20, c: 0.15 },
-    '間食': { cal: 0.05, p: 0.05, f: 0.10, c: 0.05 }
+    '朝':   { cal: 0.28, p: 0.28, f: 0.25, c: 0.30 },
+    '昼':   { cal: 0.35, p: 0.32, f: 0.35, c: 0.38 },
+    '夕方': { cal: 0.12, p: 0.12, f: 0.12, c: 0.12 },
+    '夜':   { cal: 0.32, p: 0.35, f: 0.30, c: 0.25 },
+    '間食': { cal: 0.08, p: 0.08, f: 0.08, c: 0.08 }
   }
 };
 
+// 空腹感は食事ターゲットへの直接補正ではなく、
+// selectMealsのスコアリングで反映する（過食・空腹感を食材選択で調整）
 const HUNGER_ADJUSTMENT = {
-  'かなり空腹': 1.10,
-  '少し空腹': 1.0,
-  'そこまで空腹じゃない': 0.90,
-  'なんとなく食べたい': 1.0
+  'かなり空腹':           1.0,
+  '少し空腹':             1.0,
+  'そこまで空腹じゃない': 1.0,
+  'なんとなく食べたい':   1.0
 };
 
 function getGoalCoefficients(goalNum, currentBF, targetBF) {
@@ -590,25 +596,21 @@ function calculateMealTarget(params) {
   const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
   const timeDist = goalDist[timeOfDay] || goalDist['昼'];
 
-  const hungerMult = HUNGER_ADJUSTMENT[hunger] || 1.0;
-
   const dailyCal = weight * coeff.calPerKg;
-  const dailyP = weight * coeff.pPerKg;
-  const dailyF = dailyCal * coeff.fRatio / 9;
-  const dailyC = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
+  const dailyP   = weight * coeff.pPerKg;
+  const dailyF   = dailyCal * coeff.fRatio / 9;
+  const dailyC   = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
 
-  let mealCal = dailyCal * timeDist.cal;
-  let mealP = dailyP * timeDist.p;
-  let mealF = dailyF * timeDist.f;
-  let mealC = dailyC * timeDist.c;
-
-  // 空腹感はメニュー選択スコアリングで反映（カロリーは体格・目的で固定）
+  const mealCal = dailyCal * timeDist.cal;
+  const mealP   = dailyP   * timeDist.p;
+  const mealF   = dailyF   * timeDist.f;
+  const mealC   = dailyC   * timeDist.c;
 
   return {
     cal: Math.round(mealCal),
-    p: Math.round(mealP),
-    f: Math.round(mealF),
-    c: Math.round(mealC),
+    p:   Math.round(mealP),
+    f:   Math.round(mealF),
+    c:   Math.round(mealC),
     dailyCal: Math.round(dailyCal)
   };
 }

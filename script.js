@@ -532,15 +532,32 @@ async function showQuestionStep(questions) {
         : _rawTime;
       const mood = questionAnswers[2];
       let location = questionAnswers[1];
-      // 外食×間食したいはコンビニ扱い
-      if (location === '外食にしたい' && mood === '間食したい') location = 'コンビニ';
-      // お弁当×お酒は家扱い
-      if (location === 'お弁当を作る' && mood === 'お酒を飲みたい') location = '家で食べる';
-      // ★★★ 修正箇所: 間食時間帯×時短×お弁当 → コンビニ を先に判定 ★★★
-      // 間食時間帯×時短はコンビニ扱い（お弁当を作る間食はない）
-      if (_rawTime === '間食' && mood === '食べる時間があまりない' && location === 'お弁当を作る') location = 'コンビニ';
-      // お弁当×揚げ物・時短は家扱い（お弁当に対応メニューがないため）
-      if (location === 'お弁当を作る' && (mood === '揚げ物を食べたい' || mood === '食べる時間があまりない')) location = '家で食べる';
+
+      // ── location変換ロジック（優先度順に適用） ──
+      // 1. 間食時間帯×時短×お弁当 → コンビニ（最優先・順序重要）
+      if (_rawTime === '間食' && mood === '食べる時間があまりない' && location === 'お弁当を作る') {
+        location = 'コンビニ';
+      }
+      // 2. 外食×間食したい → コンビニ
+      else if (location === '外食にしたい' && mood === '間食したい') {
+        location = 'コンビニ';
+      }
+      // 3. お弁当×お酒 → 家（お弁当でお酒は現実的でない）
+      else if (location === 'お弁当を作る' && mood === 'お酒を飲みたい') {
+        location = '家で食べる';
+      }
+      // 4. お弁当×揚げ物 → 家（お弁当用の揚げ物メニューがないため）
+      else if (location === 'お弁当を作る' && mood === '揚げ物を食べたい') {
+        location = '家で食べる';
+      }
+      // 5. お弁当×時短 → 家（朝以外は家の時短メニューで対応）
+      else if (location === 'お弁当を作る' && mood === '食べる時間があまりない') {
+        location = '家で食べる';
+      }
+      // 6. デリバリー×間食したい → コンビニ（デリバリーで間食は現実的でない）
+      else if (location === 'デリバリー' && mood === '間食したい') {
+        location = 'コンビニ';
+      }
       // お酒設問はconditional（インデックス3）: nullの場合はスキップされた
       const sakeChoice = questionAnswers[3] !== null ? questionAnswers[3] : null;
       const proteinSupp = questionAnswers[4];
@@ -853,8 +870,8 @@ async function showQuestionStep(questions) {
 
       // 食材量をスケーリングする関数
       function scaleMeal(m, targetCal) {
-        // スケール上限: 1.5倍まで（食材量が非現実的にならないよう制限）
-        const ratio = Math.min(1.5, Math.max(0.5, targetCal / m.cal));
+        // スケール上限: 2.0倍まで（食材量が非現実的にならないよう制限）
+        const ratio = Math.min(2.0, Math.max(0.5, targetCal / m.cal));
         const scaledIngredients = m.ingredients.map(ing => {
           return ing
             .replace(/([\d.]+)\s*(g|ml)/g, (_, num, unit) => {

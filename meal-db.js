@@ -891,27 +891,48 @@ const MEAL_DB = [
 
 // ============================================================
 // PFCスコアリングで目標に近い3品を選ぶ関数
+// ★ 修正ポイント:
+//   1. moodフィルタが厳しすぎて候補不足の場合、'any'メニューでフォールバック
+//   2. 夜×時短はg?t系（軽食）を除外して通常メニューを優先
+//   3. スコアリングの時間帯ペナルティを強化（朝に揚げ物が出ない等）
 // ============================================================
 
 function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null, hunger = null) {
-  const filtered = MEAL_DB.filter(meal => {
+
+  // ── ① プライマリフィルタ（mood一致 + location一致） ──
+  const primaryFilter = (meal) => {
     if (!meal.goals.includes(goal)) return false;
     if (excludeIds.includes(meal.id)) return false;
-    // 時間帯フィルタ
     if (timeOfDay && meal.timeSlot && !meal.timeSlot.includes(timeOfDay)) return false;
     if (mood && mood !== '特になし') {
-      // moodが一致 かつ locationも一致するものだけ
       return meal.mood === mood && meal.locations.includes(location);
     }
-    // 特になし・その他のとき、お酒moodのメニューは除外
     if (meal.mood === 'お酒を飲みたい') return false;
     return meal.locations.includes(location);
-  });
+  };
 
+  let filtered = MEAL_DB.filter(primaryFilter);
+
+  // ── ② フォールバック: 候補が3未満の場合は'any'moodのメニューで補完 ──
+  // 例: 夜×時短でg?t系しか出ない場合、その時間帯の通常メニューで補う
+  if (filtered.length < 3) {
+    const fallbackFilter = (meal) => {
+      if (!meal.goals.includes(goal)) return false;
+      if (excludeIds.includes(meal.id)) return false;
+      if (timeOfDay && meal.timeSlot && !meal.timeSlot.includes(timeOfDay)) return false;
+      if (meal.mood === 'お酒を飲みたい') return false;
+      if (meal.mood !== 'any') return false; // anyのみ
+      return meal.locations.includes(location);
+    };
+    const existingIds = new Set(filtered.map(m => m.id));
+    const fallback = MEAL_DB.filter(fallbackFilter).filter(m => !existingIds.has(m.id));
+    filtered = [...filtered, ...fallback];
+  }
+
+  // ── ③ それでも候補なし → 空を返す ──
   if (filtered.length === 0) return [];
 
-  // お酒moodの場合はPFC目標比率を調整（P高すぎ・C低すぎを防ぐ）
-  // お酒自体に糖質が含まれるため、P35% F25% C40%を目標にシフト
+  // ── お酒moodのPFC目標調整（P過多・C不足を防ぐ） ──
   let targetPPct = (targetP * 4) / targetCal * 100;
   let targetFPct = (targetF * 9) / targetCal * 100;
   let targetCPct = (targetC * 4) / targetCal * 100;
@@ -921,60 +942,59 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
     targetFPct = Math.min(targetFPct, 27);
   }
 
-  // 重いメニュー判定用キーワード
   const heavyWords = ['ラーメン', 'カレー', 'カツ', 'コロッケ', '唐揚げ', 'から揚げ', 'フライ', '天丼', '焼肉', 'こってり', '二郎'];
 
+  // ── ④ スコアリング ──
   const scored = filtered.map(meal => {
-    const mealPPct = (meal.p * 4) / meal.cal * 100;
-    const mealFPct = (meal.f * 9) / meal.cal * 100;
-    const mealCPct = (meal.c * 4) / meal.cal * 100;
-    // proteinWeightが低いほどP比率の重みを下げ、FCバランスを重視
+    const pfcCal = meal.p * 4 + meal.f * 9 + meal.c * 4;
+    if (pfcCal <= 0) return { meal, score: 9999 };
+
+    const mealPPct = (meal.p * 4) / pfcCal * 100;
+    const mealFPct = (meal.f * 9) / pfcCal * 100;
+    const mealCPct = (meal.c * 4) / pfcCal * 100;
+
     let score =
       Math.abs(mealPPct - targetPPct) * proteinWeight +
       Math.abs(mealFPct - targetFPct) * (2 - proteinWeight) * 0.5 +
       Math.abs(mealCPct - targetCPct) * (2 - proteinWeight) * 0.5;
 
-    // ── 時間帯ペナルティ（科学的根拠ベース）──
+    // ── カロリー乖離ペナルティ（目標の±30%超で加点） ──
+    // これが最重要：targetCalと大きくズレるメニューを弾く
+    const calRatio = meal.cal / targetCal;
+    if (calRatio < 0.5) score += 25; // 目標の半分以下は大きくペナルティ
+    else if (calRatio < 0.7) score += 12;
+    else if (calRatio > 1.5) score += 15;
+    else if (calRatio > 1.3) score += 8;
+
+    // ── 時間帯ペナルティ ──
     if (timeOfDay === '朝') {
-      // 朝：消化器官が未活性。高脂質・重い揚げ物にペナルティ（Mekary et al. 2012）
       const isHeavy = heavyWords.some(w => meal.name.includes(w));
       if (isHeavy) score += 20;
       if (mealFPct > 30) score += 10;
     } else if (timeOfDay === '夜') {
-      // 夜：脂肪合成が促進されやすい時間帯（Garaulet et al. 2013）
-      // 高脂質・高炭水化物にペナルティ（高タンパクはペナルティなし）
-      if (mealFPct > 30) score += 15;
-      if (mealCPct > 65) score += 10;
+      if (mealFPct > 35) score += 15;
+      if (mealCPct > 70) score += 10;
+      // 夜に軽食・間食レベル（200kcal未満）のメニューに強いペナルティ
+      if (meal.cal < 250) score += 30;
     } else if (timeOfDay === '間食') {
-      // 間食：150〜300kcalが適切（ACSM推奨）
       if (meal.cal > 400) score += 20;
     }
-    // 昼・夕方はペナルティなし（代謝ピーク帯）
 
     // ── 空腹感スコア調整 ──
     if (hunger === 'かなり空腹') {
-      // 高タンパク・高食物繊維メニューにボーナス（満腹感持続）
       if (mealPPct > 28) score -= 8;
     } else if (hunger === 'そこまで空腹じゃない' || hunger === 'なんとなく食べたい') {
-      // 低カロリーメニューにボーナス
       if (meal.cal < targetCal) score -= 5;
-      // 高カロリーメニューにペナルティ
       if (meal.cal > targetCal * 1.2) score += 8;
     }
 
     // ── sub別スコア調整 ──
     if (subWeight) {
-      // P優先: 高タンパクメニューにボーナス
-      if (subWeight.pBonus && mealPPct > 30) score -= subWeight.pBonus;
-      // F抑制: 高脂質にペナルティ
+      if (subWeight.pBonus   && mealPPct > 30) score -= subWeight.pBonus;
       if (subWeight.fPenalty && mealFPct > 25) score += subWeight.fPenalty;
-      // C優先: 高炭水化物メニューにボーナス
-      if (subWeight.cBonus && mealCPct > 50) score -= subWeight.cBonus;
-      // C抑制: 高炭水化物にペナルティ
+      if (subWeight.cBonus   && mealCPct > 50) score -= subWeight.cBonus;
       if (subWeight.cPenalty && mealCPct > 55) score += subWeight.cPenalty;
-      // 高カロリーボーナス（増量）
-      if (subWeight.calBonus && meal.cal > targetCal) score -= subWeight.calBonus;
-      // 低カロリーボーナス（減量）
+      if (subWeight.calBonus   && meal.cal > targetCal)       score -= subWeight.calBonus;
       if (subWeight.calPenalty && meal.cal > targetCal * 1.1) score += subWeight.calPenalty;
     }
 
