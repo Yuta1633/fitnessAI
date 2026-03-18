@@ -1667,23 +1667,8 @@ async function callAPI(messages) {
 }
 
 async function generateResponse() {
-  let { data: { session } } = await supabase.auth.getSession();
-
-  // セッションが切れていたらリフレッシュを試みる
-  if (!session) {
-    try {
-      const { data: refreshed } = await supabase.auth.refreshSession();
-      session = refreshed.session;
-    } catch (e) {
-      console.warn('セッションリフレッシュ失敗:', e);
-    }
-  }
-
-  if (!session) {
-    alert('セッションが切れています。ページを再読み込みしてください。');
-    window.location.reload();
-    return;
-  }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
 
   const { data: serviceData, error: serviceError } = await supabase
     .from('service_settings')
@@ -3590,22 +3575,4 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   mainContent.style.display = 'block';
   loadDashboard();
   renderCheckinSummary(checkinData);
-});
-
-// ============================================================
-// タブ復帰時のセッション再確認
-// 別タブから戻ってきたときsupabaseセッションが切れていると
-// ボタンが反応しなくなるため、復帰時に明示的にセッションを更新する
-// ============================================================
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState !== 'visible') return;
-  try {
-    // refreshSessionで強制的にトークンを更新
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error || !session) return;
-    // セッションが古い場合はリフレッシュ
-    await supabase.auth.refreshSession();
-  } catch (e) {
-    console.warn('セッション再確認エラー:', e);
-  }
 });
