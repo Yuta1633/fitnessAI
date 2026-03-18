@@ -1667,8 +1667,23 @@ async function callAPI(messages) {
 }
 
 async function generateResponse() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
+  let { data: { session } } = await supabase.auth.getSession();
+
+  // セッションが切れていたらリフレッシュを試みる
+  if (!session) {
+    try {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      session = refreshed.session;
+    } catch (e) {
+      console.warn('セッションリフレッシュ失敗:', e);
+    }
+  }
+
+  if (!session) {
+    alert('セッションが切れています。ページを再読み込みしてください。');
+    window.location.reload();
+    return;
+  }
 
   const { data: serviceData, error: serviceError } = await supabase
     .from('service_settings')
