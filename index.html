@@ -605,8 +605,9 @@
 
   <!-- ======================================================
        ボトムナビゲーションバー
+       ★ ログイン前は非表示。script.jsのupdateUI()でログイン後に表示。
        ====================================================== -->
-  <nav class="bottom-nav">
+  <nav class="bottom-nav" style="display:none;">
     <button class="nav-tab active" id="nav-home" onclick="switchTab('home')">
       <svg viewBox="0 0 24 24">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -717,14 +718,12 @@ function switchTab(tab) {
   const navRecord = document.getElementById('nav-record');
   const overlay = document.getElementById('tool-overlay');
 
-  // ツールオーバーレイが開いていたら閉じる
   if (overlay && overlay.classList.contains('open')) {
     overlay.classList.remove('open');
     document.getElementById('tool-iframe').src = '';
     document.body.style.overflow = '';
   }
 
-  // 全パネル非表示・全タブ非アクティブ
   mainPanel.style.display = 'none';
   toolsPanel.classList.remove('open');
   recordPanel.classList.remove('open');
@@ -770,12 +769,10 @@ function closeToolOverlay() {
   document.body.style.overflow = '';
 }
 
-// ESCキーでオーバーレイを閉じる
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeToolOverlay();
 });
 
-// iframe内のツールページからの戻るボタン対応
 window.addEventListener('message', function(e) {
   if (e.data === 'closeToolOverlay') {
     closeToolOverlay();
@@ -783,7 +780,6 @@ window.addEventListener('message', function(e) {
   }
 });
 
-// PWA Service Worker登録（キャッシュ強制更新）
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js?v=38').then(reg => {
