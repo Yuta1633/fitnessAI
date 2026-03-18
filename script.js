@@ -3576,3 +3576,21 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   loadDashboard();
   renderCheckinSummary(checkinData);
 });
+
+// ============================================================
+// タブ復帰時のセッション再確認
+// 別タブから戻ってきたときsupabaseセッションが切れていると
+// ボタンが反応しなくなるため、復帰時に明示的にセッションを更新する
+// ============================================================
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible') return;
+  try {
+    // refreshSessionで強制的にトークンを更新
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error || !session) return;
+    // セッションが古い場合はリフレッシュ
+    await supabase.auth.refreshSession();
+  } catch (e) {
+    console.warn('セッション再確認エラー:', e);
+  }
+});
