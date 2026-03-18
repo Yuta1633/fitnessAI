@@ -787,6 +787,11 @@ if ('serviceWorker' in navigator) {
     }).catch(() => {});
   });
 }
+
+// bfcache対策：別サイトから戻ってきたとき強制リロード
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) window.location.reload();
+});
 </script>
 </body>
 </html>
