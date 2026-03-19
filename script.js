@@ -1640,15 +1640,15 @@ function renderTrainingContent(text) {
     '.tr-course{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);margin-bottom:16px;overflow:hidden}' +
     '.tr-head{padding:13px 18px;display:flex;align-items:center;gap:10px}' +
     '.tr-head.fire{background:linear-gradient(135deg,#993C1D,#D85A30)}' +
-    '.tr-head.std{background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary)}' +
+    '.tr-head.std{background:linear-gradient(135deg,#1a4a7a,#2a7acc)}' +
     '.tr-head.ok{background:linear-gradient(135deg,#3B6D11,#639922)}' +
     '.tr-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}' +
     '.tr-badge.fire,.tr-badge.ok{background:rgba(255,255,255,.2);color:#fff}' +
-    '.tr-badge.std{background:#1a4a7a;color:#a8d4ff;border:.5px solid #2a6aaa}' +
+    '.tr-badge.std{background:rgba(255,255,255,.2);color:#fff}' +
     '.tr-title-f,.tr-title-o{font-size:15px;font-weight:500;color:#fff}' +
-    '.tr-title-s{font-size:15px;font-weight:500;color:var(--color-text-primary)}' +
+    '.tr-title-s{font-size:15px;font-weight:500;color:#fff}' +
     '.tr-time-f,.tr-time-o{margin-left:auto;font-size:12px;color:rgba(255,255,255,.75)}' +
-    '.tr-time-s{margin-left:auto;font-size:12px;color:var(--color-text-secondary)}' +
+    '.tr-time-s{margin-left:auto;font-size:12px;color:rgba(255,255,255,.75)}' +
     '.tr-sec{display:flex;align-items:center;gap:8px;padding:10px 18px 4px}' +
     '.tr-sec-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.06em;text-transform:uppercase}' +
     '.tr-sec-line{flex:1;height:.5px;background:var(--color-border-tertiary)}' +
