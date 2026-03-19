@@ -15,154 +15,66 @@
       align-items: center;
       justify-content: center;
     }
-    .container {
-      text-align: center;
-      padding: 3rem 2rem;
-      max-width: 540px;
-    }
-    .icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      color: #60a5fa;
-    }
-    p {
-      color: #94a3b8;
-      line-height: 1.8;
-      margin-bottom: 1.5rem;
-    }
-    .steps {
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      text-align: left;
-    }
-    .steps h3 {
-      color: #60a5fa;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-    }
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.5rem 0;
-      color: #cbd5e1;
-      font-size: 0.95rem;
-    }
-    .step-num {
-      background: #3b82f6;
-      color: white;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.8rem;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-    .step-num.green {
-      background: #06c755;
-    }
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      color: white;
-      padding: 1rem 2rem;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 1.05rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    }
-    .btn-line {
-      background: #06c755;
-      animation: pulse 2s infinite;
-    }
-    .btn-line:hover {
-      background: #05b34c;
-    }
+    .container { text-align: center; padding: 3rem 2rem; max-width: 540px; }
+    .icon { font-size: 4rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.8rem; margin-bottom: 1rem; color: #60a5fa; }
+    p { color: #94a3b8; line-height: 1.8; margin-bottom: 1.5rem; }
+    .steps { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; text-align: left; }
+    .steps h3 { color: #60a5fa; margin-bottom: 1rem; font-size: 1rem; }
+    .step { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; color: #cbd5e1; font-size: 0.95rem; }
+    .step-num { background: #3b82f6; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; flex-shrink: 0; }
+    .step-num.green { background: #06c755; }
+    .buttons { display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 0.5rem; color: white; padding: 1rem 2rem; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 1.05rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+    .btn-line { background: #06c755; animation: pulse 2s infinite; }
+    .btn-line:hover { background: #05b34c; }
     @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(6, 199, 85, 0.4); }
-      50% { box-shadow: 0 0 0 12px rgba(6, 199, 85, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(6,199,85,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(6,199,85,0); }
     }
-    .btn-service {
-      background: #3b82f6;
-    }
-    .btn-service:hover {
-      background: #2563eb;
-    }
-    .btn-sub {
-      font-size: 0.85rem;
-      color: #94a3b8;
-      margin-top: -0.5rem;
-      text-align: center;
-    }
-    .highlight-box {
-      background: rgba(6, 199, 85, 0.1);
-      border: 1px solid rgba(6, 199, 85, 0.3);
+    .btn-service { background: #3b82f6; }
+    .btn-service:hover { background: #2563eb; }
+    .btn-sub { font-size: 0.85rem; color: #94a3b8; margin-top: -0.5rem; text-align: center; }
+    .highlight-box { background: rgba(6,199,85,0.1); border: 1px solid rgba(6,199,85,0.3); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .highlight-box h3 { color: #06c755; margin-bottom: 0.5rem; font-size: 1.05rem; }
+    .highlight-box p { color: #94a3b8; margin-bottom: 0; font-size: 0.9rem; }
+    .next-steps { display: none; animation: fadeIn 0.5s ease; }
+    .next-steps.show { display: flex; flex-direction: column; gap: 1rem; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .line-done { background: rgba(6,199,85,0.1); border: 1px solid rgba(6,199,85,0.3); border-radius: 10px; padding: 12px 16px; color: #06c755; font-size: 0.9rem; font-weight: 600; display: none; align-items: center; justify-content: center; gap: 8px; }
+    .line-done.show { display: flex; }
+
+    /* 特典ボックス */
+    .gift-box {
+      background: linear-gradient(135deg, rgba(200,241,53,0.1), rgba(200,241,53,0.05));
+      border: 1px solid rgba(200,241,53,0.4);
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
-    }
-    .highlight-box h3 {
-      color: #06c755;
-      margin-bottom: 0.5rem;
-      font-size: 1.05rem;
-    }
-    .highlight-box p {
-      color: #94a3b8;
-      margin-bottom: 0;
-      font-size: 0.9rem;
-    }
-    /* LINE追加前は次のステップを非表示 */
-    .next-steps {
+      text-align: left;
       display: none;
-      animation: fadeIn 0.5s ease;
     }
-    .next-steps.show {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .line-done {
-      background: rgba(6, 199, 85, 0.1);
-      border: 1px solid rgba(6, 199, 85, 0.3);
-      border-radius: 10px;
-      padding: 12px 16px;
-      color: #06c755;
-      font-size: 0.9rem;
-      font-weight: 600;
-      display: none;
+    .gift-box.show { display: block; animation: fadeIn 0.5s ease; }
+    .gift-box-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .gift-box-header h3 { color: #c8f135; font-size: 1.05rem; }
+    .gift-box p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px; }
+    .btn-gift {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
+      background: #c8f135;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
     }
-    .line-done.show {
-      display: flex;
-    }
+    .btn-gift:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,241,53,0.3); }
   </style>
 </head>
 <body>
@@ -170,6 +82,18 @@
     <div class="icon">🎉</div>
     <h1>決済が完了しました！</h1>
     <p>Fit Project AI へようこそ。<br>あなたのアカウントが有効化されました。</p>
+
+    <!-- 紹介コード特典（コードがある場合のみ表示） -->
+    <div class="gift-box" id="gift-box">
+      <div class="gift-box-header">
+        <span style="font-size:1.5rem;">🎁</span>
+        <h3>紹介コード特典プレゼント</h3>
+      </div>
+      <p>紹介コードをお使いいただきありがとうございます。特典コンテンツをダウンロードしてください。</p>
+      <a href="#" id="gift-link" class="btn-gift" download>
+        ⬇️ 特典コンテンツをダウンロード
+      </a>
+    </div>
 
     <div class="highlight-box">
       <h3>📱 まずはLINEを追加してください</h3>
@@ -197,17 +121,12 @@
     </div>
 
     <div class="buttons">
-      <!-- LINE追加ボタン（メイン） -->
       <a href="https://lin.ee/CknkdR2" target="_blank" class="btn btn-line" id="line-btn" onclick="onLineClick()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
         LINE友だち追加（必須）
       </a>
       <p class="btn-sub">タップしてLINEを開き、友だち追加してください</p>
-
-      <!-- LINE追加完了メッセージ -->
       <div class="line-done" id="line-done">✅ LINE追加ありがとうございます！次のステップへ進んでください</div>
-
-      <!-- LINE追加後に表示されるボタン群 -->
       <div class="next-steps" id="next-steps">
         <a href="https://timerex.net/s/fit.project.ai.1633_95b1/638bdf1a" class="btn btn-service" style="background:#6366f1;">
           📅 コーチング面談を予約する
@@ -220,8 +139,33 @@
   </div>
 
   <script>
+    // 特典ファイルのURL（ここを実際のファイルURLに変更してください）
+    const GIFT_FILE_URL = '/gift/tokuten.pdf';
+
+    // URLのsession_idからStripe経由でreferral_codeを取得
+    async function checkReferral() {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      if (!sessionId) return;
+
+      try {
+        const res = await fetch('/api/get-session?session_id=' + sessionId);
+        if (!res.ok) return;
+        const data = await res.json();
+        const referralCode = data.referral_code;
+
+        if (referralCode) {
+          const giftBox = document.getElementById('gift-box');
+          const giftLink = document.getElementById('gift-link');
+          giftLink.href = GIFT_FILE_URL;
+          giftBox.classList.add('show');
+        }
+      } catch (e) {
+        console.error('referral check error:', e);
+      }
+    }
+
     function onLineClick() {
-      // LINEボタンがクリックされたら、少し待ってから次のステップを表示
       setTimeout(() => {
         document.getElementById('line-btn').style.animation = 'none';
         document.getElementById('line-btn').style.background = '#047a42';
@@ -230,6 +174,8 @@
         document.getElementById('next-steps').classList.add('show');
       }, 1500);
     }
+
+    checkReferral();
   </script>
 </body>
 </html>
