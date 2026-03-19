@@ -1786,8 +1786,7 @@ function renderTrainingContent(text) {
   return html;
 }
 function isRecoveryContent(text) {
-  return (text.includes('STEP') || text.includes('やめること')) &&
-         (text.includes('開始姿勢') || text.includes('動作手順') || text.includes('感覚の目安'));
+  return text.includes('STEP') && text.includes('やめること');
 }
 
 function stripMd(s) {
@@ -1849,7 +1848,7 @@ function renderRecoveryContent(text) {
     var line = lines[i].trim();
     if (!line) { if (inStep) curField = ''; continue; }
 
-    var stepM = line.match(/(?:#{1,3}\s*)?(?:▼\s*)?STEP\s*\d+[^\S\n]*[：:「]?\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i);
+    var stepM = line.match(/(?:#{1,3}\s*)?(?:▼\s*)?\*?\*?STEP\s*\d+[^\S\n]*[：:「]?\s*\*?\*?(.+?)(?:\s*[（(](\d+分)[）)])?\*?\*?$/i);
     if (stepM) {
       flushStep();
       inStep = true;
@@ -1910,6 +1909,11 @@ function renderRecoveryContent(text) {
         var nm = line.match(/^(\d+)\.\s*(.+)/);
         if (nm) { cur.move.push(stripMd(nm[2])); continue; }
         if (cleaned && cur.move.length < 5) { cur.move.push(cleaned); continue; }
+      }
+      // ラベルなしフォーマット：内容をmoveに追加
+      if (!curField && cleaned && !cur.pose) {
+        cur.move.push(cleaned);
+        continue;
       }
     }
   }
