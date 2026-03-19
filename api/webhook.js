@@ -34,8 +34,9 @@ export default async function handler(req, res) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const email = session.metadata?.gmail || session.customer_email;
+    const referralCode = session.metadata?.referral_code || '';
 
-    // ① Supabaseにユーザー追加（既存処理）
+    // ① Supabaseにユーザー追加（referral_code含む）
     if (email) {
       try {
         const supabase = createClient(
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
             {
               email: email,
               memo: `Stripe決済 (${session.id})`,
+              referral_code: referralCode || null,
             },
             { onConflict: 'email' }
           );
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
         if (error) {
           console.error('Supabase insert error:', error);
         } else {
-          console.log('Added ' + email + ' to allowed_users');
+          console.log('Added ' + email + ' to allowed_users' + (referralCode ? ' referral: ' + referralCode : ''));
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
@@ -70,7 +72,6 @@ export default async function handler(req, res) {
         const months = parseInt(subscription.metadata.cancel_after_months, 10);
 
         if (months) {
-          // カレンダー月で正確に計算
           const cancelDate = new Date();
           cancelDate.setMonth(cancelDate.getMonth() + months);
           const cancelAt = Math.floor(cancelDate.getTime() / 1000);
