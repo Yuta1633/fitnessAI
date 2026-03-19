@@ -3315,7 +3315,7 @@ async function loadChatHistoryList() {
     return;
   }
 
-  historyCard.style.display = 'block';
+  historyCard.style.display = 'none'; return; // 非表示
 
   const goalLabel = { '1': '脂肪を落とす', '2': '筋肉をつける', '3': '体力を上げる', '4': '不調を改善', '5': '体型を整える' };
   const methodLabel = { nutrition: '栄養', training: 'トレーニング', recovery: '回復' };
