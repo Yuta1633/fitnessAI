@@ -1787,7 +1787,11 @@ function renderTrainingContent(text) {
 }
 function isRecoveryContent(text) {
   return (text.includes('STEP') || text.includes('やめること')) &&
-         (text.includes('開始姿勢') || text.includes('動作手順') || text.includes('感覚の目安') || text.includes('秒キープ') || text.includes('回繰り返'));
+         (text.includes('開始姿勢') || text.includes('動作手順') || text.includes('感覚の目安'));
+}
+
+function stripMd(s) {
+  return s.replace(/\*\*/g, '').replace(/^\s*[-・]\s*/, '').trim();
 }
 
 function renderRecoveryContent(text) {
@@ -1796,9 +1800,9 @@ function renderRecoveryContent(text) {
     '.rc-step{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);margin-bottom:12px;overflow:hidden}' +
     '.rc-head{padding:12px 18px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0C447C,#378ADD)}' +
     '.rc-num{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0}' +
-    '.rc-name{font-size:15px;font-weight:500;color:#fff}' +
+    '.rc-sname{font-size:15px;font-weight:500;color:#fff}' +
     '.rc-time{margin-left:auto;font-size:12px;color:rgba(255,255,255,.75);white-space:nowrap}' +
-    '.rc-body{padding:12px 18px;display:grid;grid-template-columns:52px 1fr;gap:4px 10px}' +
+    '.rc-body{padding:12px 18px;display:grid;grid-template-columns:48px 1fr;gap:4px 10px}' +
     '.rc-lbl{font-size:11px;color:var(--color-text-tertiary);padding-top:2px}' +
     '.rc-val{font-size:13px;color:var(--color-text-secondary);line-height:1.6}' +
     '.rc-feel{margin:4px 18px 12px;padding:8px 12px;background:var(--color-background-secondary);border-radius:8px;font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px}' +
@@ -1817,79 +1821,96 @@ function renderRecoveryContent(text) {
   var html = css + '<div class="rc-wrap">';
   var stepCount = 0;
   var inStop = false;
-  var cur = { name:'', time:'', pose:'', move:'', feel:'', count:'', extra:'' };
+  var inStep = false;
+  var cur = { name:'', time:'', pose:'', move:[], feel:'', count:'', extra:'' };
+  var curField = '';
 
   function flushStep() {
     if (!cur.name) return;
+    var moveText = cur.move.join(' → ');
     html += '<div class="rc-step"><div class="rc-head">' +
       '<div class="rc-num">' + stepCount + '</div>' +
-      '<span class="rc-name">' + escapeHtml(cur.name) + '</span>' +
+      '<span class="rc-sname">' + escapeHtml(cur.name) + '</span>' +
       (cur.time ? '<span class="rc-time">' + escapeHtml(cur.time) + '</span>' : '') +
       '</div><div class="rc-body">' +
       (cur.pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(cur.pose) + '</span>' : '') +
-      (cur.move ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(cur.move) + '</span>' : '') +
+      (moveText ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(moveText) + '</span>' : '') +
       (cur.feel ? '<span class="rc-lbl">感覚</span><span class="rc-val">' + escapeHtml(cur.feel) + '</span>' : '') +
       (cur.count ? '<span class="rc-lbl">回数</span><span class="rc-val">' + escapeHtml(cur.count) + '</span>' : '') +
       '</div>' +
       (cur.extra ? '<div class="rc-feel"><div class="rc-dot"></div>' + escapeHtml(cur.extra) + '</div>' : '') +
       '</div>';
-    cur = { name:'', time:'', pose:'', move:'', feel:'', count:'', extra:'' };
+    cur = { name:'', time:'', pose:'', move:[], feel:'', count:'', extra:'' };
+    curField = '';
+    inStep = false;
   }
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
-    if (!line) continue;
+    if (!line) { if (inStep) curField = ''; continue; }
 
-    // STEP見出し
-    var sm = line.match(/(?:▼\s*)?STEP\s*\d+[：:「\s]*([^（\n]+?)(?:[（(](\d+分)[）)])?$/) ||
-             line.match(/^##\s*▼\s*STEP\s*\d+[：:「\s]*([^（\n]+?)(?:[（(](\d+分)[）)])?/);
-    if (sm) {
+    var stepM = line.match(/(?:#{1,3}\s*)?(?:▼\s*)?STEP\s*\d+[^\S\n]*[：:「]?\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i);
+    if (stepM) {
       flushStep();
+      inStep = true;
       inStop = false;
       stepCount++;
-      cur.name = sm[1].trim().replace(/」$/, '');
-      cur.time = sm[2] || '';
-      // 時間が名前に含まれる場合
-      var tmInName = cur.name.match(/（(\d+分)）/);
-      if (tmInName) { cur.time = tmInName[1]; cur.name = cur.name.replace(/（\d+分）/, '').trim(); }
+      cur.name = stripMd(stepM[1]).replace(/」$/, '').trim();
+      cur.time = stepM[2] || '';
+      var tn = cur.name.match(/（(\d+分)）/);
+      if (tn) { cur.time = tn[1]; cur.name = cur.name.replace(/（\d+分）/, '').trim(); }
       continue;
     }
 
-    // やめること
-    if (/【やめること】|^## 【やめること】/.test(line)) {
+    if (/【やめること】|^やめること/.test(line)) {
       flushStep();
       inStop = true;
       html += '<div class="rc-stop"><div class="rc-stop-head">やめること</div>';
       continue;
     }
 
-    // 免責文
     if (/^※\s*AI/.test(line)) {
       flushStep();
       if (inStop) { html += '<div class="rc-disclaimer">' + escapeHtml(line) + '</div></div>'; inStop = false; }
-      else html += '<div class="rc-step"><div class="rc-disclaimer">' + escapeHtml(line) + '</div></div>';
+      else html += '<div style="padding:6px 0;font-size:11px;color:var(--color-text-tertiary)">' + escapeHtml(line) + '</div>';
       continue;
     }
 
-    // やめることの項目
     if (inStop) {
       if (/^❌/.test(line)) {
         html += '<div class="rc-stop-item"><div class="rc-x">x</div><div><div class="rc-stop-text">' +
-          escapeHtml(line.replace(/^❌\s*\*?\*?/, '').replace(/\*\*$/, '').trim()) + '</div>';
+          escapeHtml(stripMd(line.replace(/^❌\s*/, ''))) + '</div>';
       } else if (/^→/.test(line)) {
         html += '<div class="rc-stop-reason">' + escapeHtml(line.replace(/^→\s*/, '')) + '</div></div></div>';
       }
       continue;
     }
 
-    // STEPの内容
-    if (cur.name) {
-      if (/開始姿勢/.test(line)) cur.pose = line.replace(/\*?\*?開始姿勢\*?\*?[：:]\s*/, '').trim();
-      else if (/動作手順|具体的な動作/.test(line)) { /* ラベルのみ、次の行で内容 */ }
-      else if (/感覚の目安/.test(line)) cur.feel = line.replace(/\*?\*?感覚の目安\*?\*?[：:]\s*/, '').trim();
-      else if (/秒数|回数|セット数/.test(line)) cur.count = line.replace(/\*?\*?(?:秒数|回数)[^：:]*[：:]\s*/, '').trim();
-      else if (/根拠|科学的/.test(line)) cur.extra = line.replace(/\*?\*?根拠\*?\*?[：:]\s*/, '').trim();
-      else if (!cur.pose && /^[1-9]\./.test(line)) cur.move = (cur.move ? cur.move + ' → ' : '') + line.replace(/^\d+\.\s*/, '').trim();
+    if (inStep) {
+      var lblM = line.match(/^\*?\*?(開始姿勢|動作手順|感覚の目安|秒数・回数[^*]*|回数[^*]*|根拠)\*?\*?\s*[：:]?\s*(.*)$/);
+      if (lblM) {
+        var lbl = lblM[1];
+        curField = lbl.match(/開始姿勢/) ? 'pose' :
+                   lbl.match(/動作/) ? 'move' :
+                   lbl.match(/感覚/) ? 'feel' :
+                   lbl.match(/回数|秒数/) ? 'count' :
+                   lbl.match(/根拠/) ? 'extra' : '';
+        var inline = stripMd(lblM[2]);
+        if (inline && curField && curField !== 'move') cur[curField] = inline;
+        else if (inline && curField === 'move') cur.move.push(inline);
+        continue;
+      }
+
+      var cleaned = stripMd(line);
+      if (curField === 'pose' && !cur.pose) { cur.pose = cleaned; continue; }
+      if (curField === 'feel' && !cur.feel) { cur.feel = cleaned; continue; }
+      if (curField === 'count' && !cur.count) { cur.count = cleaned; continue; }
+      if (curField === 'extra' && !cur.extra) { cur.extra = cleaned; continue; }
+      if (curField === 'move') {
+        var nm = line.match(/^(\d+)\.\s*(.+)/);
+        if (nm) { cur.move.push(stripMd(nm[2])); continue; }
+        if (cleaned && cur.move.length < 5) { cur.move.push(cleaned); continue; }
+      }
     }
   }
 
