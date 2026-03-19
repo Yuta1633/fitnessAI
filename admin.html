@@ -23,8 +23,6 @@
 
     <div id="admin-content" style="display:none;">
 
-
-
       <!-- サービス停止 -->
       <div class="card visible">
         <p class="section-tag">SERVICE CONTROL</p>
@@ -47,6 +45,15 @@
           <button id="add-allowed-btn" style="padding:12px 20px; background:var(--accent); color:#000; border:none; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap;">追加</button>
         </div>
         <div id="allowed-list" style="display:flex; flex-direction:column; gap:6px;">
+          <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
+        </div>
+      </div>
+
+      <!-- 紹介コード別実績 -->
+      <div class="card visible">
+        <p class="section-tag">REFERRAL</p>
+        <p class="section-title">紹介コード<strong>別実績</strong></p>
+        <div id="referral-list">
           <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
         </div>
       </div>
