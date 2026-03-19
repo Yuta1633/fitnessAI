@@ -1622,21 +1622,17 @@ function escapeHtml(str) {
 // トレーニングプラン構造化レンダリング
 // ============================================================
 function isTrainingPlan(text) {
-  // マークダウン形式
-  const courseCount = [/🔥/, /💪/, /⚡/].filter(r => r.test(text)).length;
-  if (courseCount >= 2) return true;
-  // HTML形式（新フォーマット）
-  if (text.includes('class="course"') || text.includes('class="wrap"')) return true;
-  return false;
+  // マーカー形式
+  if (text.includes('COURSE_FIRE::') && text.includes('COURSE_END')) return true;
+  // 旧形式フォールバック
+  var courseCount = [/🔥/, /💪/, /⚡/].filter(function(r){ return r.test(text); }).length;
+  return courseCount >= 2;
 }
 
 function renderTrainingContent(text) {
-  if (text.includes('class="course"') || text.includes('class="wrap"')) return text;
-
-  var courseBlocks = [];
-  var parts = text.split(/(?=(?:🔥|💪|⚡))/g).filter(function(b){ return b.trim(); });
-  if (parts.length < 2) {
-    return escapeHtml(text).replace(/\n/g, '<br>');
+  // 旧形式フォールバック
+  if (!text.includes('COURSE_FIRE::')) {
+    return renderTrainingLegacy(text);
   }
 
   var css = '<style>' +
@@ -1667,124 +1663,162 @@ function renderTrainingContent(text) {
     '.tr-val{font-size:12px;color:var(--color-text-secondary);line-height:1.5}' +
     '.tr-rpe{padding-left:32px;margin-top:4px;font-size:11px;color:var(--color-text-tertiary)}' +
     '.tr-simple{padding:9px 18px;display:flex;align-items:center;gap:10px;border-bottom:.5px solid var(--color-border-tertiary)}' +
+    '.tr-simple:last-child{border-bottom:none}' +
     '.tr-simple-name{font-size:13px;color:var(--color-text-primary)}' +
     '.tr-simple-meta{margin-left:auto;font-size:12px;color:var(--color-text-secondary);white-space:nowrap}' +
     '.tr-aerobic{margin:8px 18px 14px;border-radius:10px;background:var(--color-background-secondary);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}' +
     '.tr-aerobic-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}' +
     '.tr-aerobic-detail{font-size:12px;color:var(--color-text-secondary);margin-top:2px}' +
+    '.tr-alt{margin:0 18px 14px;padding:10px 14px;background:var(--color-background-secondary);border-radius:10px;font-size:12px;color:var(--color-text-secondary)}' +
+    '.tr-alt-title{font-size:11px;font-weight:500;color:var(--color-text-tertiary);margin-bottom:6px;letter-spacing:.05em}' +
     '</style>';
 
+  var lines = text.split('\n');
   var html = css + '<div class="tr-wrap">';
 
-  parts.forEach(function(block) {
-    var lines = block.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l; });
-    if (!lines.length) return;
+  var inCourse = false;
+  var courseType = '';
+  var inEx = false;
+  var isDetail = false;
+  var exNum = 0;
+  var cur = {};
+  var alts = [];
+  var hasAerobic = false;
 
-    var headerLine = lines[0];
-    var type = 'std', badge = 'スタンダード', title = 'スタンダードコース', timeText = '', isDetail = false;
-    if (/🔥/.test(headerLine)) { type='fire'; badge='追い込む'; title='しっかり追い込むコース'; isDetail=true; }
-    else if (/⚡/.test(headerLine)) { type='ok'; badge='これだけでもOK'; title='これだけでもOKコース'; }
+  function flushEx() {
+    if (!cur.name) return;
+    if (isDetail) {
+      html += '<div class="tr-ex"><div class="tr-ex-top">' +
+        '<div class="tr-idx">' + exNum + '</div>' +
+        '<span class="tr-ex-name">' + escapeHtml(cur.name) + '</span>' +
+        '<div class="tr-chips">' +
+        (cur.sets ? '<span class="tr-chip">' + escapeHtml(cur.sets) + '</span>' : '') +
+        (cur.rest ? '<span class="tr-chip">休憩 ' + escapeHtml(cur.rest) + '</span>' : '') +
+        '</div></div>' +
+        '<div class="tr-ex-body">' +
+        (cur.pose ? '<span class="tr-lbl">姿勢</span><span class="tr-val">' + escapeHtml(cur.pose) + '</span>' : '') +
+        (cur.move ? '<span class="tr-lbl">動作</span><span class="tr-val">' + escapeHtml(cur.move) + '</span>' : '') +
+        (cur.feel ? '<span class="tr-lbl">効く</span><span class="tr-val">' + escapeHtml(cur.feel) + '</span>' : '') +
+        (cur.note ? '<span class="tr-lbl">注意</span><span class="tr-val">' + escapeHtml(cur.note) + '</span>' : '') +
+        '</div>' +
+        (cur.rpe ? '<div class="tr-rpe">' + escapeHtml(cur.rpe) + '</div>' : '') +
+        '</div>';
+    } else {
+      var meta = [cur.sets, cur.rest ? '休憩 ' + cur.rest : ''].filter(Boolean).join('｜');
+      html += '<div class="tr-simple">' +
+        '<div class="tr-idx">' + exNum + '</div>' +
+        '<span class="tr-simple-name">' + escapeHtml(cur.name) + '</span>' +
+        (meta ? '<span class="tr-simple-meta">' + escapeHtml(meta) + '</span>' : '') +
+        '</div>';
+    }
+    cur = {};
+    inEx = false;
+  }
 
-    var tm = headerLine.match(/[（(](?:所要時間[：:]?\s*)?(\d+分)[）)]/);
-    if (tm) timeText = tm[1];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
 
-    var tsuf = type==='fire'?'f': type==='ok'?'o':'s';
-    html += '<div class="tr-course"><div class="tr-head ' + type + '">' +
-      '<span class="tr-badge ' + type + '">' + badge + '</span>' +
-      '<span class="tr-title-' + tsuf + '">' + title + '</span>' +
-      (timeText ? '<span class="tr-time-' + tsuf + '">' + timeText + '</span>' : '') +
-      '</div>';
-
-    var section = '', exNum = 0, exName = '', exSets = '', exRest = '', exRpe = '';
-    var exPose = '', exMove = '', exFeel = '', exNote = '';
-
-    function flushEx() {
-      if (!exName) return;
-      if (isDetail) {
-        html += '<div class="tr-ex"><div class="tr-ex-top"><div class="tr-idx">' + exNum + '</div>' +
-          '<span class="tr-ex-name">' + escapeHtml(exName) + '</span>' +
-          '<div class="tr-chips">' +
-          (exSets ? '<span class="tr-chip">' + escapeHtml(exSets) + '</span>' : '') +
-          (exRest ? '<span class="tr-chip">休憩 ' + escapeHtml(exRest) + '</span>' : '') +
-          '</div></div>' +
-          '<div class="tr-ex-body">' +
-          (exPose ? '<span class="tr-lbl">姿勢</span><span class="tr-val">' + escapeHtml(exPose) + '</span>' : '') +
-          (exMove ? '<span class="tr-lbl">動作</span><span class="tr-val">' + escapeHtml(exMove) + '</span>' : '') +
-          (exFeel ? '<span class="tr-lbl">効く</span><span class="tr-val">' + escapeHtml(exFeel) + '</span>' : '') +
-          (exNote ? '<span class="tr-lbl">注意</span><span class="tr-val">' + escapeHtml(exNote) + '</span>' : '') +
-          '</div>' +
-          (exRpe ? '<div class="tr-rpe">' + escapeHtml(exRpe) + '</div>' : '') +
-          '</div>';
-      } else {
-        var meta = [exSets, exRest ? '休憩 ' + exRest : ''].filter(Boolean).join('｜');
-        html += '<div class="tr-simple"><div class="tr-idx">' + exNum + '</div>' +
-          '<span class="tr-simple-name">' + escapeHtml(exName) + '</span>' +
-          (meta ? '<span class="tr-simple-meta">' + escapeHtml(meta) + '</span>' : '') +
-          '</div>';
-      }
-      exName=''; exSets=''; exRest=''; exRpe=''; exPose=''; exMove=''; exFeel=''; exNote='';
+    // コース開始
+    var cm = line.match(/^COURSE_(FIRE|STD|OK)::(.+?)::(\d+分)$/);
+    if (cm) {
+      inCourse = true;
+      courseType = cm[1].toLowerCase();
+      isDetail = courseType === 'fire';
+      exNum = 0;
+      hasAerobic = false;
+      var badge = courseType === 'fire' ? '追い込む' : courseType === 'ok' ? 'これだけでもOK' : 'スタンダード';
+      var title = courseType === 'fire' ? 'しっかり追い込むコース' : courseType === 'ok' ? 'これだけでもOKコース' : 'スタンダードコース';
+      var tsuf = courseType === 'fire' ? 'f' : courseType === 'ok' ? 'o' : 's';
+      html += '<div class="tr-course"><div class="tr-head ' + courseType + '">' +
+        '<span class="tr-badge ' + courseType + '">' + badge + '</span>' +
+        '<span class="tr-title-' + tsuf + '">' + title + '</span>' +
+        '<span class="tr-time-' + tsuf + '">' + cm[3] + '</span>' +
+        '</div>';
+      html += '<div class="tr-sec"><span class="tr-sec-lbl">筋トレ</span><div class="tr-sec-line"></div></div>';
+      continue;
     }
 
-    for (var i = 1; i < lines.length; i++) {
-      var line = lines[i];
-
-      if (/^▼\s*(筋トレ|有酸素)/.test(line)) {
-        flushEx();
-        section = /筋トレ/.test(line) ? 'ex' : 'aerobic';
-        var sname = /筋トレ/.test(line) ? '筋トレ' : '有酸素';
-        html += '<div class="tr-sec"><span class="tr-sec-lbl">' + sname + '</span><div class="tr-sec-line"></div></div>';
-        exNum = 0;
-        continue;
+    // コース終了
+    if (line === 'COURSE_END') {
+      flushEx();
+      if (!hasAerobic) {
+        // 有酸素なし
       }
+      html += '</div>';
+      inCourse = false;
+      continue;
+    }
 
-      var em = line.match(/^(\d+)[.．]\s*(.+)/);
-      if (em && section === 'ex') {
-        flushEx();
-        exNum++;
-        var full = em[2];
-        var sm = full.match(/(\d+回\s*[×x]\s*\d+セット)/i);
-        var rm = full.match(/休憩\s*([\d〜~]+\s*[秒分][^、。\s]*)/);
-        var rp = full.match(/あと[\d〜~]+回できる余力[^\n]*/);
-        exName = full.split(/\s*[—–-]\s*/)[0].trim();
-        exSets = sm ? sm[1] : '';
-        exRest = rm ? rm[1] : '';
-        exRpe = rp ? rp[0] : '';
-        continue;
-      }
+    // 種目開始: EX::名前::回数::休憩
+    var em = line.match(/^EX::(.+?)::(.+?)::(.+)$/);
+    if (em) {
+      flushEx();
+      exNum++;
+      cur = { name: em[1], sets: em[2], rest: em[3], pose:'', move:'', feel:'', note:'', rpe:'' };
+      inEx = true;
+      continue;
+    }
 
-      if (section === 'aerobic' && line && !/^[①②③④]/.test(line) && !/^根拠/.test(line)) {
-        var am = line.match(/^(.+?)\s*[—–-]\s*(.+)/);
-        if (am) {
-          var an = am[1].trim(), ad = am[2].trim();
-          var atm = ad.match(/(\d+分)/);
-          var ahr = ad.match(/最大心拍数の([\d〜~]+%)/);
-          html += '<div class="tr-aerobic"><div>' +
-            '<div class="tr-aerobic-name">' + escapeHtml(an) + '</div>' +
-            '<div class="tr-aerobic-detail">' + (ahr ? '最大心拍数の' + ahr[1] : escapeHtml(ad)) + '</div>' +
-            '</div>' + (atm ? '<div style="font-size:12px;color:var(--color-text-secondary)">' + atm[1] + '</div>' : '') + '</div>';
-        }
-        continue;
-      }
+    // 種目終了
+    if (line === 'EX_END') {
+      flushEx();
+      continue;
+    }
 
-      if (exName && isDetail) {
-        if (/開始姿勢/.test(line)) exPose = line.replace(/.*開始姿勢[：:]\s*/, '').trim();
-        else if (/^①/.test(line)) exPose = line.replace(/^①\s*/, '').replace(/開始姿勢[：:]?\s*/, '').trim();
-        else if (/動作/.test(line) && !exMove) exMove = line.replace(/.*動作[手順]*[：:]\s*/, '').trim();
-        else if (/^②/.test(line)) exMove = line.replace(/^②\s*/, '').replace(/動作[：:]?\s*/, '').trim();
-        else if (/効く/.test(line)) exFeel = line.replace(/.*効く[場所]*[：:]\s*/, '').trim();
-        else if (/^③/.test(line)) exFeel = line.replace(/^③\s*/, '').replace(/効く[^：:]*[：:]\s*/, '').trim();
-        else if (/注意/.test(line)) exNote = line.replace(/.*注意[：:]\s*/, '').trim();
-        else if (/^④/.test(line)) exNote = line.replace(/^④\s*/, '').replace(/注意[：:]\s*/, '').trim();
-        else if (/あと\d/.test(line)) exRpe = line;
+    // 有酸素
+    var am = line.match(/^AEROBIC::(.+?)::(.+?)::(\d+分)$/);
+    if (am) {
+      flushEx();
+      hasAerobic = true;
+      html += '<div class="tr-sec"><span class="tr-sec-lbl">有酸素</span><div class="tr-sec-line"></div></div>' +
+        '<div class="tr-aerobic"><div>' +
+        '<div class="tr-aerobic-name">' + escapeHtml(am[1]) + '</div>' +
+        '<div class="tr-aerobic-detail">' + escapeHtml(am[2]) + '</div>' +
+        '</div><div style="font-size:12px;color:var(--color-text-secondary)">' + escapeHtml(am[3]) + '</div></div>';
+      continue;
+    }
+
+    // 代替案
+    var altm = line.match(/^ALT::(.+?)::(.+)$/);
+    if (altm) {
+      alts.push({ alt: altm[1], orig: altm[2] });
+      continue;
+    }
+
+    // 種目フィールド
+    if (inEx && isDetail) {
+      var fm = line.match(/^(姿勢|動作|効く|注意|RPE)::(.+)$/);
+      if (fm) {
+        var key = fm[1], val = fm[2];
+        if (key === '姿勢') cur.pose = val;
+        else if (key === '動作') cur.move = val;
+        else if (key === '効く') cur.feel = val;
+        else if (key === '注意') cur.note = val;
+        else if (key === 'RPE') cur.rpe = val;
       }
     }
-    flushEx();
+  }
+
+  // 代替案
+  if (alts.length) {
+    html += '<div class="tr-alt"><div class="tr-alt-title">代替案（器具がない場合）</div>';
+    alts.forEach(function(a) {
+      html += '<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px">' +
+        escapeHtml(a.orig) + ' → <span style="color:var(--color-text-primary)">' + escapeHtml(a.alt) + '</span></div>';
+    });
     html += '</div>';
-  });
+  }
 
   html += '</div>';
   return html;
 }
+
+function renderTrainingLegacy(text) {
+  return escapeHtml(text).replace(/\n/g, '<br>');
+}
+
+
 function isRecoveryContent(text) {
   return text.includes('STEP_END') && text.includes('STOP_START');
 }
