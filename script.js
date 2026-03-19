@@ -1633,300 +1633,263 @@ function isTrainingPlan(text) {
 function renderTrainingContent(text) {
   if (text.includes('class="course"') || text.includes('class="wrap"')) return text;
 
-  const CSS = `<style>
-.tr-wrap{max-width:640px;padding:0.5rem 0;font-family:var(--font-sans)}
-.tr-course{border-radius:16px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);margin-bottom:16px;overflow:hidden}
-.tr-head{padding:13px 18px;display:flex;align-items:center;gap:10px}
-.tr-head.fire{background:linear-gradient(135deg,#993C1D 0%,#D85A30 100%)}
-.tr-head.std{background:var(--color-background-secondary)}
-.tr-head.ok{background:linear-gradient(135deg,#3B6D11 0%,#639922 100%)}
-.tr-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}
-.tr-badge.fire,.tr-badge.ok{background:rgba(255,255,255,0.2);color:#fff}
-.tr-badge.std{background:var(--color-background-primary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
-.tr-title.fire,.tr-title.ok{font-size:15px;font-weight:500;color:#fff}
-.tr-title.std{font-size:15px;font-weight:500;color:var(--color-text-primary)}
-.tr-time.fire,.tr-time.ok{margin-left:auto;font-size:12px;color:rgba(255,255,255,0.75)}
-.tr-time.std{margin-left:auto;font-size:12px;color:var(--color-text-secondary)}
-.tr-sec{display:flex;align-items:center;gap:8px;padding:10px 18px 4px}
-.tr-sec-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.06em;text-transform:uppercase}
-.tr-sec-line{flex:1;height:0.5px;background:var(--color-border-tertiary)}
-.tr-ex{padding:10px 18px 12px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.tr-ex-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.tr-idx{width:22px;height:22px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--color-text-secondary);flex-shrink:0}
-.tr-ex-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
-.tr-chips{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
-.tr-chip{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);white-space:nowrap}
-.tr-ex-body{padding-left:32px;display:grid;grid-template-columns:48px 1fr;gap:3px 8px}
-.tr-lbl{font-size:11px;color:var(--color-text-tertiary);padding-top:2px}
-.tr-val{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
-.tr-rpe{padding-left:32px;margin-top:4px;font-size:11px;color:var(--color-text-tertiary)}
-.tr-simple{padding:9px 18px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.tr-simple:last-of-type{border-bottom:none}
-.tr-simple-name{font-size:13px;color:var(--color-text-primary)}
-.tr-simple-meta{margin-left:auto;font-size:12px;color:var(--color-text-secondary);white-space:nowrap}
-.tr-aerobic{margin:8px 18px 14px;border-radius:10px;background:var(--color-background-secondary);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-.tr-aerobic-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
-.tr-aerobic-detail{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
-.tr-aerobic-right{font-size:12px;color:var(--color-text-secondary)}
-</style>`;
-
-  // コースブロックに分割
-  const courseBlocks = text.split(/(?=(?:🔥|💪|⚡))/g).filter(b => b.trim());
-  if (courseBlocks.length < 2) {
-    // コースが1つ以下の場合はシンプルレンダリング
-    return CSS + '<div class="tr-wrap">' + escapeHtml(text).replace(/\n/g, '<br>') + '</div>';
+  var courseBlocks = [];
+  var parts = text.split(/(?=(?:🔥|💪|⚡))/g).filter(function(b){ return b.trim(); });
+  if (parts.length < 2) {
+    return escapeHtml(text).replace(/\n/g, '<br>');
   }
 
-  let html = CSS + '<div class="tr-wrap">';
+  var css = '<style>' +
+    '.tr-wrap{max-width:640px;padding:.5rem 0;font-family:var(--font-sans)}' +
+    '.tr-course{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);margin-bottom:16px;overflow:hidden}' +
+    '.tr-head{padding:13px 18px;display:flex;align-items:center;gap:10px}' +
+    '.tr-head.fire{background:linear-gradient(135deg,#993C1D,#D85A30)}' +
+    '.tr-head.std{background:var(--color-background-secondary)}' +
+    '.tr-head.ok{background:linear-gradient(135deg,#3B6D11,#639922)}' +
+    '.tr-badge{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px}' +
+    '.tr-badge.fire,.tr-badge.ok{background:rgba(255,255,255,.2);color:#fff}' +
+    '.tr-badge.std{background:var(--color-background-primary);color:var(--color-text-secondary);border:.5px solid var(--color-border-tertiary)}' +
+    '.tr-title-f,.tr-title-o{font-size:15px;font-weight:500;color:#fff}' +
+    '.tr-title-s{font-size:15px;font-weight:500;color:var(--color-text-primary)}' +
+    '.tr-time-f,.tr-time-o{margin-left:auto;font-size:12px;color:rgba(255,255,255,.75)}' +
+    '.tr-time-s{margin-left:auto;font-size:12px;color:var(--color-text-secondary)}' +
+    '.tr-sec{display:flex;align-items:center;gap:8px;padding:10px 18px 4px}' +
+    '.tr-sec-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.06em;text-transform:uppercase}' +
+    '.tr-sec-line{flex:1;height:.5px;background:var(--color-border-tertiary)}' +
+    '.tr-ex{padding:10px 18px 12px;border-bottom:.5px solid var(--color-border-tertiary)}' +
+    '.tr-ex-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}' +
+    '.tr-idx{width:22px;height:22px;border-radius:50%;background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--color-text-secondary);flex-shrink:0}' +
+    '.tr-ex-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}' +
+    '.tr-chips{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}' +
+    '.tr-chip{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);white-space:nowrap}' +
+    '.tr-ex-body{padding-left:32px;display:grid;grid-template-columns:48px 1fr;gap:3px 8px}' +
+    '.tr-lbl{font-size:11px;color:var(--color-text-tertiary);padding-top:2px}' +
+    '.tr-val{font-size:12px;color:var(--color-text-secondary);line-height:1.5}' +
+    '.tr-rpe{padding-left:32px;margin-top:4px;font-size:11px;color:var(--color-text-tertiary)}' +
+    '.tr-simple{padding:9px 18px;display:flex;align-items:center;gap:10px;border-bottom:.5px solid var(--color-border-tertiary)}' +
+    '.tr-simple-name{font-size:13px;color:var(--color-text-primary)}' +
+    '.tr-simple-meta{margin-left:auto;font-size:12px;color:var(--color-text-secondary);white-space:nowrap}' +
+    '.tr-aerobic{margin:8px 18px 14px;border-radius:10px;background:var(--color-background-secondary);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}' +
+    '.tr-aerobic-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}' +
+    '.tr-aerobic-detail{font-size:12px;color:var(--color-text-secondary);margin-top:2px}' +
+    '</style>';
 
-  for (const block of courseBlocks) {
-    const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-    if (!lines.length) continue;
+  var html = css + '<div class="tr-wrap">';
 
-    const headerLine = lines[0];
-    let type = 'std', badgeLabel = 'スタンダード', titleText = 'スタンダードコース', timeText = '';
+  parts.forEach(function(block) {
+    var lines = block.split('\n').map(function(l){ return l.trim(); }).filter(function(l){ return l; });
+    if (!lines.length) return;
 
-    if (/🔥/.test(headerLine)) { type = 'fire'; badgeLabel = '追い込む'; titleText = 'しっかり追い込むコース'; }
-    else if (/⚡/.test(headerLine)) { type = 'ok'; badgeLabel = 'これだけでもOK'; titleText = 'これだけでもOKコース'; }
-    else if (/💪/.test(headerLine)) { type = 'std'; badgeLabel = 'スタンダード'; titleText = 'スタンダードコース'; }
+    var headerLine = lines[0];
+    var type = 'std', badge = 'スタンダード', title = 'スタンダードコース', timeText = '', isDetail = false;
+    if (/🔥/.test(headerLine)) { type='fire'; badge='追い込む'; title='しっかり追い込むコース'; isDetail=true; }
+    else if (/⚡/.test(headerLine)) { type='ok'; badge='これだけでもOK'; title='これだけでもOKコース'; }
 
-    // 時間を抽出
-    const timeMatch = headerLine.match(/[（(](?:所要時間[：:]?\s*)?(\d+分)[）)]/);
-    if (timeMatch) timeText = timeMatch[1];
+    var tm = headerLine.match(/[（(](?:所要時間[：:]?\s*)?(\d+分)[）)]/);
+    if (tm) timeText = tm[1];
 
-    html += \`<div class="tr-course">
-  <div class="tr-head \${type}">
-    <span class="tr-badge \${type}">\${badgeLabel}</span>
-    <span class="tr-title \${type}">\${titleText}</span>
-    \${timeText ? \`<span class="tr-time \${type}">\${timeText}</span>\` : ''}
-  </div>\`;
+    var tsuf = type==='fire'?'f': type==='ok'?'o':'s';
+    html += '<div class="tr-course"><div class="tr-head ' + type + '">' +
+      '<span class="tr-badge ' + type + '">' + badge + '</span>' +
+      '<span class="tr-title-' + tsuf + '">' + title + '</span>' +
+      (timeText ? '<span class="tr-time-' + tsuf + '">' + timeText + '</span>' : '') +
+      '</div>';
 
-    let currentSection = '';
-    let exCount = 0;
-    let inEx = false;
-    let currentEx = null;
-    let exLines = [];
-    let isFirst = type === 'fire'; // 追い込むコースのみ詳細表示
+    var section = '', exNum = 0, exName = '', exSets = '', exRest = '', exRpe = '';
+    var exPose = '', exMove = '', exFeel = '', exNote = '';
 
-    const flushEx = () => {
-      if (!currentEx) return;
-      if (isFirst) {
-        // 詳細表示
-        let exHtml = \`<div class="tr-ex"><div class="tr-ex-top"><div class="tr-idx">\${exCount}</div><span class="tr-ex-name">\${escapeHtml(currentEx.name)}</span>\`;
-        const chips = [];
-        if (currentEx.sets) chips.push(currentEx.sets);
-        if (currentEx.rest) chips.push('休憩 ' + currentEx.rest);
-        if (chips.length) exHtml += '<div class="tr-chips">' + chips.map(c => \`<span class="tr-chip">\${escapeHtml(c)}</span>\`).join('') + '</div>';
-        exHtml += '</div><div class="tr-ex-body">';
-        if (currentEx.pose) exHtml += \`<span class="tr-lbl">姿勢</span><span class="tr-val">\${escapeHtml(currentEx.pose)}</span>\`;
-        if (currentEx.move) exHtml += \`<span class="tr-lbl">動作</span><span class="tr-val">\${escapeHtml(currentEx.move)}</span>\`;
-        if (currentEx.feel) exHtml += \`<span class="tr-lbl">効く</span><span class="tr-val">\${escapeHtml(currentEx.feel)}</span>\`;
-        if (currentEx.note) exHtml += \`<span class="tr-lbl">注意</span><span class="tr-val">\${escapeHtml(currentEx.note)}</span>\`;
-        exHtml += '</div>';
-        if (currentEx.rpe) exHtml += \`<div class="tr-rpe">\${escapeHtml(currentEx.rpe)}</div>\`;
-        exHtml += '</div>';
-        html += exHtml;
+    function flushEx() {
+      if (!exName) return;
+      if (isDetail) {
+        html += '<div class="tr-ex"><div class="tr-ex-top"><div class="tr-idx">' + exNum + '</div>' +
+          '<span class="tr-ex-name">' + escapeHtml(exName) + '</span>' +
+          '<div class="tr-chips">' +
+          (exSets ? '<span class="tr-chip">' + escapeHtml(exSets) + '</span>' : '') +
+          (exRest ? '<span class="tr-chip">休憩 ' + escapeHtml(exRest) + '</span>' : '') +
+          '</div></div>' +
+          '<div class="tr-ex-body">' +
+          (exPose ? '<span class="tr-lbl">姿勢</span><span class="tr-val">' + escapeHtml(exPose) + '</span>' : '') +
+          (exMove ? '<span class="tr-lbl">動作</span><span class="tr-val">' + escapeHtml(exMove) + '</span>' : '') +
+          (exFeel ? '<span class="tr-lbl">効く</span><span class="tr-val">' + escapeHtml(exFeel) + '</span>' : '') +
+          (exNote ? '<span class="tr-lbl">注意</span><span class="tr-val">' + escapeHtml(exNote) + '</span>' : '') +
+          '</div>' +
+          (exRpe ? '<div class="tr-rpe">' + escapeHtml(exRpe) + '</div>' : '') +
+          '</div>';
       } else {
-        // シンプル表示
-        let meta = [currentEx.sets, currentEx.rest ? '休憩 ' + currentEx.rest : ''].filter(Boolean).join('｜');
-        html += \`<div class="tr-simple"><div class="tr-idx">\${exCount}</div><span class="tr-simple-name">\${escapeHtml(currentEx.name)}</span>\${meta ? \`<span class="tr-simple-meta">\${escapeHtml(meta)}</span>\` : ''}</div>\`;
+        var meta = [exSets, exRest ? '休憩 ' + exRest : ''].filter(Boolean).join('｜');
+        html += '<div class="tr-simple"><div class="tr-idx">' + exNum + '</div>' +
+          '<span class="tr-simple-name">' + escapeHtml(exName) + '</span>' +
+          (meta ? '<span class="tr-simple-meta">' + escapeHtml(meta) + '</span>' : '') +
+          '</div>';
       }
-      currentEx = null;
-    };
+      exName=''; exSets=''; exRest=''; exRpe=''; exPose=''; exMove=''; exFeel=''; exNote='';
+    }
 
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
+    for (var i = 1; i < lines.length; i++) {
+      var line = lines[i];
 
-      // セクション見出し
       if (/^▼\s*(筋トレ|有酸素)/.test(line)) {
         flushEx();
-        const secName = line.replace(/^▼\s*/, '').replace(/（.*?）/, '').trim();
-        currentSection = secName;
-        html += \`<div class="tr-sec"><span class="tr-sec-lbl">\${escapeHtml(secName)}</span><div class="tr-sec-line"></div></div>\`;
-        exCount = 0;
+        section = /筋トレ/.test(line) ? 'ex' : 'aerobic';
+        var sname = /筋トレ/.test(line) ? '筋トレ' : '有酸素';
+        html += '<div class="tr-sec"><span class="tr-sec-lbl">' + sname + '</span><div class="tr-sec-line"></div></div>';
+        exNum = 0;
         continue;
       }
 
-      // 種目行（番号で始まる）
-      const exMatch = line.match(/^(\d+)[.．、]\s*(.+?)(?:\s*[—–-]\s*(.+))?$/);
-      if (exMatch && currentSection === '筋トレ') {
+      var em = line.match(/^(\d+)[.．]\s*(.+)/);
+      if (em && section === 'ex') {
         flushEx();
-        exCount++;
-        const fullName = exMatch[2].trim();
-        // 回数・セット・休憩を名前から分離
-        const setsMatch = fullName.match(/(\d+回\s*[×x×]\s*\d+セット|\d+回\s*[×x×]\s*\d+set)/i);
-        const restMatch = fullName.match(/休憩\s*([\d〜~]+[秒分](?:\s*[\d〜~]+[秒分])?)/);
-        const rpeMatch = fullName.match(/あと[\d〜~]+回できる余力/);
-        const name = fullName
-          .replace(/\s*[—–-]\s*.+$/, '')
-          .replace(/\(.+?\)/g, '')
-          .trim();
-        currentEx = {
-          name,
-          sets: setsMatch ? setsMatch[0] : (exMatch[3] || ''),
-          rest: restMatch ? restMatch[1] : '',
-          rpe: rpeMatch ? rpeMatch[0] : '',
-          pose: '', move: '', feel: '', note: ''
-        };
+        exNum++;
+        var full = em[2];
+        var sm = full.match(/(\d+回\s*[×x]\s*\d+セット)/i);
+        var rm = full.match(/休憩\s*([\d〜~]+\s*[秒分][^、。\s]*)/);
+        var rp = full.match(/あと[\d〜~]+回できる余力[^\n]*/);
+        exName = full.split(/\s*[—–-]\s*/)[0].trim();
+        exSets = sm ? sm[1] : '';
+        exRest = rm ? rm[1] : '';
+        exRpe = rp ? rp[0] : '';
         continue;
       }
 
-      // 有酸素行
-      if (currentSection === '有酸素' && line && !/^[①②③④⑤]/.test(line)) {
-        const aeroMatch = line.match(/^(.+?)[—–-]\s*(.+)/);
-        if (aeroMatch) {
-          const aName = aeroMatch[1].trim();
-          const aDetail = aeroMatch[2].trim();
-          const timeM = aDetail.match(/(\d+分)/);
-          const hrM = aDetail.match(/最大心拍数の([\d〜~]+%)/);
-          html += \`<div class="tr-aerobic"><div><div class="tr-aerobic-name">\${escapeHtml(aName)}</div><div class="tr-aerobic-detail">\${hrM ? '最大心拍数の' + hrM[1] : escapeHtml(aDetail)}</div></div>\${timeM ? \`<div class="tr-aerobic-right">\${timeM[1]}</div>\` : ''}</div>\`;
+      if (section === 'aerobic' && line && !/^[①②③④]/.test(line) && !/^根拠/.test(line)) {
+        var am = line.match(/^(.+?)\s*[—–-]\s*(.+)/);
+        if (am) {
+          var an = am[1].trim(), ad = am[2].trim();
+          var atm = ad.match(/(\d+分)/);
+          var ahr = ad.match(/最大心拍数の([\d〜~]+%)/);
+          html += '<div class="tr-aerobic"><div>' +
+            '<div class="tr-aerobic-name">' + escapeHtml(an) + '</div>' +
+            '<div class="tr-aerobic-detail">' + (ahr ? '最大心拍数の' + ahr[1] : escapeHtml(ad)) + '</div>' +
+            '</div>' + (atm ? '<div style="font-size:12px;color:var(--color-text-secondary)">' + atm[1] + '</div>' : '') + '</div>';
         }
         continue;
       }
 
-      // 動作説明（①〜④）
-      if (currentEx && isFirst) {
-        if (/^[①開始姿勢]/.test(line) || /^開始姿勢/.test(line)) currentEx.pose = line.replace(/^[①]\s*開始姿勢[：:]?\s*/,'').replace(/^開始姿勢[：:]?\s*/,'').trim();
-        else if (/^[②動作]/.test(line) || /^動作/.test(line)) currentEx.move = line.replace(/^[②]\s*動作[：:]?\s*/,'').replace(/^動作[：:]?\s*/,'').trim();
-        else if (/^[③効]/.test(line) || /^効く/.test(line)) currentEx.feel = line.replace(/^[③]\s*効く[場所]*[：:]?\s*/,'').replace(/^効く[^：:]*[：:]?\s*/,'').trim();
-        else if (/^[④注意]/.test(line) || /^注意/.test(line)) currentEx.note = line.replace(/^[④]\s*注意[：:]?\s*/,'').replace(/^注意[：:]?\s*/,'').trim();
-        else if (/あと\d/.test(line)) currentEx.rpe = line;
+      if (exName && isDetail) {
+        if (/開始姿勢/.test(line)) exPose = line.replace(/.*開始姿勢[：:]\s*/, '').trim();
+        else if (/^①/.test(line)) exPose = line.replace(/^①\s*/, '').replace(/開始姿勢[：:]?\s*/, '').trim();
+        else if (/動作/.test(line) && !exMove) exMove = line.replace(/.*動作[手順]*[：:]\s*/, '').trim();
+        else if (/^②/.test(line)) exMove = line.replace(/^②\s*/, '').replace(/動作[：:]?\s*/, '').trim();
+        else if (/効く/.test(line)) exFeel = line.replace(/.*効く[場所]*[：:]\s*/, '').trim();
+        else if (/^③/.test(line)) exFeel = line.replace(/^③\s*/, '').replace(/効く[^：:]*[：:]\s*/, '').trim();
+        else if (/注意/.test(line)) exNote = line.replace(/.*注意[：:]\s*/, '').trim();
+        else if (/^④/.test(line)) exNote = line.replace(/^④\s*/, '').replace(/注意[：:]\s*/, '').trim();
+        else if (/あと\d/.test(line)) exRpe = line;
       }
     }
     flushEx();
     html += '</div>';
-  }
+  });
 
   html += '</div>';
   return html;
 }
-
 function isRecoveryContent(text) {
   return (text.includes('STEP') || text.includes('やめること')) &&
          (text.includes('開始姿勢') || text.includes('動作手順') || text.includes('感覚の目安') || text.includes('秒キープ') || text.includes('回繰り返'));
 }
 
 function renderRecoveryContent(text) {
-  const CSS = `<style>
-.rc-wrap{max-width:640px;padding:0.5rem 0;font-family:var(--font-sans)}
-.rc-step{border-radius:16px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);margin-bottom:12px;overflow:hidden}
-.rc-head{padding:12px 18px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0C447C 0%,#378ADD 100%)}
-.rc-num{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0}
-.rc-name{font-size:15px;font-weight:500;color:#fff}
-.rc-time{margin-left:auto;font-size:12px;color:rgba(255,255,255,0.75);white-space:nowrap}
-.rc-body{padding:12px 18px;display:grid;grid-template-columns:52px 1fr;gap:4px 10px}
-.rc-lbl{font-size:11px;color:var(--color-text-tertiary);padding-top:2px}
-.rc-val{font-size:13px;color:var(--color-text-secondary);line-height:1.6}
-.rc-feel{margin:4px 18px 12px;padding:8px 12px;background:var(--color-background-secondary);border-radius:8px;font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px}
-.rc-dot{width:6px;height:6px;border-radius:50%;background:#378ADD;flex-shrink:0}
-.rc-extra-wrap{display:flex;align-items:center;gap:8px;padding:12px 18px 4px}
-.rc-extra-line{flex:1;height:0.5px;background:var(--color-border-tertiary)}
-.rc-extra-lbl{font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:0.06em;text-transform:uppercase}
-.rc-extra{margin:6px 18px 14px;border-radius:10px;background:var(--color-background-secondary);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-.rc-extra-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
-.rc-extra-detail{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
-.rc-stop{border-radius:16px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);overflow:hidden;margin-bottom:12px}
-.rc-stop-head{padding:12px 18px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary);font-size:13px;font-weight:500;color:var(--color-text-primary)}
-.rc-stop-item{padding:10px 18px;display:flex;align-items:flex-start;gap:10px;border-bottom:0.5px solid var(--color-border-tertiary)}
-.rc-stop-item:last-child{border-bottom:none}
-.rc-x{width:18px;height:18px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:10px;color:#A32D2D;font-weight:500}
-.rc-stop-text{font-size:13px;color:var(--color-text-secondary);line-height:1.5}
-.rc-stop-reason{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
-.rc-disclaimer{padding:10px 18px;font-size:11px;color:var(--color-text-tertiary);border-top:0.5px solid var(--color-border-tertiary)}
-</style>`;
+  var css = '<style>' +
+    '.rc-wrap{max-width:640px;padding:.5rem 0;font-family:var(--font-sans)}' +
+    '.rc-step{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);margin-bottom:12px;overflow:hidden}' +
+    '.rc-head{padding:12px 18px;display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0C447C,#378ADD)}' +
+    '.rc-num{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:#fff;flex-shrink:0}' +
+    '.rc-name{font-size:15px;font-weight:500;color:#fff}' +
+    '.rc-time{margin-left:auto;font-size:12px;color:rgba(255,255,255,.75);white-space:nowrap}' +
+    '.rc-body{padding:12px 18px;display:grid;grid-template-columns:52px 1fr;gap:4px 10px}' +
+    '.rc-lbl{font-size:11px;color:var(--color-text-tertiary);padding-top:2px}' +
+    '.rc-val{font-size:13px;color:var(--color-text-secondary);line-height:1.6}' +
+    '.rc-feel{margin:4px 18px 12px;padding:8px 12px;background:var(--color-background-secondary);border-radius:8px;font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px}' +
+    '.rc-dot{width:6px;height:6px;border-radius:50%;background:#378ADD;flex-shrink:0}' +
+    '.rc-stop{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);overflow:hidden;margin-bottom:12px}' +
+    '.rc-stop-head{padding:12px 18px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;font-weight:500;color:var(--color-text-primary)}' +
+    '.rc-stop-item{padding:10px 18px;display:flex;align-items:flex-start;gap:10px;border-bottom:.5px solid var(--color-border-tertiary)}' +
+    '.rc-stop-item:last-child{border-bottom:none}' +
+    '.rc-x{width:18px;height:18px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:10px;color:#A32D2D;font-weight:500}' +
+    '.rc-stop-text{font-size:13px;color:var(--color-text-secondary);line-height:1.5}' +
+    '.rc-stop-reason{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}' +
+    '.rc-disclaimer{padding:10px 18px;font-size:11px;color:var(--color-text-tertiary);border-top:.5px solid var(--color-border-tertiary)}' +
+    '</style>';
 
-  const lines = text.split('\n');
-  let html = CSS + '<div class="rc-wrap">';
-  let stepCount = 0;
-  let inStep = false;
-  let inStop = false;
-  let stopStarted = false;
-  let currentStep = { name: '', time: '', pose: '', move: '', feel: '', count: '', extra: '' };
+  var lines = text.split('\n');
+  var html = css + '<div class="rc-wrap">';
+  var stepCount = 0;
+  var inStop = false;
+  var cur = { name:'', time:'', pose:'', move:'', feel:'', count:'', extra:'' };
 
-  const flushStep = () => {
-    if (!currentStep.name) return;
-    html += `<div class="rc-step"><div class="rc-head"><div class="rc-num">${stepCount}</div><span class="rc-name">${escapeHtml(currentStep.name)}</span>${currentStep.time ? `<span class="rc-time">${escapeHtml(currentStep.time)}</span>` : ''}</div><div class="rc-body">`;
-    if (currentStep.pose) html += `<span class="rc-lbl">姿勢</span><span class="rc-val">${escapeHtml(currentStep.pose)}</span>`;
-    if (currentStep.move) html += `<span class="rc-lbl">動作</span><span class="rc-val">${escapeHtml(currentStep.move)}</span>`;
-    if (currentStep.feel) html += `<span class="rc-lbl">感覚</span><span class="rc-val">${escapeHtml(currentStep.feel)}</span>`;
-    if (currentStep.count) html += `<span class="rc-lbl">回数</span><span class="rc-val">${escapeHtml(currentStep.count)}</span>`;
-    html += '</div>';
-    if (currentStep.extra) html += `<div class="rc-feel"><div class="rc-dot"></div>${escapeHtml(currentStep.extra)}</div>`;
-    html += '</div>';
-    currentStep = { name: '', time: '', pose: '', move: '', feel: '', count: '', extra: '' };
-  };
+  function flushStep() {
+    if (!cur.name) return;
+    html += '<div class="rc-step"><div class="rc-head">' +
+      '<div class="rc-num">' + stepCount + '</div>' +
+      '<span class="rc-name">' + escapeHtml(cur.name) + '</span>' +
+      (cur.time ? '<span class="rc-time">' + escapeHtml(cur.time) + '</span>' : '') +
+      '</div><div class="rc-body">' +
+      (cur.pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(cur.pose) + '</span>' : '') +
+      (cur.move ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(cur.move) + '</span>' : '') +
+      (cur.feel ? '<span class="rc-lbl">感覚</span><span class="rc-val">' + escapeHtml(cur.feel) + '</span>' : '') +
+      (cur.count ? '<span class="rc-lbl">回数</span><span class="rc-val">' + escapeHtml(cur.count) + '</span>' : '') +
+      '</div>' +
+      (cur.extra ? '<div class="rc-feel"><div class="rc-dot"></div>' + escapeHtml(cur.extra) + '</div>' : '') +
+      '</div>';
+    cur = { name:'', time:'', pose:'', move:'', feel:'', count:'', extra:'' };
+  }
 
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
     if (!line) continue;
 
     // STEP見出し
-    const stepMatch = line.match(/(?:▼\s*)?STEP\s*(\d+)[：:「\s]*([^（
-]+?)(?:[（(](\d+分)[）)])?$/);
-    if (stepMatch || /^##\s*▼/.test(line)) {
+    var sm = line.match(/(?:▼\s*)?STEP\s*\d+[：:「\s]*([^（\n]+?)(?:[（(](\d+分)[）)])?$/) ||
+             line.match(/^##\s*▼\s*STEP\s*\d+[：:「\s]*([^（\n]+?)(?:[（(](\d+分)[）)])?/);
+    if (sm) {
       flushStep();
       inStop = false;
-      inStep = true;
       stepCount++;
-
-      if (stepMatch) {
-        currentStep.name = stepMatch[2].trim().replace(/」$/, '');
-        currentStep.time = stepMatch[3] || '';
-      } else {
-        currentStep.name = line.replace(/^##\s*▼\s*/, '').replace(/（.*?）/, '').trim();
-        const tm = line.match(/（(\d+分)）/);
-        if (tm) currentStep.time = tm[1];
-      }
+      cur.name = sm[1].trim().replace(/」$/, '');
+      cur.time = sm[2] || '';
+      // 時間が名前に含まれる場合
+      var tmInName = cur.name.match(/（(\d+分)）/);
+      if (tmInName) { cur.time = tmInName[1]; cur.name = cur.name.replace(/（\d+分）/, '').trim(); }
       continue;
     }
 
     // やめること
-    if (/(?:##\s*)?【やめること】|^やめること/.test(line)) {
+    if (/【やめること】|^## 【やめること】/.test(line)) {
       flushStep();
-      inStep = false;
       inStop = true;
-      stopStarted = true;
       html += '<div class="rc-stop"><div class="rc-stop-head">やめること</div>';
-      continue;
-    }
-
-    // 入浴・別枠
-    if (/入浴|別枠/.test(line) && !inStop) {
-      const timeM = line.match(/(\d+分)/);
-      const tempM = line.match(/(\d+度)/);
-      html += '<div class="rc-extra-wrap"><div class="rc-extra-line"></div><span class="rc-extra-lbl">別枠</span><div class="rc-extra-line"></div></div>';
-      html += `<div class="rc-extra"><div><div class="rc-extra-name">入浴</div><div class="rc-extra-detail">${tempM ? tempM[1] + 'のお湯 — 時間があれば終了後に' : '時間があれば終了後に'}</div></div>${timeM ? `<div>${escapeHtml(timeM[1])}</div>` : ''}</div>`;
       continue;
     }
 
     // 免責文
     if (/^※\s*AI/.test(line)) {
       flushStep();
-      if (inStop) { html += `<div class="rc-disclaimer">${escapeHtml(line)}</div></div>`; inStop = false; }
-      else html += `<div class="rc-step"><div class="rc-disclaimer">${escapeHtml(line)}</div></div>`;
+      if (inStop) { html += '<div class="rc-disclaimer">' + escapeHtml(line) + '</div></div>'; inStop = false; }
+      else html += '<div class="rc-step"><div class="rc-disclaimer">' + escapeHtml(line) + '</div></div>';
       continue;
     }
 
     // やめることの項目
     if (inStop) {
       if (/^❌/.test(line)) {
-        const text2 = line.replace(/^❌\s*\*?\*?/, '').replace(/\*\*$/, '').trim();
-        html += `<div class="rc-stop-item"><div class="rc-x">✕</div><div><div class="rc-stop-text">${escapeHtml(text2)}</div>`;
+        html += '<div class="rc-stop-item"><div class="rc-x">x</div><div><div class="rc-stop-text">' +
+          escapeHtml(line.replace(/^❌\s*\*?\*?/, '').replace(/\*\*$/, '').trim()) + '</div>';
       } else if (/^→/.test(line)) {
-        const reason = line.replace(/^→\s*/, '');
-        html += `<div class="rc-stop-reason">${escapeHtml(reason)}</div></div></div>`;
+        html += '<div class="rc-stop-reason">' + escapeHtml(line.replace(/^→\s*/, '')) + '</div></div></div>';
       }
       continue;
     }
 
     // STEPの内容
-    if (inStep) {
-      if (/開始姿勢/.test(line)) currentStep.pose = line.replace(/\*?\*?開始姿勢\*?\*?[：:]\s*/, '').trim();
-      else if (/動作手順|具体的な動作/.test(line)) currentStep.move = '';
-      else if (currentStep.move !== undefined && /^\d+\.\s/.test(line) && !currentStep.move) currentStep.move = line.replace(/^\d+\.\s*/, '');
-      else if (/感覚の目安/.test(line)) currentStep.feel = line.replace(/\*?\*?感覚の目安\*?\*?[：:]\s*/, '').trim();
-      else if (/秒数|回数|セット数/.test(line)) currentStep.count = line.replace(/\*?\*?(?:秒数|回数|セット数)[・\/回数セット数]*\*?\*?[：:]\s*/, '').trim();
-      else if (/根拠|科学的/.test(line)) currentStep.extra = line.replace(/\*?\*?根拠\*?\*?[：:]\s*/, '').trim();
+    if (cur.name) {
+      if (/開始姿勢/.test(line)) cur.pose = line.replace(/\*?\*?開始姿勢\*?\*?[：:]\s*/, '').trim();
+      else if (/動作手順|具体的な動作/.test(line)) { /* ラベルのみ、次の行で内容 */ }
+      else if (/感覚の目安/.test(line)) cur.feel = line.replace(/\*?\*?感覚の目安\*?\*?[：:]\s*/, '').trim();
+      else if (/秒数|回数|セット数/.test(line)) cur.count = line.replace(/\*?\*?(?:秒数|回数)[^：:]*[：:]\s*/, '').trim();
+      else if (/根拠|科学的/.test(line)) cur.extra = line.replace(/\*?\*?根拠\*?\*?[：:]\s*/, '').trim();
+      else if (!cur.pose && /^[1-9]\./.test(line)) cur.move = (cur.move ? cur.move + ' → ' : '') + line.replace(/^\d+\.\s*/, '').trim();
     }
   }
 
