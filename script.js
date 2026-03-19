@@ -3218,8 +3218,13 @@ function addStreamingMessage() {
 }
 
 function updateStreamingMessage(div, text) {
-  const { cleanText, options } = parseOptions(text);
-  div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
+  // ストリーミング中はHTMLをそのまま表示（HTML形式の場合）
+  if (text.includes('class="wrap"') || text.includes('class="step-block"')) {
+    div.innerHTML = text;
+  } else {
+    const { cleanText, options } = parseOptions(text);
+    div.innerHTML = escapeHtml(cleanText).replace(/\n/g, '<br>');
+  }
   chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
@@ -3228,6 +3233,12 @@ function finalizeStreamingMessage(div, text) {
 
   if (isTrainingPlan(text)) {
     div.innerHTML = renderTrainingContent(text);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    return;
+  }
+
+  if (text.includes('class="step-block"') || text.includes('class="stop-block"')) {
+    div.innerHTML = text;
     chatHistory.scrollTop = chatHistory.scrollHeight;
     return;
   }
