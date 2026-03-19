@@ -270,6 +270,9 @@
     </div>
     <p id="plan-note" class="plan-note">税込・買い切り</p>
 
+    <div style="margin-bottom:12px;">
+      <input type="text" id="referral-code" placeholder="紹介者コード（お持ちの方のみ）" style="width:100%; padding:10px 14px; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none;" oninput="this.value=this.value.toUpperCase()">
+    </div>
     <button id="purchase-btn" onclick="startCheckout()" class="purchase-cta">購入してはじめる →</button>
 
     <p id="purchase-msg" class="purchase-msg"></p>
@@ -687,7 +690,11 @@ async function startCheckout() {
     const res = await fetch('/api/create-checkout', {
       method: 'POST',
       headers: checkoutHeaders,
-      body: JSON.stringify({ email: userEmail, plan: selectedPlan })
+      body: JSON.stringify({
+        email: userEmail,
+        plan: selectedPlan,
+        referral_code: document.getElementById('referral-code')?.value?.trim() || ''
+      })
     });
     const data = await res.json();
     if (data.url) {

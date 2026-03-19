@@ -14,9 +14,6 @@ const serviceStatus    = document.getElementById('service-status');
 const toggleServiceBtn = document.getElementById('toggle-service-btn');
 const userList         = document.getElementById('user-list');
 
-// ============================================================
-// 管理者チェック
-// ============================================================
 async function checkAdmin() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -40,11 +37,9 @@ async function checkAdmin() {
   loadServiceStatus();
   loadAllowedUsers();
   loadUsers().catch(e => console.error('loadUsersエラー:', e));
+  loadReferralStats();
 }
 
-// ============================================================
-// サービス状態
-// ============================================================
 async function loadServiceStatus() {
   const { data } = await supabase
     .from('service_settings')
@@ -87,12 +82,8 @@ toggleServiceBtn.addEventListener('click', async () => {
   updateServiceUI(newValue === 'true');
 });
 
-// ============================================================
-// ユーザー詳細データ取得
-// ============================================================
 async function loadUserDetail(userId) {
   const today = new Date();
-
   const day = today.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(today);
@@ -111,7 +102,6 @@ async function loadUserDetail(userId) {
     .select('recorded_at')
     .eq('user_id', userId);
 
-  // 全アクティブ日を統合
   const activeDates = new Set();
   (usageData || []).filter(r => r.count > 0).forEach(r => activeDates.add(r.date));
   (bodyDatesData || []).forEach(r => {
@@ -156,7 +146,6 @@ async function loadUserDetail(userId) {
     if (methodCount[h.method] !== undefined) methodCount[h.method]++;
   });
 
-  // 体重記録
   const { data: bodyData } = await supabase
     .from('body_records')
     .select('weight, body_fat, recorded_at, created_at')
@@ -164,7 +153,6 @@ async function loadUserDetail(userId) {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  // スタート記録
   const { data: startData } = await supabase
     .from('body_records')
     .select('weight, body_fat, recorded_at, created_at')
@@ -172,14 +160,12 @@ async function loadUserDetail(userId) {
     .order('created_at', { ascending: true })
     .limit(1);
 
-  // 目標設定
   const { data: goalData } = await supabase
     .from('user_goals')
     .select('goal_weight, goal_body_fat')
     .eq('user_id', userId)
     .maybeSingle();
 
-  // 同意記録
   const { data: consentData } = await supabase
     .from('user_consents')
     .select('consented_at, terms_version, privacy_version')
@@ -196,7 +182,6 @@ async function loadUserDetail(userId) {
 
   const consent = (consentData && consentData.length > 0) ? consentData[0] : null;
 
-  // タイプ診断結果
   const { data: analysisData } = await supabase
     .from('personal_analysis')
     .select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at')
@@ -207,9 +192,6 @@ async function loadUserDetail(userId) {
   return { streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData: bodyData || [], startRecord, goalData: goalData || null, consent, analysisData: analysisData || [] };
 }
 
-// ============================================================
-// 詳細パネルのHTML生成
-// ============================================================
 function renderAdminGauge(label, unit, startVal, currentVal, goalVal, color) {
   if (startVal == null || currentVal == null || goalVal == null) return '';
   const isIncrease = goalVal > startVal;
@@ -244,7 +226,6 @@ function renderAdminGauge(label, unit, startVal, currentVal, goalVal, color) {
 function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData, startRecord, goalData, consent, analysisData }) {
   const methodLabel = { nutrition: '🥗 栄養', training: '🏋️ トレーニング', recovery: '😴 回復' };
 
-  // 同意状況
   let consentHtml = '';
   if (consent) {
     const date = new Date(consent.consented_at);
@@ -313,7 +294,6 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     </div>
   `;
 
-  // 体重記録（折り畳み表示）
   let bodyHtml = '';
   if (bodyData && bodyData.length > 0) {
     const pageSize = 5;
@@ -339,7 +319,6 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     `;
   }
 
-  // 目標・進捗ゲージ
   let goalHtml = '';
   if (goalData && (goalData.goal_weight != null || goalData.goal_body_fat != null)) {
     const parts = [];
@@ -347,43 +326,36 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     if (goalData.goal_body_fat != null) parts.push(`目標体脂肪率: <strong>${goalData.goal_body_fat}%</strong>`);
 
     let gaugeHtml = '';
-
     if (goalData.goal_weight != null) {
       const currentWeight = bodyData.find(r => r.weight != null)?.weight ?? null;
       const startWeight = [...bodyData].reverse().find(r => r.weight != null)?.weight ?? null;
-
       if (currentWeight != null) {
         if (startWeight != null && startWeight !== currentWeight) {
           gaugeHtml += renderAdminGauge('体重', 'kg', startWeight, currentWeight, goalData.goal_weight, 'var(--accent)');
         } else {
           const remaining = Math.abs(currentWeight - goalData.goal_weight).toFixed(1);
-          const isIncrease = goalData.goal_weight > currentWeight;
-          const reached = isIncrease ? currentWeight >= goalData.goal_weight : currentWeight <= goalData.goal_weight;
+          const reached = goalData.goal_weight > currentWeight ? currentWeight >= goalData.goal_weight : currentWeight <= goalData.goal_weight;
           gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 現在 <strong style="color:var(--white);">${currentWeight}kg</strong> → 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　${reached ? '目標達成！🎉' : `あと ${remaining}kg`}</p>`;
         }
       } else {
         gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　（記録なし）</p>`;
       }
     }
-
     if (goalData.goal_body_fat != null) {
       const currentBodyFat = bodyData.find(r => r.body_fat != null)?.body_fat ?? null;
       const startBodyFat = [...bodyData].reverse().find(r => r.body_fat != null)?.body_fat ?? null;
-
       if (currentBodyFat != null) {
         if (startBodyFat != null && startBodyFat !== currentBodyFat) {
           gaugeHtml += renderAdminGauge('体脂肪率', '%', startBodyFat, currentBodyFat, goalData.goal_body_fat, '#4fc3f7');
         } else {
           const remaining = Math.abs(currentBodyFat - goalData.goal_body_fat).toFixed(1);
-          const isIncrease = goalData.goal_body_fat > currentBodyFat;
-          const reached = isIncrease ? currentBodyFat >= goalData.goal_body_fat : currentBodyFat <= goalData.goal_body_fat;
+          const reached = goalData.goal_body_fat > currentBodyFat ? currentBodyFat >= goalData.goal_body_fat : currentBodyFat <= goalData.goal_body_fat;
           gaugeHtml += `<p style="font-size:12px; color:var(--muted);">体脂肪率: 現在 <strong style="color:var(--white);">${currentBodyFat}%</strong> → 目標 <strong style="color:#4fc3f7;">${goalData.goal_body_fat}%</strong>　${reached ? '目標達成！🎉' : `あと ${remaining}%`}</p>`;
         }
       } else {
         gaugeHtml += `<p style="font-size:12px; color:var(--muted);">体脂肪率: 目標 <strong style="color:#4fc3f7;">${goalData.goal_body_fat}%</strong>　（記録なし）</p>`;
       }
     }
-
     goalHtml = `
       <div style="margin-bottom:14px;">
         <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">GOAL & PROGRESS</p>
@@ -395,14 +367,9 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     `;
   }
 
-  // タイプ診断結果
   let analysisHtml = '';
   if (analysisData && analysisData.length > 0) {
-    analysisHtml = `
-      <div style="margin-bottom:14px;">
-        <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">PERSONAL ANALYSIS</p>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-    `;
+    analysisHtml = `<div style="margin-bottom:14px;"><p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">PERSONAL ANALYSIS</p><div style="display:flex; flex-direction:column; gap:8px;">`;
     analysisData.forEach(function(item) {
       var date = new Date(item.created_at);
       var dateStr = date.getFullYear() + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
@@ -411,31 +378,7 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
       var tPct = total > 0 ? Math.round((item.training_count || 0) / total * 100) : 0;
       var rPct = total > 0 ? Math.round((item.recovery_count || 0) / total * 100) : 0;
       var detailId = 'pa-detail-' + Math.random().toString(36).slice(2, 8);
-
-      analysisHtml += `
-        <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}'); d.style.display=d.style.display==='none'?'block':'none';">
-            <div>
-              <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
-                <span style="font-size:13px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">${item.type_name || '未分類'}</span>
-                <span style="font-size:11px; color:var(--muted);">🔥${item.streak || 0}日連続</span>
-              </div>
-              <div style="font-size:11px; color:var(--muted);">${dateStr}　🥗${nPct}% 🏋️${tPct}% 😴${rPct}%</div>
-            </div>
-            <span style="font-size:12px; color:var(--muted);">▼</span>
-          </div>
-          <div id="${detailId}" style="display:none; padding:0 14px 14px; border-top:1px solid var(--border);">
-            <div style="padding-top:12px;">
-              <div style="display:flex; gap:6px; margin-bottom:10px;">
-                <div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🥗</span><br><strong style="font-size:12px; color:#4ade80;">${item.nutrition_count || 0}</strong></div>
-                <div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🏋️</span><br><strong style="font-size:12px; color:#f59e0b;">${item.training_count || 0}</strong></div>
-                <div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">😴</span><br><strong style="font-size:12px; color:#818cf8;">${item.recovery_count || 0}</strong></div>
-              </div>
-              <div style="background:#1a1a1a; border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(item.full_result || '結果なし')}</div>
-            </div>
-          </div>
-        </div>
-      `;
+      analysisHtml += `<div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;"><div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}'); d.style.display=d.style.display==='none'?'block':'none';"><div><div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;"><span style="font-size:13px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">${item.type_name || '未分類'}</span><span style="font-size:11px; color:var(--muted);">🔥${item.streak || 0}日連続</span></div><div style="font-size:11px; color:var(--muted);">${dateStr}　🥗${nPct}% 🏋️${tPct}% 😴${rPct}%</div></div><span style="font-size:12px; color:var(--muted);">▼</span></div><div id="${detailId}" style="display:none; padding:0 14px 14px; border-top:1px solid var(--border);"><div style="padding-top:12px;"><div style="display:flex; gap:6px; margin-bottom:10px;"><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🥗</span><br><strong style="font-size:12px; color:#4ade80;">${item.nutrition_count || 0}</strong></div><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🏋️</span><br><strong style="font-size:12px; color:#f59e0b;">${item.training_count || 0}</strong></div><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">😴</span><br><strong style="font-size:12px; color:#818cf8;">${item.recovery_count || 0}</strong></div></div><div style="background:#1a1a1a; border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(item.full_result || '結果なし')}</div></div></div></div>`;
     });
     analysisHtml += '</div></div>';
   }
@@ -471,7 +414,7 @@ function renderAllowedPage() {
       <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#1e1e1e; border:1px solid var(--border); border-radius:8px;">
         <div>
           <p style="font-size:13px; color:var(--white);">${u.email}</p>
-          <p style="font-size:11px; color:var(--muted);">追加日: ${dateStr}${u.memo ? '　メモ: ' + u.memo : ''}</p>
+          <p style="font-size:11px; color:var(--muted);">追加日: ${dateStr}${u.referral_code ? '　紹介コード: <strong style="color:var(--accent);">' + escapeHtml(u.referral_code) + '</strong>' : ''}${u.memo ? '　メモ: ' + u.memo : ''}</p>
         </div>
         <button data-allowed-id="${u.id}" style="padding:6px 14px; border-radius:6px; border:1px solid var(--red); background:transparent; color:var(--red); cursor:pointer; font-size:12px;">解除</button>
       </div>
@@ -497,10 +440,7 @@ function renderAllowedPage() {
       if (!confirm('このユーザーのアクセス許可を解除しますか？')) return;
       btn.disabled = true;
       btn.textContent = '解除中...';
-      const { error } = await supabase
-        .from('allowed_users')
-        .delete()
-        .eq('id', btn.dataset.allowedId);
+      const { error } = await supabase.from('allowed_users').delete().eq('id', btn.dataset.allowedId);
       if (error) {
         alert('解除に失敗しました');
         btn.disabled = false;
@@ -520,11 +460,10 @@ function renderAllowedPage() {
 async function loadAllowedUsers() {
   const { data, error } = await supabase
     .from('allowed_users')
-    .select('id, email, memo, created_at')
+    .select('id, email, memo, referral_code, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('allowed_users取得エラー:', error);
     allowedList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
     return;
   }
@@ -544,16 +483,13 @@ addAllowedBtn.addEventListener('click', async () => {
   addAllowedBtn.disabled = true;
   addAllowedBtn.textContent = '追加中...';
 
-  const { error } = await supabase
-    .from('allowed_users')
-    .insert({ email });
+  const { error } = await supabase.from('allowed_users').insert({ email });
 
   if (error) {
     if (error.code === '23505') {
       alert('このメールアドレスは既に追加されています');
     } else {
       alert('追加に失敗しました: ' + error.message);
-      console.error('allowed_users追加エラー:', error);
     }
   } else {
     allowedEmailInput.value = '';
@@ -589,7 +525,7 @@ function renderUserPage() {
   const start = (usersPage - 1) * USERS_PER_PAGE;
   const pageData = usersFiltered.slice(start, start + USERS_PER_PAGE);
 
-  pageData.forEach(({ user, name, info, isBlocked, hasConsent, isAllowed }) => {
+  pageData.forEach(({ user, name, info, isBlocked, hasConsent, isAllowed, referralCode }) => {
     const div = document.createElement('div');
     div.style.cssText = 'background:#1e1e1e; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden;';
 
@@ -598,18 +534,16 @@ function renderUserPage() {
     header.innerHTML = `
       <div style="flex:1; min-width:0;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
-          ${name
-            ? `<p style="font-size:14px; color:var(--white); font-weight:700;">${name}</p>`
-            : `<p style="font-size:12px; color:#666; font-style:italic;">名前未登録</p>`
-          }
+          ${name ? `<p style="font-size:14px; color:var(--white); font-weight:700;">${name}</p>` : `<p style="font-size:12px; color:#666; font-style:italic;">名前未登録</p>`}
           <p style="font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${user.email}</p>
           <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; ${isAllowed ? 'background:#1a2a1a; color:var(--accent); border:1px solid var(--accent);' : 'background:#2a1a1a; color:var(--red); border:1px solid var(--red);'}">${isAllowed ? '許可' : '未許可'}</span>
           <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; ${hasConsent ? 'background:#1a2a1a; color:var(--accent); border:1px solid var(--accent);' : 'background:#2a1a1a; color:var(--red); border:1px solid var(--red);'}">${hasConsent ? '同意済' : '未同意'}</span>
+          ${referralCode ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(79,195,247,0.15); color:#4fc3f7; border:1px solid rgba(79,195,247,0.3);">📣 ${escapeHtml(referralCode)}</span>` : ''}
         </div>
         <p style="font-size:12px; color:var(--muted);">今日: ${info.today}回 ／ 累計: ${info.total}回</p>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-shrink:0; margin-left:12px;">
-        <span class="toggle-icon" style="font-size:12px; color:var(--muted); transition: transform 0.2s;">▼ 詳細</span>
+        <span class="toggle-icon" style="font-size:12px; color:var(--muted);">▼ 詳細</span>
         <button data-uid="${user.id}" data-blocked="${isBlocked}" style="padding:8px 16px; border-radius:8px; border:1px solid ${isBlocked ? 'var(--accent)' : 'var(--red)'}; background:transparent; color:${isBlocked ? 'var(--accent)' : 'var(--red)'}; cursor:pointer; font-size:13px;">
           ${isBlocked ? '解除' : '停止'}
         </button>
@@ -622,23 +556,16 @@ function renderUserPage() {
 
     let loaded = false;
 
-    header.addEventListener('mouseenter', () => {
-      if (detailArea.style.display === 'none') header.style.background = '#252525';
-    });
-    header.addEventListener('mouseleave', () => {
-      header.style.background = '';
-    });
+    header.addEventListener('mouseenter', () => { if (detailArea.style.display === 'none') header.style.background = '#252525'; });
+    header.addEventListener('mouseleave', () => { header.style.background = ''; });
 
     header.addEventListener('click', async (e) => {
       if (e.target.tagName === 'BUTTON') return;
-
       const icon = header.querySelector('.toggle-icon');
-
       if (detailArea.style.display === 'none') {
         detailArea.style.display = 'block';
         icon.textContent = '▲ 閉じる';
         header.style.background = '#252525';
-
         if (!loaded) {
           loaded = true;
           const detail = await loadUserDetail(user.id);
@@ -652,7 +579,6 @@ function renderUserPage() {
     });
 
     header.querySelector('button').addEventListener('click', (e) => toggleBlock(e, user.id));
-
     div.appendChild(header);
     div.appendChild(detailArea);
     userList.appendChild(div);
@@ -683,37 +609,20 @@ function renderUserPage() {
 async function loadUsers() {
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: allUsers, error: userError } = await supabase
-    .from('all_users')
-    .select('id, email, created_at');
-  console.log('allUsers:', allUsers, userError);
-
-  // 名前を取得
-  const { data: profileData } = await supabase
-    .from('user_profiles')
-    .select('user_id, name');
+  const { data: allUsers } = await supabase.from('all_users').select('id, email, created_at');
+  const { data: profileData } = await supabase.from('user_profiles').select('user_id, name');
   const profileMap = {};
   (profileData || []).forEach(p => { profileMap[p.user_id] = p.name; });
 
-  const { data: usageData } = await supabase
-    .from('usage_limits')
-    .select('user_id, count, date');
-
-  const { data: blockData } = await supabase
-    .from('blocked_users')
-    .select('user_id');
-
-  const { data: consentData } = await supabase
-    .from('user_consents')
-    .select('user_id, consented_at');
-
-  const { data: allowedData } = await supabase
-    .from('allowed_users')
-    .select('email');
+  const { data: usageData } = await supabase.from('usage_limits').select('user_id, count, date');
+  const { data: blockData } = await supabase.from('blocked_users').select('user_id');
+  const { data: consentData } = await supabase.from('user_consents').select('user_id, consented_at');
+  const { data: allowedData } = await supabase.from('allowed_users').select('email, referral_code');
 
   const blockedIds = new Set((blockData || []).map(b => b.user_id));
   const consentedIds = new Set((consentData || []).map(c => c.user_id));
-  const allowedEmails = new Set((allowedData || []).map(a => a.email));
+  const allowedMap = {};
+  (allowedData || []).forEach(a => { allowedMap[a.email] = a.referral_code || ''; });
 
   const userMap = {};
   (usageData || []).forEach(row => {
@@ -733,14 +642,14 @@ async function loadUsers() {
     info: userMap[user.id] || { total: 0, today: 0 },
     isBlocked: blockedIds.has(user.id),
     hasConsent: consentedIds.has(user.id),
-    isAllowed: allowedEmails.has(user.email)
+    isAllowed: user.email in allowedMap,
+    referralCode: allowedMap[user.email] || '',
   }));
 
   usersFiltered = [...usersAllData];
   usersPage = 1;
   renderUserPage();
 
-  // 名前・メールアドレス両方で検索
   const searchInput = document.getElementById('user-search');
   searchInput.placeholder = '名前・メールアドレスで検索...';
   searchInput.addEventListener('input', () => {
@@ -754,15 +663,10 @@ async function loadUsers() {
   });
 }
 
-// ============================================================
-// ブロック切り替え
-// ============================================================
 async function toggleBlock(e, userId) {
   const btn = e.target;
   btn.disabled = true;
-
   const currentlyBlocked = btn.dataset.blocked === 'true';
-
   if (currentlyBlocked) {
     await supabase.from('blocked_users').delete().eq('user_id', userId);
     btn.textContent = '停止';
@@ -776,11 +680,9 @@ async function toggleBlock(e, userId) {
     btn.style.color = 'var(--accent)';
     btn.dataset.blocked = 'true';
   }
-
   btn.disabled = false;
 }
 
-// 管理画面の体重記録折り畳み
 const RECORD_PAGE_SIZE = 5;
 
 function renderAdminRecordList(recordId, records, shown) {
@@ -801,8 +703,6 @@ function renderAdminRecordList(recordId, records, shown) {
   `).join('');
 
   btnsEl.innerHTML = '';
-  btnsEl.style.cssText = 'display:flex; gap:8px; margin-top:8px;';
-
   if (hasMore) {
     const btn = document.createElement('button');
     btn.textContent = `過去${Math.min(RECORD_PAGE_SIZE, records.length - shown)}件を表示`;
@@ -844,21 +744,20 @@ var analysisAllData = [];
 var analysisPage = 1;
 
 async function loadAnalysisResults() {
-  var analysisList = document.getElementById("analysis-list");
+  var analysisList = document.getElementById('analysis-list');
   if (!analysisList) return;
 
   var { data, error } = await supabase
-    .from("personal_analysis")
-    .select("id, user_id, type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at")
-    .order("created_at", { ascending: false });
+    .from('personal_analysis')
+    .select('id, user_id, type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at')
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error("personal_analysis取得エラー:", error);
     analysisList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
     return;
   }
 
-  var { data: allUsers } = await supabase.from("all_users").select("id, email");
+  var { data: allUsers } = await supabase.from('all_users').select('id, email');
   var emailMap = {};
   (allUsers || []).forEach(function(u) { emailMap[u.id] = u.email; });
 
@@ -877,52 +776,27 @@ function renderAnalysisPage(listEl, emailMap) {
   var start = (analysisPage - 1) * ANALYSIS_PER_PAGE;
   var pageData = analysisAllData.slice(start, start + ANALYSIS_PER_PAGE);
 
-  var html = "";
+  var html = '';
   pageData.forEach(function(item) {
     var date = new Date(item.created_at);
-    var dateStr = date.getFullYear() + "/" + String(date.getMonth()+1).padStart(2,"0") + "/" + String(date.getDate()).padStart(2,"0") + " " + String(date.getHours()).padStart(2,"0") + ":" + String(date.getMinutes()).padStart(2,"0");
-    var email = emailMap[item.user_id] || "不明";
+    var dateStr = date.getFullYear() + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
+    var email = emailMap[item.user_id] || '不明';
     var total = (item.nutrition_count || 0) + (item.training_count || 0) + (item.recovery_count || 0);
     var nPct = total > 0 ? Math.round((item.nutrition_count || 0) / total * 100) : 0;
     var tPct = total > 0 ? Math.round((item.training_count || 0) / total * 100) : 0;
     var rPct = total > 0 ? Math.round((item.recovery_count || 0) / total * 100) : 0;
-    var itemId = "analysis-" + item.id.slice(0, 8);
+    var itemId = 'analysis-' + item.id.slice(0, 8);
 
     html += '<div style="background:#1e1e1e; border:1px solid var(--border); border-radius:12px; overflow:hidden;">';
     html += '<div id="' + itemId + '-header" style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; cursor:pointer;" data-target="' + itemId + '-detail">';
-    html += '<div style="flex:1;">';
-    html += '<div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">';
-    html += '<span style="font-size:13px; color:var(--white);">' + escapeHtml(email) + '</span>';
-    html += '<span style="font-size:12px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">' + escapeHtml(item.type_name || "未分類") + '</span>';
-    html += '</div>';
-    html += '<div style="display:flex; gap:12px; font-size:11px; color:var(--muted);">';
-    html += '<span>' + dateStr + '</span>';
-    html += '<span>🔥 ' + (item.streak || 0) + '日連続</span>';
-    html += '<span>🥗' + nPct + '% 🏋️' + tPct + '% 😴' + rPct + '%</span>';
-    html += '</div>';
-    html += '</div>';
-    html += '<span style="font-size:12px; color:var(--muted);">▼</span>';
-    html += '</div>';
-    html += '<div id="' + itemId + '-detail" style="display:none; padding:0 18px 16px; border-top:1px solid var(--border);">';
-    html += '<div style="padding-top:14px;">';
-    html += '<div style="display:flex; gap:8px; margin-bottom:12px;">';
-    html += '<div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🥗 栄養</span><br><strong style="color:#4ade80;">' + (item.nutrition_count || 0) + '回</strong></div>';
-    html += '<div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🏋️ トレ</span><br><strong style="color:#f59e0b;">' + (item.training_count || 0) + '回</strong></div>';
-    html += '<div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">😴 回復</span><br><strong style="color:#818cf8;">' + (item.recovery_count || 0) + '回</strong></div>';
-    html += '</div>';
-    var safeResult = escapeHtml(item.full_result || "結果なし");
-    html += '<div style="background:#111; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:13px; color:var(--white); line-height:1.8; white-space:pre-wrap;">' + safeResult.replace(/## /g, '<br><span style="color:var(--accent); font-size:12px; letter-spacing:0.1em; font-weight:700;">').replace(/\n/g, '</span>\n') + '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
+    html += '<div style="flex:1;"><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:13px; color:var(--white);">' + escapeHtml(email) + '</span><span style="font-size:12px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">' + escapeHtml(item.type_name || '未分類') + '</span></div><div style="display:flex; gap:12px; font-size:11px; color:var(--muted);"><span>' + dateStr + '</span><span>🔥 ' + (item.streak || 0) + '日連続</span><span>🥗' + nPct + '% 🏋️' + tPct + '% 😴' + rPct + '%</span></div></div>';
+    html += '<span style="font-size:12px; color:var(--muted);">▼</span></div>';
+    html += '<div id="' + itemId + '-detail" style="display:none; padding:0 18px 16px; border-top:1px solid var(--border);"><div style="padding-top:14px;"><div style="display:flex; gap:8px; margin-bottom:12px;"><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🥗 栄養</span><br><strong style="color:#4ade80;">' + (item.nutrition_count || 0) + '回</strong></div><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🏋️ トレ</span><br><strong style="color:#f59e0b;">' + (item.training_count || 0) + '回</strong></div><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">😴 回復</span><br><strong style="color:#818cf8;">' + (item.recovery_count || 0) + '回</strong></div></div>';
+    html += '<div style="background:#111; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:13px; color:var(--white); line-height:1.8; white-space:pre-wrap;">' + escapeHtml(item.full_result || '結果なし') + '</div></div></div></div>';
   });
 
   if (totalPages > 1) {
-    html += '<div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;">';
-    html += '<button id="analysis-prev" ' + (analysisPage <= 1 ? "disabled" : "") + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage <= 1 ? "#333" : "var(--muted)") + '; cursor:' + (analysisPage <= 1 ? "not-allowed" : "pointer") + '; font-size:12px;">← 前へ</button>';
-    html += '<span style="font-size:12px; color:var(--muted);">' + analysisPage + " / " + totalPages + "（全" + analysisAllData.length + "件）</span>";
-    html += '<button id="analysis-next" ' + (analysisPage >= totalPages ? "disabled" : "") + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage >= totalPages ? "#333" : "var(--muted)") + '; cursor:' + (analysisPage >= totalPages ? "not-allowed" : "pointer") + '; font-size:12px;">次へ →</button>';
-    html += '</div>';
+    html += '<div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;"><button id="analysis-prev" ' + (analysisPage <= 1 ? 'disabled' : '') + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage <= 1 ? '#333' : 'var(--muted)') + '; cursor:' + (analysisPage <= 1 ? 'not-allowed' : 'pointer') + '; font-size:12px;">← 前へ</button><span style="font-size:12px; color:var(--muted);">' + analysisPage + ' / ' + totalPages + '（全' + analysisAllData.length + '件）</span><button id="analysis-next" ' + (analysisPage >= totalPages ? 'disabled' : '') + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage >= totalPages ? '#333' : 'var(--muted)') + '; cursor:' + (analysisPage >= totalPages ? 'not-allowed' : 'pointer') + '; font-size:12px;">次へ →</button></div>';
   } else {
     html += '<p style="font-size:11px; color:var(--muted); text-align:center; margin-top:8px;">全' + analysisAllData.length + '件</p>';
   }
@@ -930,24 +804,90 @@ function renderAnalysisPage(listEl, emailMap) {
   listEl.innerHTML = html;
 
   pageData.forEach(function(item) {
-    var itemId = "analysis-" + item.id.slice(0, 8);
-    var header = document.getElementById(itemId + "-header");
+    var itemId = 'analysis-' + item.id.slice(0, 8);
+    var header = document.getElementById(itemId + '-header');
     if (header) {
-      header.addEventListener("click", function() {
-        var detail = document.getElementById(itemId + "-detail");
-        if (detail.style.display === "none") {
-          detail.style.display = "block";
-        } else {
-          detail.style.display = "none";
-        }
+      header.addEventListener('click', function() {
+        var detail = document.getElementById(itemId + '-detail');
+        if (detail.style.display === 'none') { detail.style.display = 'block'; } else { detail.style.display = 'none'; }
       });
     }
   });
 
-  var prevBtn = document.getElementById("analysis-prev");
-  var nextBtn = document.getElementById("analysis-next");
-  if (prevBtn) prevBtn.addEventListener("click", function() { analysisPage--; renderAnalysisPage(listEl, emailMap); });
-  if (nextBtn) nextBtn.addEventListener("click", function() { analysisPage++; renderAnalysisPage(listEl, emailMap); });
+  var prevBtn = document.getElementById('analysis-prev');
+  var nextBtn = document.getElementById('analysis-next');
+  if (prevBtn) prevBtn.addEventListener('click', function() { analysisPage--; renderAnalysisPage(listEl, emailMap); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { analysisPage++; renderAnalysisPage(listEl, emailMap); });
+}
+
+// ============================================================
+// 紹介コード別実績
+// ============================================================
+async function loadReferralStats() {
+  const referralList = document.getElementById('referral-list');
+  if (!referralList) return;
+
+  referralList.innerHTML = '<p style="color:var(--muted); font-size:13px;">読み込み中...</p>';
+
+  try {
+    const { data, error } = await supabase
+      .from('allowed_users')
+      .select('email, referral_code, created_at')
+      .not('referral_code', 'is', null)
+      .neq('referral_code', '')
+      .order('created_at', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      referralList.innerHTML = '<p style="color:var(--muted); font-size:13px;">紹介コード経由の購入者がまだいません</p>';
+      return;
+    }
+
+    // コード別に集計
+    const codeMap = {};
+    data.forEach(u => {
+      const code = u.referral_code || '不明';
+      if (!codeMap[code]) codeMap[code] = [];
+      codeMap[code].push(u);
+    });
+
+    let html = '';
+    Object.entries(codeMap).sort((a, b) => b[1].length - a[1].length).forEach(([code, users]) => {
+      const revenue = users.length * 99800;
+      const commission20 = Math.floor(revenue * 0.20);
+      const commission25 = Math.floor(revenue * 0.25);
+      const commission30 = Math.floor(revenue * 0.30);
+      const commission35 = Math.floor(revenue * 0.35);
+      html += `
+        <div style="background:#1e1e1e; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--border);">
+            <div>
+              <p style="font-size:18px; font-weight:700; color:var(--accent); letter-spacing:0.15em; margin-bottom:4px;">${escapeHtml(code)}</p>
+              <p style="font-size:12px; color:var(--muted);">${users.length}件の購入 ／ 売上合計 ¥${revenue.toLocaleString()}</p>
+            </div>
+            <div style="text-align:right; flex-shrink:0; margin-left:16px;">
+              <p style="font-size:11px; color:var(--muted); margin-bottom:4px;">報酬目安</p>
+              <p style="font-size:12px; color:#ccc;">20%: <strong style="color:var(--accent);">¥${commission20.toLocaleString()}</strong></p>
+              <p style="font-size:12px; color:#ccc;">25%: <strong style="color:var(--accent);">¥${commission25.toLocaleString()}</strong></p>
+              <p style="font-size:12px; color:#ccc;">30%: <strong style="color:var(--accent);">¥${commission30.toLocaleString()}</strong></p>
+              <p style="font-size:12px; color:#ccc;">35%: <strong style="color:var(--accent);">¥${commission35.toLocaleString()}</strong></p>
+            </div>
+          </div>
+          <div style="padding:10px 18px;">
+            ${users.map(u => {
+              const date = new Date(u.created_at);
+              const dateStr = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`;
+              return `<p style="font-size:12px; color:var(--muted); padding:5px 0; border-bottom:1px solid #1a1a1a;">${dateStr} ／ ${escapeHtml(u.email)}</p>`;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    referralList.innerHTML = html;
+  } catch (e) {
+    console.error('referral stats error:', e);
+    referralList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
+  }
 }
 
 checkAdmin();
