@@ -1755,7 +1755,7 @@ function renderTrainingContent(text) {
     if (em) {
       flushEx();
       exNum++;
-      cur = { name: em[1], sets: em[2], rest: em[3], pose:'', move:'', feel:'', note:'', rpe:'' };
+      cur = { name: em[1], sets: em[2], rest: em[3].replace(/^休憩\s*/, ''), pose:'', move:'', feel:'', note:'', rpe:'' };
       inEx = true;
       continue;
     }
