@@ -1816,109 +1816,106 @@ function renderRecoveryContent(text) {
     '.rc-disclaimer{padding:10px 18px;font-size:11px;color:var(--color-text-tertiary);border-top:.5px solid var(--color-border-tertiary)}' +
     '</style>';
 
-  // まずSTEPブロックに分割
-  var blocks = [];
   var lines = text.split('\n');
-  var currentBlock = null;
+  var blocks = [];
   var stopLines = [];
-  var inStop = false;
   var disclaimer = '';
+  var inStop = false;
+  var currentBlock = null;
 
+  // Phase1: STEPブロックに分割
   for (var i = 0; i < lines.length; i++) {
     var raw = lines[i];
     var line = raw.trim();
     if (!line) continue;
 
-    // 免責文
     if (/^※\s*AI/.test(line)) { disclaimer = line; continue; }
 
-    // やめること開始
-    if (/【やめること】|^##\s*【やめること】/.test(line)) {
+    if (/【やめること】/.test(line)) {
       if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
       inStop = true;
       continue;
     }
 
-    // STEP見出し検出
-    var stepM = line.replace(/\*\*/g,'').match(/(?:▼\s*)?STEP\s*\d+\s*[：:]\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i) ||
-                line.replace(/\*\*/g,'').match(/(?:▼\s*)?STEP\s*\d+\s*[「](.+?)(?:\s*[（(](\d+分)[）)])?/i) ||
-                line.replace(/\*\*/g,'').match(/(?:#{1,3}\s*)?(?:▼\s*)?STEP\s*\d+\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i);
+    // STEP検出: **を除去してマッチ
+    var clean = line.replace(/\*\*/g, '').trim();
+    var stepM = clean.match(/(?:▼\s*)?STEP\s*\d+\s*[：:]\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i) ||
+                clean.match(/(?:#{1,3}\s*)?(?:▼\s*)?STEP\s*\d+\s+(.+?)(?:\s*[（(](\d+分)[）)])?$/i);
 
     if (stepM && !inStop) {
       if (currentBlock) blocks.push(currentBlock);
-      var sname = stripMd(stepM[1] || '').replace(/[」）)）\s]*$/, '').trim();
+      var sname = stripMd(stepM[1] || '').replace(/[」）\s]+$/, '').trim();
       var stime = stepM[2] || '';
-      // 時間が名前内に含まれる場合
       var tn = sname.match(/[（(](\d+分)[）)]/);
       if (tn) { stime = tn[1]; sname = sname.replace(/[（(]\d+分[）)]/, '').trim(); }
       currentBlock = { name: sname, time: stime, lines: [] };
       continue;
     }
 
-    if (inStop) {
-      stopLines.push(line);
-    } else if (currentBlock) {
-      currentBlock.lines.push(line);
-    }
+    if (inStop) { stopLines.push(line); }
+    else if (currentBlock) { currentBlock.lines.push(line); }
   }
   if (currentBlock) blocks.push(currentBlock);
 
-  // HTML生成
+  // Phase2: 各ブロックをパース
   var html = css + '<div class="rc-wrap">';
-  var stepNum = 0;
 
-  blocks.forEach(function(block) {
-    stepNum++;
-    // ブロック内の行をパース
+  blocks.forEach(function(block, idx) {
+    var stepNum = idx + 1;
     var pose = '', moveArr = [], feel = '', count = '', extra = '';
     var curField = '';
     var blines = block.lines;
 
     for (var j = 0; j < blines.length; j++) {
       var bl = blines[j].trim();
-      if (!bl) { curField = ''; continue; }
-      var cl = stripMd(bl);
+      if (!bl) continue;
 
-      // ラベル検出
-      var lm = bl.replace(/\*\*/g,'').match(/^(開始姿勢|動作手順|感覚の目安|秒数[・/]?回数.*|回数.*|根拠)\s*[：:]?\s*(.*)$/);
-      if (lm) {
-        curField = lm[1].match(/開始姿勢/) ? 'pose' :
-                   lm[1].match(/動作/) ? 'move' :
-                   lm[1].match(/感覚/) ? 'feel' :
-                   lm[1].match(/回数|秒数/) ? 'count' : 'extra';
-        var inline = stripMd(lm[2]);
-        if (inline) {
-          if (curField === 'pose' && !pose) pose = inline;
-          else if (curField === 'feel' && !feel) feel = inline;
-          else if (curField === 'count' && !count) count = inline;
-          else if (curField === 'extra' && !extra) extra = inline;
-          else if (curField === 'move') moveArr.push(inline);
-        }
+      // **を除去したラベル行判定（単独行）
+      var cleanBl = bl.replace(/\*\*/g, '').trim();
+
+      // ラベルが単独行の場合 → 次の行が内容
+      if (cleanBl === '開始姿勢') { curField = 'pose'; continue; }
+      if (cleanBl === '動作手順') { curField = 'move'; continue; }
+      if (cleanBl === '感覚の目安') { curField = 'feel'; continue; }
+      if (/^秒数[・\/]?回数|^回数[・\/]?セット/.test(cleanBl)) { curField = 'count'; continue; }
+      if (cleanBl === '根拠') { curField = 'extra'; continue; }
+
+      // インライン形式「**開始姿勢** 内容」
+      var inlineM = bl.replace(/\*\*/g,'').match(/^(開始姿勢|動作手順|感覚の目安|秒数[・\/]?回数[^：:]*|根拠)\s*[：:]\s*(.+)$/);
+      if (inlineM) {
+        var lbl = inlineM[1];
+        var val = inlineM[2].trim();
+        if (/開始姿勢/.test(lbl)) { pose = val; curField = 'pose'; }
+        else if (/動作/.test(lbl)) { moveArr.push(val); curField = 'move'; }
+        else if (/感覚/.test(lbl)) { feel = val; curField = 'feel'; }
+        else if (/回数|秒数/.test(lbl)) { count = val; curField = 'count'; }
+        else if (/根拠/.test(lbl)) { extra = val; curField = 'extra'; }
         continue;
       }
 
-      // 番号リスト（動作手順）
+      var cleaned = stripMd(bl);
+
+      // 番号リスト → 動作
       var nm = bl.match(/^(\d+)[.．]\s*(.+)/);
-      if (nm && (curField === 'move' || (!pose && !curField))) {
-        moveArr.push(stripMd(nm[2]));
-        curField = 'move';
+      if (nm) {
+        var step = stripMd(nm[2]);
+        if (curField === 'move' || !curField) { moveArr.push(step); curField = 'move'; }
         continue;
       }
 
-      // フィールド継続
-      if (curField === 'pose' && !pose) { pose = cl; continue; }
-      if (curField === 'feel' && !feel) { feel = cl; continue; }
-      if (curField === 'count' && !count) { count = cl; continue; }
-      if (curField === 'extra' && !extra) { extra = cl; continue; }
-      if (curField === 'move') { moveArr.push(cl); continue; }
+      // （括弧）内容 → 根拠
+      if (/^[（(]/.test(bl) && !extra) { extra = cleaned.replace(/^[（(]/, '').replace(/[）)]$/, ''); continue; }
 
-      // ラベルなし：最初の行を姿勢、残りをmoveへ
-      if (!pose && !curField) { pose = cl; curField = 'pose'; continue; }
-      if (curField === 'pose') { moveArr.push(cl); curField = 'move'; continue; }
-      if (!curField && cl) { moveArr.push(cl); }
+      // フィールドの継続行
+      if (curField === 'pose' && !pose) { pose = cleaned; continue; }
+      if (curField === 'feel' && !feel) { feel = cleaned; continue; }
+      if (curField === 'count' && !count) { count = cleaned; continue; }
+      if (curField === 'extra' && !extra) { extra = cleaned; continue; }
+      if (curField === 'move') { moveArr.push(cleaned); continue; }
     }
 
-    var moveText = moveArr.slice(0, 4).join(' → ');
+    var moveText = moveArr.slice(0,4).join(' → ');
+    var hasBody = pose || moveText || feel || count;
 
     html += '<div class="rc-step"><div class="rc-head">' +
       '<div class="rc-num">' + stepNum + '</div>' +
@@ -1926,7 +1923,6 @@ function renderRecoveryContent(text) {
       (block.time ? '<span class="rc-time">' + escapeHtml(block.time) + '</span>' : '') +
       '</div>';
 
-    var hasBody = pose || moveText || feel || count;
     if (hasBody) {
       html += '<div class="rc-body">' +
         (pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(pose) + '</span>' : '') +
