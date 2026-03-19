@@ -1786,7 +1786,7 @@ function renderTrainingContent(text) {
   return html;
 }
 function isRecoveryContent(text) {
-  return text.includes('STEP') && text.includes('やめること');
+  return text.includes('STEP_END') && text.includes('STOP_START');
 }
 
 function stripMd(s) {
@@ -1806,6 +1806,9 @@ function renderRecoveryContent(text) {
     '.rc-val{font-size:13px;color:var(--color-text-secondary);line-height:1.6}' +
     '.rc-feel{margin:4px 18px 12px;padding:8px 12px;background:var(--color-background-secondary);border-radius:8px;font-size:12px;color:var(--color-text-secondary);display:flex;align-items:center;gap:8px}' +
     '.rc-dot{width:6px;height:6px;border-radius:50%;background:#378ADD;flex-shrink:0}' +
+    '.rc-bath{margin:8px 18px 14px;border-radius:10px;background:var(--color-background-secondary);padding:10px 14px;display:flex;justify-content:space-between;align-items:center}' +
+    '.rc-bath-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}' +
+    '.rc-bath-detail{font-size:12px;color:var(--color-text-secondary);margin-top:2px}' +
     '.rc-stop{border-radius:16px;background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);overflow:hidden;margin-bottom:12px}' +
     '.rc-stop-head{padding:12px 18px;background:var(--color-background-secondary);border-bottom:.5px solid var(--color-border-tertiary);font-size:13px;font-weight:500;color:var(--color-text-primary)}' +
     '.rc-stop-item{padding:10px 18px;display:flex;align-items:flex-start;gap:10px;border-bottom:.5px solid var(--color-border-tertiary)}' +
@@ -1817,138 +1820,133 @@ function renderRecoveryContent(text) {
     '</style>';
 
   var lines = text.split('\n');
-  var blocks = [];
-  var currentBlock = null;
-  var stopLines = [];
+  var html = css + '<div class="rc-wrap">';
+  var stepNum = 0;
+  var inStep = false;
   var inStop = false;
+  var cur = {};
+  var stopItems = [];
+  var bathData = null;
   var disclaimer = '';
+
+  function flushStep() {
+    if (!cur.name) return;
+    html += '<div class="rc-step"><div class="rc-head">' +
+      '<div class="rc-num">' + stepNum + '</div>' +
+      '<span class="rc-sname">' + escapeHtml(cur.name) + '</span>' +
+      (cur.time ? '<span class="rc-time">' + escapeHtml(cur.time) + '</span>' : '') +
+      '</div>';
+    var hasBody = cur.pose || cur.move || cur.feel || cur.count;
+    if (hasBody) {
+      html += '<div class="rc-body">' +
+        (cur.pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(cur.pose) + '</span>' : '') +
+        (cur.move ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(cur.move) + '</span>' : '') +
+        (cur.feel ? '<span class="rc-lbl">感覚</span><span class="rc-val">' + escapeHtml(cur.feel) + '</span>' : '') +
+        (cur.count ? '<span class="rc-lbl">回数</span><span class="rc-val">' + escapeHtml(cur.count) + '</span>' : '') +
+        '</div>';
+    }
+    if (cur.extra) {
+      html += '<div class="rc-feel"><div class="rc-dot"></div>' + escapeHtml(cur.extra) + '</div>';
+    }
+    html += '</div>';
+    cur = {};
+    inStep = false;
+  }
 
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i].trim();
     if (!line) continue;
 
-    if (/^※\s*AI/.test(line)) { disclaimer = line; continue; }
+    // STEP開始: STEP1::名前::時間
+    var stepM = line.match(/^STEP\d+::(.+?)::(\d+分)?$/);
+    if (stepM) {
+      flushStep();
+      inStep = true;
+      inStop = false;
+      stepNum++;
+      cur = { name: stepM[1].trim(), time: stepM[2] || '', pose:'', move:'', feel:'', count:'', extra:'' };
+      continue;
+    }
 
-    if (/【やめること】|^##\s*【やめること】|^やめること$/.test(line)) {
-      if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
+    // STEP終了
+    if (line === 'STEP_END') {
+      flushStep();
+      continue;
+    }
+
+    // BATH
+    var bathM = line.match(/^BATH::(.+?)::(\d+分)$/);
+    if (bathM) {
+      bathData = { detail: bathM[1], time: bathM[2] };
+      continue;
+    }
+
+    // やめること開始
+    if (line === 'STOP_START') {
+      flushStep();
       inStop = true;
+      inStep = false;
       continue;
     }
 
-    // STEP検出: **を除去してからSTEP N という文字列を探す
-    var clean = line.replace(/\*\*/g, '').replace(/^[▼#\s]+/, '').trim();
-    var isStep = /^STEP\s*\d+/.test(clean);
-
-    if (isStep && !inStop) {
-      if (currentBlock) blocks.push(currentBlock);
-      // 名前と時間を抽出
-      var afterStep = clean.replace(/^STEP\s*\d+\s*/, '');
-      // 区切り文字を除去
-      afterStep = afterStep.replace(/^[：:\-–—「\s]+/, '').trim();
-      var timeM = afterStep.match(/[（(](\d+分)[）)]/);
-      var stime = timeM ? timeM[1] : '';
-      var sname = afterStep.replace(/[（(]\d+分[）)]/, '').replace(/[」）)）\s*]*$/, '').trim();
-      currentBlock = { name: sname, time: stime, lines: [] };
+    // やめること終了
+    if (line === 'STOP_END') {
+      inStop = false;
       continue;
     }
 
+    // 免責文
+    if (/^DISCLAIMER|^※\s*AI/.test(line)) {
+      disclaimer = /^DISCLAIMER$/.test(line)
+        ? '※ AIによる提案のため個人差があります。痛みや不調が続く場合は医療機関にご相談ください。'
+        : line;
+      continue;
+    }
+
+    // STEPの各フィールド
+    if (inStep) {
+      var fm = line.match(/^(姿勢|動作|感覚|回数|根拠)::(.+)$/);
+      if (fm) {
+        var key = fm[1], val = fm[2].trim();
+        if (key === '姿勢') cur.pose = val;
+        else if (key === '動作') cur.move = val;
+        else if (key === '感覚') cur.feel = val;
+        else if (key === '回数') cur.count = val;
+        else if (key === '根拠') cur.extra = val;
+      }
+      continue;
+    }
+
+    // やめることの項目
     if (inStop) {
-      stopLines.push(line);
-    } else if (currentBlock) {
-      currentBlock.lines.push(line);
+      var sm = line.match(/^❌\s*(.+?)::(.+)$/);
+      if (sm) stopItems.push({ text: sm[1].trim(), reason: sm[2].trim() });
+      else if (/^❌/.test(line)) stopItems.push({ text: line.replace(/^❌\s*/, '').trim(), reason: '' });
+      continue;
     }
   }
-  if (currentBlock) blocks.push(currentBlock);
 
-  var html = css + '<div class="rc-wrap">';
-  var stepNum = 0;
-
-  blocks.forEach(function(block) {
-    stepNum++;
-    var pose = '', moveArr = [], feel = '', count = '', extra = '';
-    var curField = '';
-
-    block.lines.forEach(function(bl) {
-      var cl = stripMd(bl.trim());
-      if (!cl) { curField = ''; return; }
-
-      // ラベル検出
-      var lm = cl.match(/^(開始姿勢|動作手順|具体的な動作|感覚の目安|秒数[・\/]?回数.*|回数.*|根拠)\s*[：:]?\s*(.*)$/);
-      if (lm) {
-        curField = lm[1].match(/開始姿勢/) ? 'pose' :
-                   lm[1].match(/動作|手順/) ? 'move' :
-                   lm[1].match(/感覚/) ? 'feel' :
-                   lm[1].match(/回数|秒数/) ? 'count' : 'extra';
-        var inline = lm[2].trim();
-        if (inline) {
-          if (curField === 'pose' && !pose) pose = inline;
-          else if (curField === 'feel' && !feel) feel = inline;
-          else if (curField === 'count' && !count) count = inline;
-          else if (curField === 'extra' && !extra) extra = inline;
-          else if (curField === 'move') moveArr.push(inline);
-        }
-        return;
-      }
-
-      // 番号リスト
-      var nm = cl.match(/^(\d+)[.．]\s*(.+)/);
-      if (nm) {
-        moveArr.push(nm[2]);
-        curField = 'move';
-        return;
-      }
-
-      // フィールド継続
-      if (curField === 'pose' && !pose) { pose = cl; return; }
-      if (curField === 'feel' && !feel) { feel = cl; return; }
-      if (curField === 'count' && !count) { count = cl; return; }
-      if (curField === 'extra' && !extra) { extra = cl; return; }
-      if (curField === 'move') { moveArr.push(cl); return; }
-
-      // ラベルなし: 最初の行→姿勢、以降→動作
-      if (!pose && !moveArr.length) { pose = cl; curField = 'pose'; return; }
-      moveArr.push(cl);
-      curField = 'move';
-    });
-
-    var moveText = moveArr.slice(0, 4).join(' → ');
-
-    html += '<div class="rc-step"><div class="rc-head">' +
-      '<div class="rc-num">' + stepNum + '</div>' +
-      '<span class="rc-sname">' + escapeHtml(block.name) + '</span>' +
-      (block.time ? '<span class="rc-time">' + escapeHtml(block.time) + '</span>' : '') +
-      '</div>';
-
-    if (pose || moveText || feel || count) {
-      html += '<div class="rc-body">' +
-        (pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(pose) + '</span>' : '') +
-        (moveText ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(moveText) + '</span>' : '') +
-        (feel ? '<span class="rc-lbl">感覚</span><span class="rc-val">' + escapeHtml(feel) + '</span>' : '') +
-        (count ? '<span class="rc-lbl">回数</span><span class="rc-val">' + escapeHtml(count) + '</span>' : '') +
-        '</div>';
-    }
-    if (extra) html += '<div class="rc-feel"><div class="rc-dot"></div>' + escapeHtml(extra) + '</div>';
-    html += '</div>';
-  });
+  // BATH
+  if (bathData) {
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:10px 0 4px">' +
+      '<div style="flex:1;height:.5px;background:var(--color-border-tertiary)"></div>' +
+      '<span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);letter-spacing:.06em">別枠</span>' +
+      '<div style="flex:1;height:.5px;background:var(--color-border-tertiary)"></div></div>' +
+      '<div class="rc-bath"><div>' +
+      '<div class="rc-bath-name">入浴</div>' +
+      '<div class="rc-bath-detail">' + escapeHtml(bathData.detail) + ' — 時間があれば終了後に</div>' +
+      '</div><div style="font-size:12px;color:var(--color-text-secondary)">' + escapeHtml(bathData.time) + '</div></div>';
+  }
 
   // やめること
-  if (stopLines.length) {
+  if (stopItems.length) {
     html += '<div class="rc-stop"><div class="rc-stop-head">やめること</div>';
-    var openItem = false;
-    stopLines.forEach(function(sl) {
-      var sc = sl.trim();
-      if (/^❌/.test(sc)) {
-        if (openItem) html += '</div></div>';
-        html += '<div class="rc-stop-item"><div class="rc-x">x</div><div>' +
-          '<div class="rc-stop-text">' + escapeHtml(stripMd(sc.replace(/^❌\s*/, ''))) + '</div>';
-        openItem = true;
-      } else if (/^→/.test(sc) && openItem) {
-        html += '<div class="rc-stop-reason">' + escapeHtml(sc.replace(/^→\s*/, '')) + '</div>';
-      } else if (sc && openItem) {
-        html += '<div class="rc-stop-reason">' + escapeHtml(sc) + '</div>';
-      }
+    stopItems.forEach(function(item) {
+      html += '<div class="rc-stop-item"><div class="rc-x">x</div><div>' +
+        '<div class="rc-stop-text">' + escapeHtml(item.text) + '</div>' +
+        (item.reason ? '<div class="rc-stop-reason">' + escapeHtml(item.reason) + '</div>' : '') +
+        '</div></div>';
     });
-    if (openItem) html += '</div></div>';
     if (disclaimer) html += '<div class="rc-disclaimer">' + escapeHtml(disclaimer) + '</div>';
     html += '</div>';
   } else if (disclaimer) {
