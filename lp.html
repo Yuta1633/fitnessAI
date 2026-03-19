@@ -10,329 +10,83 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: 'Noto Sans JP', sans-serif;
-      background: #050505;
-      color: #e2e8f0;
-      overflow-x: hidden;
-    }
-    :root {
-      --accent: #c8f135;
-      --accent-dim: rgba(200,241,53,0.15);
-      --muted: #ccc;
-      --border: #1a1a1a;
-      --card: #0d0d0d;
-    }
-
-    .bg-grid {
-      position: fixed; top:0; left:0; width:100%; height:100%;
-      background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-      background-size: 48px 48px;
-      pointer-events: none; z-index: 0;
-    }
-    .bg-glow {
-      position: fixed; top: -200px; left: 50%; transform: translateX(-50%);
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(200,241,53,0.06) 0%, transparent 70%);
-      pointer-events: none; z-index: 0;
-    }
-
-    .wrap {
-      position: relative; z-index: 1;
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    .hero {
-      text-align: center;
-      padding: 100px 0 72px;
-    }
-    .hero-badge {
-      display: inline-block;
-      background: var(--accent-dim);
-      border: 1px solid rgba(200,241,53,0.25);
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      padding: 7px 18px;
-      border-radius: 24px;
-      margin-bottom: 28px;
-      text-transform: uppercase;
-    }
-    .hero h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(48px, 11vw, 80px);
-      line-height: 1.05;
-      color: #fff;
-      margin-bottom: 20px;
-      letter-spacing: 1px;
-    }
+    body { font-family: 'Noto Sans JP', sans-serif; background: #050505; color: #e2e8f0; overflow-x: hidden; }
+    :root { --accent: #c8f135; --accent-dim: rgba(200,241,53,0.15); --muted: #ccc; --border: #1a1a1a; --card: #0d0d0d; }
+    .bg-grid { position: fixed; top:0; left:0; width:100%; height:100%; background-image: linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px); background-size: 48px 48px; pointer-events: none; z-index: 0; }
+    .bg-glow { position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 600px; height: 600px; background: radial-gradient(circle, rgba(200,241,53,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    .wrap { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 20px; }
+    .hero { text-align: center; padding: 100px 0 72px; }
+    .hero-badge { display: inline-block; background: var(--accent-dim); border: 1px solid rgba(200,241,53,0.25); color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: 3px; padding: 7px 18px; border-radius: 24px; margin-bottom: 28px; text-transform: uppercase; }
+    .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px, 11vw, 80px); line-height: 1.05; color: #fff; margin-bottom: 20px; letter-spacing: 1px; }
     .hero h1 span { color: var(--accent); }
-    .hero-sub {
-      font-size: 15px;
-      color: var(--muted);
-      line-height: 1.9;
-      margin-bottom: 40px;
-    }
+    .hero-sub { font-size: 15px; color: var(--muted); line-height: 1.9; margin-bottom: 40px; }
     .hero-sub strong { color: #ccc; font-weight: 700; }
-    .cta-btn {
-      display: inline-block;
-      padding: 17px 52px;
-      background: var(--accent);
-      color: #000;
-      font-size: 15px;
-      font-weight: 700;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      letter-spacing: 0.5px;
-    }
-    .cta-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(200,241,53,0.25);
-    }
-    .cta-line {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 15px 36px;
-      background: transparent;
-      color: #06c755;
-      font-size: 14px;
-      font-weight: 700;
-      border: 2px solid #06c755;
-      border-radius: 10px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s;
-      letter-spacing: 0.5px;
-    }
-    .cta-line:hover {
-      background: #06c755;
-      color: #fff;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(6,199,85,0.25);
-    }
+    .cta-btn { display: inline-block; padding: 17px 52px; background: var(--accent); color: #000; font-size: 15px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s; letter-spacing: 0.5px; }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(200,241,53,0.25); }
+    .cta-line { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 15px 36px; background: transparent; color: #06c755; font-size: 14px; font-weight: 700; border: 2px solid #06c755; border-radius: 10px; cursor: pointer; text-decoration: none; transition: all 0.2s; letter-spacing: 0.5px; }
+    .cta-line:hover { background: #06c755; color: #fff; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(6,199,85,0.25); }
     .cta-line svg { transition: fill 0.2s; }
     .cta-line:hover svg { fill: #fff; }
-    .cta-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-    }
-    .cta-or {
-      font-size: 12px;
-      color: #666;
-      letter-spacing: 2px;
-    }
-    .hero-price {
-      margin-top: 14px;
-      font-size: 13px;
-      color: #aaa;
-    }
-    .hero-price strong {
-      color: var(--accent);
-      font-size: 15px;
-    }
-
-    .stats-bar {
-      display: flex;
-      justify-content: center;
-      gap: 48px;
-      padding: 52px 0;
-      border-top: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 48px;
-    }
+    .cta-group { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .cta-or { font-size: 12px; color: #666; letter-spacing: 2px; }
+    .hero-price { margin-top: 14px; font-size: 13px; color: #aaa; }
+    .hero-price strong { color: var(--accent); font-size: 15px; }
+    .stats-bar { display: flex; justify-content: center; gap: 48px; padding: 52px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 48px; }
     .stat-item { text-align: center; }
-    .stat-num {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 56px;
-      color: var(--accent);
-      line-height: 1;
-    }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: var(--accent); line-height: 1; }
     .stat-num span { font-size: 28px; }
-    .stat-label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-      letter-spacing: 1px;
-      font-weight: 500;
-    }
-
+    .stat-label { font-size: 12px; color: var(--muted); margin-top: 8px; letter-spacing: 1px; font-weight: 500; }
     .section { padding: 56px 0; }
-    .section-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      color: var(--accent);
-      margin-bottom: 10px;
-      text-transform: uppercase;
-    }
-    .section-title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #fff;
-      margin-bottom: 32px;
-      line-height: 1.4;
-    }
-
-    .hybrid-banner {
-      background: linear-gradient(135deg, rgba(200,241,53,0.06), rgba(78,205,196,0.06));
-      border: 1px solid rgba(200,241,53,0.15);
-      border-radius: 16px;
-      padding: 28px 24px;
-      display: flex;
-      gap: 20px;
-      align-items: center;
-      margin-bottom: 48px;
-    }
+    .section-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; }
+    .section-title { font-size: 24px; font-weight: 900; color: #fff; margin-bottom: 32px; line-height: 1.4; }
+    .hybrid-banner { background: linear-gradient(135deg, rgba(200,241,53,0.06), rgba(78,205,196,0.06)); border: 1px solid rgba(200,241,53,0.15); border-radius: 16px; padding: 28px 24px; display: flex; gap: 20px; align-items: center; margin-bottom: 48px; }
     .hybrid-text h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
     .hybrid-text p { font-size: 13px; color: var(--muted); line-height: 1.7; }
     .hybrid-text strong { color: var(--accent); }
-    @media (max-width: 500px) {
-      .hybrid-banner { flex-direction: column; text-align: center; }
-    }
-
+    @media (max-width: 500px) { .hybrid-banner { flex-direction: column; text-align: center; } }
     .steps-grid { display: flex; flex-direction: column; gap: 16px; }
-    .step-card {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 22px 20px;
-    }
-    .step-num {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 32px;
-      color: var(--accent);
-      line-height: 1;
-      flex-shrink: 0;
-      width: 36px;
-    }
+    .step-card { display: flex; align-items: flex-start; gap: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px 20px; }
+    .step-num { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--accent); line-height: 1; flex-shrink: 0; width: 36px; }
     .step-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
     .step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-    .feature-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    @media (max-width: 500px) {
-      .feature-grid { grid-template-columns: 1fr; }
-    }
-    .feature-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px 20px;
-      transition: border-color 0.3s;
-    }
+    .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 500px) { .feature-grid { grid-template-columns: 1fr; } }
+    .feature-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px 20px; transition: border-color 0.3s; }
     .feature-card:hover { border-color: #777; }
     .feature-icon { font-size: 28px; margin-bottom: 12px; }
     .feature-name { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
     .feature-desc { font-size: 12px; color: var(--muted); line-height: 1.7; }
-    .feature-tag {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      margin-top: 8px;
-      letter-spacing: 0.5px;
-    }
+    .feature-tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px; margin-top: 8px; letter-spacing: 0.5px; }
     .tag-ai { background: rgba(200,241,53,0.15); color: var(--accent); }
     .tag-human { background: rgba(78,205,196,0.15); color: #4ecdc4; }
-
     .compare-table { width: 100%; border-collapse: collapse; }
-    .compare-table th, .compare-table td {
-      padding: 14px 10px;
-      text-align: center;
-      font-size: 13px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: middle;
-    }
+    .compare-table th, .compare-table td { padding: 14px 10px; text-align: center; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
     .compare-table th { color: #bbb; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; }
     .compare-table th:first-child, .compare-table td:first-child { text-align: left; min-width: 110px; }
     .compare-table td { color: #aaa; }
     .compare-table .price { font-weight: 700; }
-
     .pricing { text-align: center; }
-    .pricing-card {
-      background: var(--card);
-      border: 2px solid var(--accent);
-      border-radius: 20px;
-      padding: 40px 28px;
-      max-width: 420px;
-      margin: 0 auto;
-      position: relative;
-      overflow: hidden;
-    }
-    .pricing-card::before {
-      content: '';
-      position: absolute;
-      top: -80px; right: -80px;
-      width: 200px; height: 200px;
-      background: radial-gradient(circle, rgba(200,241,53,0.08), transparent 70%);
-      pointer-events: none;
-    }
+    .pricing-card { background: var(--card); border: 2px solid var(--accent); border-radius: 20px; padding: 40px 28px; max-width: 420px; margin: 0 auto; position: relative; overflow: hidden; }
+    .pricing-card::before { content: ''; position: absolute; top: -80px; right: -80px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(200,241,53,0.08), transparent 70%); pointer-events: none; }
     .pricing-card h3 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .pricing-amount {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 56px;
-      color: var(--accent);
-      margin: 14px 0 4px;
-      line-height: 1;
-      letter-spacing: 1px;
-    }
+    .pricing-amount { font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: var(--accent); margin: 14px 0 4px; line-height: 1; letter-spacing: 1px; }
     .pricing-note { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
     .pricing-list { text-align: left; margin-bottom: 28px; }
     .pricing-list p { font-size: 13px; color: #ccc; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
     .pricing-list span { color: var(--accent); margin-right: 8px; }
-
-    .guarantee-banner {
-      text-align: center;
-      margin-top: 28px;
-      padding: 24px 20px;
-      background: rgba(200,241,53,0.04);
-      border: 1px solid rgba(200,241,53,0.15);
-      border-radius: 14px;
-    }
+    .guarantee-banner { text-align: center; margin-top: 28px; padding: 24px 20px; background: rgba(200,241,53,0.04); border: 1px solid rgba(200,241,53,0.15); border-radius: 14px; }
     .guarantee-banner .guarantee-icon { font-size: 32px; margin-bottom: 8px; }
     .guarantee-banner h4 { font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
     .guarantee-banner p { font-size: 13px; color: var(--muted); line-height: 1.7; }
-
     .faq-item { border-bottom: 1px solid var(--border); padding: 20px 0; }
     .faq-q { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
     .faq-a { font-size: 13px; color: var(--muted); line-height: 1.7; }
-
     .final-cta { text-align: center; padding: 64px 0 80px; }
-    .final-cta h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 36px;
-      color: #fff;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
-    }
+    .final-cta h2 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: #fff; margin-bottom: 12px; letter-spacing: 1px; }
     .final-cta p { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
-
-    footer {
-      text-align: center;
-      padding: 32px 0 24px;
-      border-top: 1px solid var(--border);
-    }
+    footer { text-align: center; padding: 32px 0 24px; border-top: 1px solid var(--border); }
     footer a { color: #aaa; font-size: 12px; text-decoration: none; margin: 0 10px; }
     footer .copy { color: #777; font-size: 11px; margin-top: 10px; }
-
     .fade { opacity:0; transform:translateY(20px); transition:opacity 0.6s ease, transform 0.6s ease; }
     .fade.visible { opacity:1; transform:translateY(0); }
   </style>
@@ -340,10 +94,8 @@
 <body>
   <div class="bg-grid"></div>
   <div class="bg-glow"></div>
-
   <div class="wrap">
 
-    <!-- ヒーロー -->
     <div class="hero">
       <div class="hero-badge">AI × Human Coaching</div>
       <h1><span>AI</span>が導き、<br>コーチが<span>寄り添う</span></h1>
@@ -359,7 +111,6 @@
       <p class="hero-price"><strong>¥99,800</strong>（税込・買い切り）｜14日間全額返金保証つき</p>
     </div>
 
-    <!-- コンセプト -->
     <div class="fade" style="text-align:center; padding:64px 20px 56px; margin-bottom:40px; position:relative;">
       <p style="font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:8px; color:var(--accent); margin-bottom:20px; opacity:0.8;">— CONCEPT —</p>
       <p style="font-family:'Bebas Neue',sans-serif; font-size:48px; font-weight:400; color:#fff; letter-spacing:4px; line-height:1.3;">BEYOND LAZINESS.</p>
@@ -367,110 +118,46 @@
       <div style="width:40px; height:2px; background:var(--accent); margin:24px auto 0; opacity:0.6;"></div>
     </div>
 
-    <!-- ハイブリッド訴求バナー -->
     <div class="hybrid-banner fade" style="text-align:center; display:block; padding:36px 28px;">
       <p style="font-size:22px; font-weight:900; color:#fff; margin-bottom:14px; line-height:1.5;">AIだけじゃない。<br>人間のコーチがいる。</p>
       <p style="font-size:13px; color:var(--muted); line-height:1.8;">AIが得意な<strong style="color:var(--accent);">データ分析・プラン生成・24時間対応</strong>と、<br>人間が得意な<strong style="color:#4ecdc4;">モチベーション管理・悩み相談・柔軟なアドバイス</strong>。<br>両方の力で、あなたを支える。</p>
     </div>
 
-    <!-- 数字バナー -->
     <div class="stats-bar fade">
-      <div class="stat-item">
-        <div class="stat-num">24<span style="font-size:18px;">/7</span></div>
-        <div class="stat-label">AIがいつでも対応</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">90<span style="font-size:18px;">日</span></div>
-        <div class="stat-label">コーチが伴走</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-num">¥0</div>
-        <div class="stat-label">追加料金なし</div>
-      </div>
+      <div class="stat-item"><div class="stat-num">24<span style="font-size:18px;">/7</span></div><div class="stat-label">AIがいつでも対応</div></div>
+      <div class="stat-item"><div class="stat-num">90<span style="font-size:18px;">日</span></div><div class="stat-label">コーチが伴走</div></div>
+      <div class="stat-item"><div class="stat-num">¥0</div><div class="stat-label">追加料金なし</div></div>
     </div>
 
-    <!-- 使い方ステップ -->
     <div class="section fade">
       <p class="section-label">How it Works</p>
       <h2 class="section-title">AIプラン × コーチの伴走</h2>
       <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num">01</div>
-          <div>
-            <div class="step-name">目的と手段を選ぶ</div>
-            <div class="step-desc">脂肪を落とす・筋肉をつけるなど目標を選び、栄養・トレーニング・回復からアプローチを決定。</div>
-          </div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">02</div>
-          <div>
-            <div class="step-name">AIが即座にプランを生成</div>
-            <div class="step-desc">あなたの状況・過去の履歴をもとに、毎回異なる最適なプランをAIがリアルタイムで提案。</div>
-          </div>
-        </div>
-        <div class="step-card">
-          <div class="step-num">03</div>
-          <div>
-            <div class="step-name">コーチが見守り、補う</div>
-            <div class="step-desc">AIでは対応しきれない悩みや、やる気が出ない時、方向性に迷った時は人間のコーチが直接フォロー。</div>
-          </div>
-        </div>
+        <div class="step-card"><div class="step-num">01</div><div><div class="step-name">目的と手段を選ぶ</div><div class="step-desc">脂肪を落とす・筋肉をつけるなど目標を選び、栄養・トレーニング・回復からアプローチを決定。</div></div></div>
+        <div class="step-card"><div class="step-num">02</div><div><div class="step-name">AIが即座にプランを生成</div><div class="step-desc">あなたの状況・過去の履歴をもとに、毎回異なる最適なプランをAIがリアルタイムで提案。</div></div></div>
+        <div class="step-card"><div class="step-num">03</div><div><div class="step-name">コーチが見守り、補う</div><div class="step-desc">AIでは対応しきれない悩みや、やる気が出ない時、方向性に迷った時は人間のコーチが直接フォロー。</div></div></div>
       </div>
     </div>
 
-    <!-- 特徴 -->
     <div class="section fade">
       <p class="section-label">Features</p>
       <h2 class="section-title">AIとコーチ、それぞれの強み</h2>
       <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <div class="feature-name">毎回変わるプラン</div>
-          <div class="feature-desc">過去の履歴を学習し、同じ提案を繰り返さない。成長に合わせて進化するAI。</div>
-          <div class="feature-tag tag-ai">AI</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <div class="feature-name">悩みに寄り添う相談</div>
-          <div class="feature-desc">「続かない」「何を信じればいい？」そんな時こそ、人間のコーチが対話で支えます。</div>
-          <div class="feature-tag tag-human">コーチ</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <div class="feature-name">データ分析 & レビュー</div>
-          <div class="feature-desc">体重・体脂肪・利用パターンをAIが分析。週次レビューで科学的に改善提案。</div>
-          <div class="feature-tag tag-ai">AI</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔥</div>
-          <div class="feature-name">モチベーション管理</div>
-          <div class="feature-desc">ストリーク・称号に加え、停滞期やサボりがちな時はコーチが背中を押します。</div>
-          <div class="feature-tag tag-human">コーチ</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🥗</div>
-          <div class="feature-name">3軸トータルケア</div>
-          <div class="feature-desc">栄養・トレーニング・回復を科学的根拠に基づいてバランスよくサポート。</div>
-          <div class="feature-tag tag-ai">AI</div>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🩺</div>
-          <div class="feature-name">個別の事情に対応</div>
-          <div class="feature-desc">怪我・持病・生活リズムなどAIだけでは判断が難しい相談にもコーチが対応。</div>
-          <div class="feature-tag tag-human">コーチ</div>
-        </div>
+        <div class="feature-card"><div class="feature-icon">🎯</div><div class="feature-name">毎回変わるプラン</div><div class="feature-desc">過去の履歴を学習し、同じ提案を繰り返さない。成長に合わせて進化するAI。</div><div class="feature-tag tag-ai">AI</div></div>
+        <div class="feature-card"><div class="feature-icon">💬</div><div class="feature-name">悩みに寄り添う相談</div><div class="feature-desc">「続かない」「何を信じればいい？」そんな時こそ、人間のコーチが対話で支えます。</div><div class="feature-tag tag-human">コーチ</div></div>
+        <div class="feature-card"><div class="feature-icon">📊</div><div class="feature-name">データ分析 & レビュー</div><div class="feature-desc">体重・体脂肪・利用パターンをAIが分析。週次レビューで科学的に改善提案。</div><div class="feature-tag tag-ai">AI</div></div>
+        <div class="feature-card"><div class="feature-icon">🔥</div><div class="feature-name">モチベーション管理</div><div class="feature-desc">ストリーク・称号に加え、停滞期やサボりがちな時はコーチが背中を押します。</div><div class="feature-tag tag-human">コーチ</div></div>
+        <div class="feature-card"><div class="feature-icon">🥗</div><div class="feature-name">3軸トータルケア</div><div class="feature-desc">栄養・トレーニング・回復を科学的根拠に基づいてバランスよくサポート。</div><div class="feature-tag tag-ai">AI</div></div>
+        <div class="feature-card"><div class="feature-icon">🩺</div><div class="feature-name">個別の事情に対応</div><div class="feature-desc">怪我・持病・生活リズムなどAIだけでは判断が難しい相談にもコーチが対応。</div><div class="feature-tag tag-human">コーチ</div></div>
       </div>
     </div>
 
-    <!-- 比較 -->
     <div class="section fade">
       <p class="section-label">Comparison</p>
       <h2 class="section-title">なぜ Fit Project AI なのか？</h2>
       <div style="overflow-x:auto;">
         <table class="compare-table">
-          <thead>
-            <tr><th></th><th>パーソナルジム</th><th>AIアプリ</th><th style="color:var(--accent); border-bottom:2px solid var(--accent);">Fit Project AI</th></tr>
-          </thead>
+          <thead><tr><th></th><th>パーソナルジム</th><th>AIアプリ</th><th style="color:var(--accent); border-bottom:2px solid var(--accent);">Fit Project AI</th></tr></thead>
           <tbody>
             <tr><td style="color:#fff; font-weight:600;">3ヶ月の費用</td><td class="price">¥300,000〜</td><td class="price">¥5,000〜</td><td class="price" style="color:var(--accent); font-size:15px;">¥99,800</td></tr>
             <tr><td style="color:#fff; font-weight:600;">個別プラン作成</td><td>◎ トレーナーが作成</td><td>△ テンプレベース</td><td style="color:var(--accent);">◎ AI毎回最適化</td></tr>
@@ -484,7 +171,6 @@
       </div>
     </div>
 
-    <!-- 料金 -->
     <div class="section pricing fade">
       <p class="section-label">Pricing</p>
       <h2 class="section-title">あなたに合った支払い方法を選べます</h2>
@@ -498,7 +184,7 @@
             <p><span>✓</span>3ヶ月間の人間コーチによるサポート</p>
             <p><span>✓</span>栄養・トレーニング・回復の総合ケア</p>
             <p><span>✓</span>進捗管理 & 週次AIレビュー</p>
-            <p><span>✓</span>サービス提供終了後も6ヶ月間AI利用可能</p>
+            <p><span>✓</span>AIサイト3ヶ月利用権（コーチング期間と同じ）</p>
             <p><span>✓</span>14日間全額返金保証</p>
           </div>
           <a href="/" class="cta-btn" style="width:100%; display:block; text-align:center;">購入してはじめる →</a>
@@ -528,7 +214,6 @@
           <a href="/" class="cta-btn" style="width:100%; display:block; text-align:center; background:transparent; border:2px solid var(--accent); color:var(--accent);">6回分割で購入 →</a>
         </div>
       </div>
-      <!-- 返金保証バナー -->
       <div class="guarantee-banner fade">
         <div class="guarantee-icon">🛡️</div>
         <h4>14日間 全額返金保証</h4>
@@ -536,73 +221,34 @@
       </div>
     </div>
 
-    <!-- FAQ -->
     <div class="section fade">
       <p class="section-label">FAQ</p>
       <h2 class="section-title">よくある質問</h2>
-      <div class="faq-item">
-        <div class="faq-q">Q. サブスクリプション（月額課金）ですか？</div>
-        <div class="faq-a">いいえ。一括払いは一度きりのお支払いです。分割払いは3回（月々¥33,267）または6回（月々¥16,634）から選べ、回数終了後に自動停止します。いずれも追加料金はかかりません。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. 分割払いでもすぐにサービスを使えますか？</div>
-        <div class="faq-a">はい。初回の決済が完了した時点で、すべての機能をご利用いただけます。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. AIだけでなく、人間のコーチもつくのですか？</div>
-        <div class="faq-a">はい。日々のプラン生成はAIが担当し、AIでは対応しきれない個別の悩みや方向性の相談、モチベーションの維持は人間のコーチが直接サポートします。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. フィットネス初心者でも大丈夫ですか？</div>
-        <div class="faq-a">はい。AIがあなたのレベルに合わせたプランを生成し、わからないことや不安なことはコーチに直接相談できます。初心者の方にこそ使っていただきたいサービスです。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. 3ヶ月後もAIは使えますか？</div>
-        <div class="faq-a">はい。コーチング期間終了後もAIアシスタントをご利用いただけます。万が一サービスを終了する場合も、終了後6ヶ月間はアクセス可能です。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. 返金はできますか？</div>
-        <div class="faq-a">はい。購入から14日以内であれば全額返金いたします。LINEで「返金希望」とお送りいただくだけで手続きできます。返金理由はサービス改善のためお伺いしますが、理由にかかわらず返金いたします。詳しくは<a href="/Tokushoho.html" style="color:var(--accent);">特定商取引法に基づく表記</a>をご確認ください。</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Q. どんな端末で使えますか？</div>
-        <div class="faq-a">スマートフォン・タブレット・PCのブラウザからご利用いただけます。アプリのインストールは不要です。</div>
-      </div>
+      <div class="faq-item"><div class="faq-q">Q. サブスクリプション（月額課金）ですか？</div><div class="faq-a">いいえ。一括払いは一度きりのお支払いです。分割払いは3回（月々¥33,267）または6回（月々¥16,634）から選べ、回数終了後に自動停止します。いずれも追加料金はかかりません。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. 分割払いでもすぐにサービスを使えますか？</div><div class="faq-a">はい。初回の決済が完了した時点で、すべての機能をご利用いただけます。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. AIだけでなく、人間のコーチもつくのですか？</div><div class="faq-a">はい。日々のプラン生成はAIが担当し、AIでは対応しきれない個別の悩みや方向性の相談、モチベーションの維持は人間のコーチが直接サポートします。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. フィットネス初心者でも大丈夫ですか？</div><div class="faq-a">はい。AIがあなたのレベルに合わせたプランを生成し、わからないことや不安なことはコーチに直接相談できます。初心者の方にこそ使っていただきたいサービスです。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. 3ヶ月後もAIは使えますか？</div><div class="faq-a">AIサイトの利用権はコーチング期間（3ヶ月）と同じ期間です。コーチング終了後はAIサイトの利用権も終了となります。万が一サービスを終了する場合は、終了日から3ヶ月間はアクセス可能です。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. 返金はできますか？</div><div class="faq-a">はい。購入から14日以内であれば全額返金いたします。LINEで「返金希望」とお送りいただくだけで手続きできます。返金理由はサービス改善のためお伺いしますが、理由にかかわらず返金いたします。詳しくは<a href="/Tokushoho.html" style="color:var(--accent);">特定商取引法に基づく表記</a>をご確認ください。</div></div>
+      <div class="faq-item"><div class="faq-q">Q. どんな端末で使えますか？</div><div class="faq-a">スマートフォン・タブレット・PCのブラウザからご利用いただけます。アプリのインストールは不要です。</div></div>
     </div>
 
-    <!-- ===== お問い合わせフォーム ===== -->
     <div class="section fade" id="contact">
       <p class="section-label">Contact</p>
       <h2 class="section-title">お問い合わせ</h2>
-      <p style="font-size:13px; color:var(--muted); margin-bottom:28px; margin-top:-16px; line-height:1.7;">
-        サービスに関するご質問・ご相談はお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。
-      </p>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:28px; margin-top:-16px; line-height:1.7;">サービスに関するご質問・ご相談はお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
       <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px 24px;">
         <form id="contact-form" style="display:flex; flex-direction:column; gap:18px;">
-          <div>
-            <label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">お名前 <span style="color:#f87171;">*</span></label>
-            <input type="text" name="name" required placeholder="例: 山田 太郎" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'">
-          </div>
-          <div>
-            <label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">メールアドレス <span style="color:#f87171;">*</span></label>
-            <input type="email" name="email" required placeholder="例: example@gmail.com" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'">
-          </div>
-          <div>
-            <label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">電話番号（任意）</label>
-            <input type="tel" name="phone" placeholder="例: 090-1234-5678" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'">
-          </div>
-          <div>
-            <label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">お問い合わせ内容 <span style="color:#f87171;">*</span></label>
-            <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; resize:vertical; font-family:'Noto Sans JP',sans-serif; line-height:1.7; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'"></textarea>
-          </div>
-          <button type="submit" class="contact-submit-btn" style="width:100%; padding:16px; background:#c8f135; color:#000; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:opacity 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(200,241,53,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">送信する →</button>
+          <div><label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">お名前 <span style="color:#f87171;">*</span></label><input type="text" name="name" required placeholder="例: 山田 太郎" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'"></div>
+          <div><label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">メールアドレス <span style="color:#f87171;">*</span></label><input type="email" name="email" required placeholder="例: example@gmail.com" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'"></div>
+          <div><label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">電話番号（任意）</label><input type="tel" name="phone" placeholder="例: 090-1234-5678" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; font-family:'Noto Sans JP',sans-serif; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'"></div>
+          <div><label style="display:block; font-size:12px; color:#888; margin-bottom:6px; font-weight:500;">お問い合わせ内容 <span style="color:#f87171;">*</span></label><textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" style="width:100%; padding:12px 14px; background:#111; border:1px solid #2a2a2a; border-radius:8px; color:#fff; font-size:14px; outline:none; resize:vertical; font-family:'Noto Sans JP',sans-serif; line-height:1.7; transition:border-color 0.2s;" onfocus="this.style.borderColor='#c8f135'" onblur="this.style.borderColor='#2a2a2a'"></textarea></div>
+          <button type="submit" style="width:100%; padding:16px; background:#c8f135; color:#000; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:opacity 0.2s, transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(200,241,53,0.25)'" onmouseout="this.style.transform='';this.style.boxShadow=''">送信する →</button>
           <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
         </form>
       </div>
     </div>
-    <!-- ===== お問い合わせフォーム ここまで ===== -->
 
-    <!-- 最終CTA -->
     <div class="final-cta fade">
       <h2>CHANGE STARTS TODAY</h2>
       <p>AIの力と、人の温もり。<br>あなたに最適なフィットネスが、ここにある。</p>
@@ -617,7 +263,6 @@
       <p style="margin-top:24px; font-size:13px; color:#bbb; letter-spacing:1px;">「明日やろう」を、今日で終わりにする。</p>
     </div>
 
-    <!-- フッター -->
     <footer>
       <div>
         <a href="/Terms.html">利用規約</a>
@@ -629,11 +274,8 @@
     </footer>
 
   </div>
-
   <script>
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.08 });
+    const obs = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.08 });
     document.querySelectorAll('.fade').forEach(el => obs.observe(el));
   </script>
   <script src="contact.js"></script>
