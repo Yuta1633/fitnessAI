@@ -1818,104 +1818,100 @@ function renderRecoveryContent(text) {
 
   var lines = text.split('\n');
   var blocks = [];
-  var stopLines = [];
-  var disclaimer = '';
-  var inStop = false;
   var currentBlock = null;
+  var stopLines = [];
+  var inStop = false;
+  var disclaimer = '';
 
-  // Phase1: STEPブロックに分割
   for (var i = 0; i < lines.length; i++) {
-    var raw = lines[i];
-    var line = raw.trim();
+    var line = lines[i].trim();
     if (!line) continue;
 
     if (/^※\s*AI/.test(line)) { disclaimer = line; continue; }
 
-    if (/【やめること】/.test(line)) {
+    if (/【やめること】|^##\s*【やめること】|^やめること$/.test(line)) {
       if (currentBlock) { blocks.push(currentBlock); currentBlock = null; }
       inStop = true;
       continue;
     }
 
-    // STEP検出: **を除去してマッチ
-    var clean = line.replace(/\*\*/g, '').trim();
-    var stepM = clean.match(/(?:▼\s*)?STEP\s*\d+\s*[：:]\s*(.+?)(?:\s*[（(](\d+分)[）)])?$/i) ||
-                clean.match(/(?:#{1,3}\s*)?(?:▼\s*)?STEP\s*\d+\s+(.+?)(?:\s*[（(](\d+分)[）)])?$/i);
+    // STEP検出: **を除去してからSTEP N という文字列を探す
+    var clean = line.replace(/\*\*/g, '').replace(/^[▼#\s]+/, '').trim();
+    var isStep = /^STEP\s*\d+/.test(clean);
 
-    if (stepM && !inStop) {
+    if (isStep && !inStop) {
       if (currentBlock) blocks.push(currentBlock);
-      var sname = stripMd(stepM[1] || '').replace(/[」）\s]+$/, '').trim();
-      var stime = stepM[2] || '';
-      var tn = sname.match(/[（(](\d+分)[）)]/);
-      if (tn) { stime = tn[1]; sname = sname.replace(/[（(]\d+分[）)]/, '').trim(); }
+      // 名前と時間を抽出
+      var afterStep = clean.replace(/^STEP\s*\d+\s*/, '');
+      // 区切り文字を除去
+      afterStep = afterStep.replace(/^[：:\-–—「\s]+/, '').trim();
+      var timeM = afterStep.match(/[（(](\d+分)[）)]/);
+      var stime = timeM ? timeM[1] : '';
+      var sname = afterStep.replace(/[（(]\d+分[）)]/, '').replace(/[」）)）\s*]*$/, '').trim();
       currentBlock = { name: sname, time: stime, lines: [] };
       continue;
     }
 
-    if (inStop) { stopLines.push(line); }
-    else if (currentBlock) { currentBlock.lines.push(line); }
+    if (inStop) {
+      stopLines.push(line);
+    } else if (currentBlock) {
+      currentBlock.lines.push(line);
+    }
   }
   if (currentBlock) blocks.push(currentBlock);
 
-  // Phase2: 各ブロックをパース
   var html = css + '<div class="rc-wrap">';
+  var stepNum = 0;
 
-  blocks.forEach(function(block, idx) {
-    var stepNum = idx + 1;
+  blocks.forEach(function(block) {
+    stepNum++;
     var pose = '', moveArr = [], feel = '', count = '', extra = '';
     var curField = '';
-    var blines = block.lines;
 
-    for (var j = 0; j < blines.length; j++) {
-      var bl = blines[j].trim();
-      if (!bl) continue;
+    block.lines.forEach(function(bl) {
+      var cl = stripMd(bl.trim());
+      if (!cl) { curField = ''; return; }
 
-      // **を除去したラベル行判定（単独行）
-      var cleanBl = bl.replace(/\*\*/g, '').trim();
-
-      // ラベルが単独行の場合 → 次の行が内容
-      if (cleanBl === '開始姿勢') { curField = 'pose'; continue; }
-      if (cleanBl === '動作手順') { curField = 'move'; continue; }
-      if (cleanBl === '感覚の目安') { curField = 'feel'; continue; }
-      if (/^秒数[・\/]?回数|^回数[・\/]?セット/.test(cleanBl)) { curField = 'count'; continue; }
-      if (cleanBl === '根拠') { curField = 'extra'; continue; }
-
-      // インライン形式「**開始姿勢** 内容」
-      var inlineM = bl.replace(/\*\*/g,'').match(/^(開始姿勢|動作手順|感覚の目安|秒数[・\/]?回数[^：:]*|根拠)\s*[：:]\s*(.+)$/);
-      if (inlineM) {
-        var lbl = inlineM[1];
-        var val = inlineM[2].trim();
-        if (/開始姿勢/.test(lbl)) { pose = val; curField = 'pose'; }
-        else if (/動作/.test(lbl)) { moveArr.push(val); curField = 'move'; }
-        else if (/感覚/.test(lbl)) { feel = val; curField = 'feel'; }
-        else if (/回数|秒数/.test(lbl)) { count = val; curField = 'count'; }
-        else if (/根拠/.test(lbl)) { extra = val; curField = 'extra'; }
-        continue;
+      // ラベル検出
+      var lm = cl.match(/^(開始姿勢|動作手順|具体的な動作|感覚の目安|秒数[・\/]?回数.*|回数.*|根拠)\s*[：:]?\s*(.*)$/);
+      if (lm) {
+        curField = lm[1].match(/開始姿勢/) ? 'pose' :
+                   lm[1].match(/動作|手順/) ? 'move' :
+                   lm[1].match(/感覚/) ? 'feel' :
+                   lm[1].match(/回数|秒数/) ? 'count' : 'extra';
+        var inline = lm[2].trim();
+        if (inline) {
+          if (curField === 'pose' && !pose) pose = inline;
+          else if (curField === 'feel' && !feel) feel = inline;
+          else if (curField === 'count' && !count) count = inline;
+          else if (curField === 'extra' && !extra) extra = inline;
+          else if (curField === 'move') moveArr.push(inline);
+        }
+        return;
       }
 
-      var cleaned = stripMd(bl);
-
-      // 番号リスト → 動作
-      var nm = bl.match(/^(\d+)[.．]\s*(.+)/);
+      // 番号リスト
+      var nm = cl.match(/^(\d+)[.．]\s*(.+)/);
       if (nm) {
-        var step = stripMd(nm[2]);
-        if (curField === 'move' || !curField) { moveArr.push(step); curField = 'move'; }
-        continue;
+        moveArr.push(nm[2]);
+        curField = 'move';
+        return;
       }
 
-      // （括弧）内容 → 根拠
-      if (/^[（(]/.test(bl) && !extra) { extra = cleaned.replace(/^[（(]/, '').replace(/[）)]$/, ''); continue; }
+      // フィールド継続
+      if (curField === 'pose' && !pose) { pose = cl; return; }
+      if (curField === 'feel' && !feel) { feel = cl; return; }
+      if (curField === 'count' && !count) { count = cl; return; }
+      if (curField === 'extra' && !extra) { extra = cl; return; }
+      if (curField === 'move') { moveArr.push(cl); return; }
 
-      // フィールドの継続行
-      if (curField === 'pose' && !pose) { pose = cleaned; continue; }
-      if (curField === 'feel' && !feel) { feel = cleaned; continue; }
-      if (curField === 'count' && !count) { count = cleaned; continue; }
-      if (curField === 'extra' && !extra) { extra = cleaned; continue; }
-      if (curField === 'move') { moveArr.push(cleaned); continue; }
-    }
+      // ラベルなし: 最初の行→姿勢、以降→動作
+      if (!pose && !moveArr.length) { pose = cl; curField = 'pose'; return; }
+      moveArr.push(cl);
+      curField = 'move';
+    });
 
-    var moveText = moveArr.slice(0,4).join(' → ');
-    var hasBody = pose || moveText || feel || count;
+    var moveText = moveArr.slice(0, 4).join(' → ');
 
     html += '<div class="rc-step"><div class="rc-head">' +
       '<div class="rc-num">' + stepNum + '</div>' +
@@ -1923,7 +1919,7 @@ function renderRecoveryContent(text) {
       (block.time ? '<span class="rc-time">' + escapeHtml(block.time) + '</span>' : '') +
       '</div>';
 
-    if (hasBody) {
+    if (pose || moveText || feel || count) {
       html += '<div class="rc-body">' +
         (pose ? '<span class="rc-lbl">姿勢</span><span class="rc-val">' + escapeHtml(pose) + '</span>' : '') +
         (moveText ? '<span class="rc-lbl">動作</span><span class="rc-val">' + escapeHtml(moveText) + '</span>' : '') +
@@ -1940,13 +1936,16 @@ function renderRecoveryContent(text) {
     html += '<div class="rc-stop"><div class="rc-stop-head">やめること</div>';
     var openItem = false;
     stopLines.forEach(function(sl) {
-      if (/^❌/.test(sl)) {
+      var sc = sl.trim();
+      if (/^❌/.test(sc)) {
         if (openItem) html += '</div></div>';
         html += '<div class="rc-stop-item"><div class="rc-x">x</div><div>' +
-          '<div class="rc-stop-text">' + escapeHtml(stripMd(sl.replace(/^❌\s*/,''))) + '</div>';
+          '<div class="rc-stop-text">' + escapeHtml(stripMd(sc.replace(/^❌\s*/, ''))) + '</div>';
         openItem = true;
-      } else if (/^→/.test(sl) && openItem) {
-        html += '<div class="rc-stop-reason">' + escapeHtml(sl.replace(/^→\s*/,'')) + '</div>';
+      } else if (/^→/.test(sc) && openItem) {
+        html += '<div class="rc-stop-reason">' + escapeHtml(sc.replace(/^→\s*/, '')) + '</div>';
+      } else if (sc && openItem) {
+        html += '<div class="rc-stop-reason">' + escapeHtml(sc) + '</div>';
       }
     });
     if (openItem) html += '</div></div>';
