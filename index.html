@@ -254,7 +254,7 @@
   <div class="purchase-card">
     <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
     <h2 class="purchase-title">フルサポートプランに参加しよう</h2>
-    <p class="purchase-subtitle">3ヶ月パーソナルコーチング + AI長期利用権</p>
+    <p class="purchase-subtitle">3ヶ月パーソナルコーチング + AI3ヶ月利用権</p>
 
     <!-- 支払い方法選択 -->
     <div class="plan-toggle" id="plan-toggle">
@@ -280,7 +280,7 @@
         <p class="feature-item">専属AIコーチによる個別プラン生成</p>
         <p class="feature-item">3ヶ月間のパーソナルコーチング</p>
         <p class="feature-item">栄養・トレーニング・回復の総合サポート</p>
-        <p class="feature-item">サービス提供終了後も6ヶ月間AI利用可能</p>
+        <p class="feature-item">サービス提供終了後も3ヶ月間AI利用可能</p>
       </div>
     </div>
 
@@ -791,6 +791,23 @@ if ('serviceWorker' in navigator) {
 // bfcache対策：別サイトから戻ってきたとき強制リロード
 window.addEventListener('pageshow', function(e) {
   if (e.persisted) window.location.reload();
+});
+
+// タブを離れて戻ったとき、会話中でなければリロード
+let hiddenAt = null;
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden') {
+    hiddenAt = Date.now();
+  } else if (document.visibilityState === 'visible' && hiddenAt) {
+    const elapsed = Date.now() - hiddenAt;
+    hiddenAt = null;
+    // 会話中（チャット履歴あり）はリロードしない
+    const chatHistory = document.getElementById('chat-history');
+    const hasChat = chatHistory && chatHistory.children.length > 0;
+    if (!hasChat && elapsed > 3000) {
+      window.location.reload();
+    }
+  }
 });
 </script>
 </body>
