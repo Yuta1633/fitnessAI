@@ -1502,6 +1502,9 @@ function addMessage(role, text) {
     // トレーニングプランの場合は構造化レンダリング
     if (isTrainingPlan(text)) {
       div.innerHTML = renderTrainingContent(text);
+    } else if (text.includes('class="step-block"') || text.includes('class="stop-block"')) {
+      // recovery HTML形式
+      div.innerHTML = text;
     } else if (isNutritionResponse(text) && window.NutritionDB) {
       // 栄養提案: [ITEMS:]→PFCバッジ変換
       const { cleanText: textWithoutOpts, options } = parseOptions(text);
@@ -1618,17 +1621,24 @@ function escapeHtml(str) {
 // トレーニングプラン構造化レンダリング
 // ============================================================
 function isTrainingPlan(text) {
+  // マークダウン形式
   const courseCount = [/🔥/, /💪/, /⚡/].filter(r => r.test(text)).length;
-  return courseCount >= 2;
+  if (courseCount >= 2) return true;
+  // HTML形式（新フォーマット）
+  if (text.includes('class="course"') || text.includes('class="wrap"')) return true;
+  return false;
 }
 
 function renderTrainingContent(text) {
+  // HTML形式（新フォーマット）ならそのまま返す
+  if (text.includes('class="course"') || text.includes('class="wrap"')) {
+    return text;
+  }
+  // 旧マークダウン形式
   const lines = text.split('\n');
   let html = '';
-
   for (const line of lines) {
     const trimmed = line.trim();
-
     if (/^[🔥💪⚡]/.test(trimmed)) {
       html += `<div class="tp-course">${escapeHtml(line)}</div>`;
     } else if (/^▼/.test(trimmed)) {
@@ -1639,7 +1649,6 @@ function renderTrainingContent(text) {
       html += escapeHtml(line) + '<br>';
     }
   }
-
   return html;
 }
 
