@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fit Project AI 完全活用ガイド</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08080f;font-family:'Noto Sans JP',system-ui,sans-serif;color:#e0e0d8;padding-bottom:80px;min-height:100vh}
+.hero{padding:52px 24px 44px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(200,241,53,0.07) 0%,transparent 65%);pointer-events:none}
+.hero-tag{display:inline-block;background:#c8f135;color:#000;font-size:10px;font-weight:900;letter-spacing:4px;padding:6px 16px;border-radius:4px;margin-bottom:20px}
+.hero h1{font-size:30px;font-weight:900;color:#fff;line-height:1.35;margin-bottom:12px}
+.hero h1 span{color:#c8f135}
+.hero-guide{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px 14px;font-size:12px;color:#666;margin-top:4px}
+.sh{display:flex;align-items:center;gap:14px;padding:0 20px;margin:44px 0 18px}
+.sh-num{font-size:48px;font-weight:900;line-height:1;color:transparent;-webkit-text-stroke:1px rgba(255,255,255,0.12)}
+.sh-tag{font-size:10px;font-weight:700;letter-spacing:3px;margin-bottom:3px}
+.sh-title{font-size:18px;font-weight:900;color:#fff;line-height:1.3}
+.how-wrap{padding:0 20px;display:flex;flex-direction:column;gap:10px}
+.hc{border-radius:16px;overflow:hidden;cursor:pointer}
+.hc-head{display:flex;align-items:flex-start;gap:14px;padding:16px 18px}
+.hc-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;margin-top:2px}
+.hc-label{flex:1}
+.hc-name{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.hc-summary{font-size:12px;color:#666;line-height:1.6;margin-bottom:6px}
+.tap-hint{display:flex;align-items:center;gap:4px;font-size:11px;color:#444;font-weight:600}
+.tap-icon{font-size:10px;transition:transform 0.25s;display:inline-block}
+.open .tap-icon{transform:rotate(180deg)}
+.tap-open::before{content:'詳細を見る'}
+.open .tap-open::before{content:'閉じる'}
+.slide{max-height:0;overflow:hidden;transition:max-height 0.35s ease}
+.open .slide{max-height:1000px}
+.hc-inner{padding:16px 18px;font-size:13px;line-height:1.9;border-top:1px solid rgba(255,255,255,0.06);color:#8a8a96}
+.hc-inner strong{color:#e0e0d8;font-weight:700}
+.point{border-left:2px solid;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:13px;line-height:1.8;background:rgba(255,255,255,0.02)}
+.hc-inner ul{padding-left:0;margin:8px 0;list-style:none}
+.hc-inner ul li{padding:5px 0 5px 16px;position:relative;border-bottom:1px solid rgba(255,255,255,0.04)}
+.hc-inner ul li::before{content:'—';position:absolute;left:0;color:rgba(255,255,255,0.2)}
+.tl-wrap{padding:0 20px}
+.tl{position:relative;padding-left:28px}
+.tl::before{content:'';position:absolute;left:10px;top:12px;bottom:12px;width:2px;background:linear-gradient(to bottom,#c8f135,#7f56d9,#f97316)}
+.tl-item{position:relative;margin-bottom:20px;cursor:pointer}
+.tl-dot{position:absolute;left:-22px;top:12px;width:14px;height:14px;border-radius:50%;border:2px solid #08080f}
+.tl-item:nth-child(1) .tl-dot{background:#c8f135}
+.tl-item:nth-child(2) .tl-dot{background:#7f56d9}
+.tl-item:nth-child(3) .tl-dot{background:#f97316}
+.tl-card{border-radius:14px;overflow:hidden}
+.tl-head-wrap{padding:14px 16px}
+.tl-item:nth-child(1) .tl-head-wrap{background:rgba(200,241,53,0.07);border:1px solid rgba(200,241,53,0.15)}
+.tl-item:nth-child(2) .tl-head-wrap{background:rgba(127,86,217,0.07);border:1px solid rgba(127,86,217,0.15)}
+.tl-item:nth-child(3) .tl-head-wrap{background:rgba(249,115,22,0.07);border:1px solid rgba(249,115,22,0.15)}
+.tl-month{font-size:10px;font-weight:700;letter-spacing:3px;margin-bottom:4px}
+.tl-item:nth-child(1) .tl-month{color:#c8f135}
+.tl-item:nth-child(2) .tl-month{color:#a78bfa}
+.tl-item:nth-child(3) .tl-month{color:#fb923c}
+.tl-head{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.4}
+.tl-summary{font-size:12px;color:#666;line-height:1.6;margin-bottom:6px}
+.tl-inner{padding:14px 16px;font-size:13px;line-height:1.85;color:#8a8a96;border-left:1px solid rgba(255,255,255,0.06);border-right:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);border-radius:0 0 14px 14px}
+.tl-inner strong{color:#e0e0d8;font-weight:700}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.ck:last-child{border:none}
+.goal-wrap{padding:0 20px}
+.tab-guide{display:flex;align-items:center;gap:8px;font-size:12px;color:#555;margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.tab{padding:8px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#555;font-size:12px;cursor:pointer;transition:all 0.18s;white-space:nowrap}
+.tab.on{border-color:transparent;font-weight:700}
+.tab:nth-child(1).on{background:#ef4444;color:#fff}
+.tab:nth-child(2).on{background:#3b82f6;color:#fff}
+.tab:nth-child(3).on{background:#f97316;color:#fff}
+.tab:nth-child(4).on{background:#10b981;color:#fff}
+.tab:nth-child(5).on{background:#a855f7;color:#fff}
+.tab-hint{font-size:11px;color:#444;margin-bottom:14px;padding-left:4px}
+.gblock{display:none}
+.gblock.on{display:flex;flex-direction:column;gap:8px}
+.goal-desc{font-size:12px;color:#666;margin-bottom:8px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);line-height:1.8}
+.rule{border-radius:12px;overflow:hidden;cursor:pointer}
+.rule-head{padding:13px 15px}
+.rule.ok .rule-head{background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.14)}
+.rule.ng .rule-head{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12)}
+.rule-top{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.rule-badge{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+.rule.ok .rule-badge{background:rgba(34,197,94,0.18);color:#22c55e}
+.rule.ng .rule-badge{background:rgba(239,68,68,0.15);color:#ef4444}
+.rule-title{flex:1;font-size:13px;font-weight:700;color:#e0e0d8;line-height:1.4}
+.rule-summary{font-size:12px;color:#555;line-height:1.6;padding-left:34px;margin-bottom:6px}
+.rule-tap{padding-left:34px}
+.rule-inner{padding:12px 15px 14px;font-size:13px;color:#777;line-height:1.85;border-left:1px solid rgba(255,255,255,0.05);border-right:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);border-radius:0 0 12px 12px}
+.rule-inner strong{color:#c0c0b8;font-weight:700}
+.rsl{font-size:10px;font-weight:700;letter-spacing:3px;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.rsl.ok{color:#22c55e}
+.rsl.ng{color:#ef4444}
+.rsl::before,.rsl::after{content:'';flex:1;height:1px;background:currentColor;opacity:0.2}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">紹介コード特典</div>
+  <h1>Fit Project AI<br><span>完全活用ガイド</span></h1>
+  <div class="hero-guide">👆 各項目をタップすると詳細が開きます</div>
+</div>
+
+<!-- CH1 -->
+<div class="sh">
+  <div class="sh-num">01</div>
+  <div class="sh-info">
+    <div class="sh-tag" style="color:#c8f135">HOW TO USE</div>
+    <div class="sh-title">このアプリの正しい使い方</div>
+  </div>
+</div>
+<div class="how-wrap">
+
+  <div class="hc" style="background:#111118;border:1px solid rgba(200,241,53,0.12)" onclick="this.classList.toggle('open')">
+    <div class="hc-head">
+      <div class="hc-ico" style="background:rgba(200,241,53,0.1)">📅</div>
+      <div class="hc-label">
+        <div class="hc-name">頻度とタイミング</div>
+        <div class="hc-summary">毎日使うのが理想。「今日は何もしない」日も回復メニューを選ぶだけでOK。完璧にやろうとすると続きません。</div>
+        <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+      </div>
+    </div>
+    <div class="slide"><div class="hc-inner">
+      <div class="point" style="border-color:#c8f135">🔁 <strong style="color:#c8f135">理想のサイクル</strong><br>筋トレ → 回復 → 筋トレ → 回復 …<br>この繰り返しが体の成長サイクルと一致します。回復を「サボり」と思わないこと。</div>
+      生成するタイミングは<strong>その日の動き出す前</strong>がベスト。前日の夜に翌日分を生成しておく使い方も有効です。<br><br>
+      週で考えると「栄養3回・トレーニング2〜3回・回復1〜2回」のバランスが理想的です。どれか1つに偏りすぎると効果が落ちます。
+    </div></div>
+  </div>
+
+  <div class="hc" style="background:#111118;border:1px solid rgba(99,102,241,0.15)" onclick="this.classList.toggle('open')">
+    <div class="hc-head">
+      <div class="hc-ico" style="background:rgba(99,102,241,0.1)">🎯</div>
+      <div class="hc-label">
+        <div class="hc-name">選択肢の選び方と意味</div>
+        <div class="hc-summary">ここを雑にすると的外れな提案が出続けます。体調・時間・場所は正直に・正確に選ぶことが最重要。</div>
+        <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+      </div>
+    </div>
+    <div class="slide"><div class="hc-inner">
+      AIの提案の質は<strong>入力情報の正確さに直結します。</strong><br><br>
+      <ul>
+        <li><strong>体調：</strong>睡眠不足・ストレス高い日は素直に「少し疲れ気味」を選ぶのが正解。無理して「元気」を選ぶと翌日に影響します</li>
+        <li><strong>時間：</strong>「今日実際に使える時間」を正確に。15分しかないなら15分と入れてください</li>
+        <li><strong>場所：</strong>「家（道具なし）」を選べば器具が一切不要のメニューが生成されます</li>
+        <li><strong>3コースの強度：</strong>疲れている日は迷わず「これだけでもOK」を選んでください。やらないより圧倒的にマシです</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="hc" style="background:#111118;border:1px solid rgba(249,115,22,0.15)" onclick="this.classList.toggle('open')">
+    <div class="hc-head">
+      <div class="hc-ico" style="background:rgba(249,115,22,0.1)">💬</div>
+      <div class="hc-label">
+        <div class="hc-name">コーチへの相談タイミング</div>
+        <div class="hc-summary">日常の「今日何をするか」はAIに任せてOK。感情・方向修正・個別事情はコーチが得意な領域です。</div>
+        <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+      </div>
+    </div>
+    <div class="slide"><div class="hc-inner">
+      <div class="point" style="border-color:#f97316">📞 <strong style="color:#fb923c">これはコーチに相談してください</strong><br>2週間以上体重・体型に変化がない / やる気が全く出ない・3日以上サボった / 怪我や痛みが出た / 方向性がわからなくなった / AIの提案が合っていない気がする</div>
+      逆に言えば<strong>日常の「今日何をするか」はすべてAIに任せて大丈夫です。</strong>コーチとAIを使い分けることで成果が大きく変わります。
+    </div></div>
+  </div>
+
+  <div class="hc" style="background:#111118;border:1px solid rgba(236,72,153,0.15)" onclick="this.classList.toggle('open')">
+    <div class="hc-head">
+      <div class="hc-ico" style="background:rgba(236,72,153,0.1)">📊</div>
+      <div class="hc-label">
+        <div class="hc-name">記録の残し方</div>
+        <div class="hc-summary">使えば使うほどAIの精度が上がる仕組みです。体重・体脂肪の記録がAIをあなた専用にしていきます。</div>
+        <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+      </div>
+    </div>
+    <div class="slide"><div class="hc-inner">
+      このアプリは<strong>過去の利用履歴を参照して提案を生成します。</strong><br><br>
+      <ul>
+        <li><strong>体重・体脂肪：</strong>毎日同じ時間帯（朝起きてすぐ）に計ることで変動を正確に追えます</li>
+        <li><strong>目標の設定：</strong>最初に「目標体重」「目標体脂肪率」を設定しておいてください。AIが現在地との差を把握して強度を調整します</li>
+        <li><strong>記録をサボった週：</strong>AIの提案が汎用的になります。記録が増えるほどあなた専用のプランになっていきます</li>
+      </ul>
+    </div></div>
+  </div>
+
+</div>
+
+<!-- CH2 -->
+<div class="sh">
+  <div class="sh-num">02</div>
+  <div class="sh-info">
+    <div class="sh-tag" style="color:#a78bfa">ROADMAP</div>
+    <div class="sh-title">3ヶ月の理想的な進め方</div>
+  </div>
+</div>
+<div class="tl-wrap">
+  <div class="tl">
+
+    <div class="tl-item" onclick="this.classList.toggle('open')">
+      <div class="tl-dot"></div>
+      <div class="tl-card">
+        <div class="tl-head-wrap">
+          <div class="tl-month">MONTH 1 — 習慣化</div>
+          <div class="tl-head">「続けること」だけを目標にする</div>
+          <div class="tl-summary">体の変化は最低6〜8週間後。変化が出なくても正常です。この時期に結果を求めてやめるのが最大の失敗パターン。</div>
+          <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+        </div>
+        <div class="slide"><div class="tl-inner">
+          この時期にやること：
+          <div class="ck"><span>✓</span><span>週3〜4回のアプリ使用を目標にする（完璧じゃなくていい）</span></div>
+          <div class="ck"><span>✓</span><span>コーチとの初回面談で3ヶ月のゴールを言語化する</span></div>
+          <div class="ck"><span>✓</span><span>毎日体重を計る習慣をつける</span></div>
+          <div class="ck"><span>✓</span><span>「これだけでもOK」コースを活用して休まず継続する</span></div>
+          <br>体重・体型に変化が出なくても、体の内側（代謝・睡眠の質・疲れにくさ）は確実に変わり始めています。
+        </div></div>
+      </div>
+    </div>
+
+    <div class="tl-item" onclick="this.classList.toggle('open')">
+      <div class="tl-dot"></div>
+      <div class="tl-card">
+        <div class="tl-head-wrap">
+          <div class="tl-month">MONTH 2 — 強化</div>
+          <div class="tl-head">強度を上げて変化を作る</div>
+          <div class="tl-summary">習慣ができたら「しっかり追い込む」コースを週2〜3回に。体重・体型の変化が出始める時期です。</div>
+          <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+        </div>
+        <div class="slide"><div class="tl-inner">
+          この時期にやること：
+          <div class="ck"><span>✓</span><span>コース選択を「スタンダード」〜「しっかり追い込む」に引き上げる</span></div>
+          <div class="ck"><span>✓</span><span>変化が出始めたら写真で記録しておく</span></div>
+          <div class="ck"><span>✓</span><span>停滞感があればコーチに相談して方向修正する</span></div>
+          <div class="ck"><span>✓</span><span>栄養・トレーニング・回復の3軸をバランスよく使う</span></div>
+          <br>追い込む日と回復の日を交互に入れることが重要です。毎日追い込みすぎると回復が追いつかず逆効果になります。
+        </div></div>
+      </div>
+    </div>
+
+    <div class="tl-item" onclick="this.classList.toggle('open')">
+      <div class="tl-dot"></div>
+      <div class="tl-card">
+        <div class="tl-head-wrap">
+          <div class="tl-month">MONTH 3 — 加速</div>
+          <div class="tl-head">最も変化が出る時期。妥協しない</div>
+          <div class="tl-summary">1〜2ヶ月目の蓄積がここで一気に開花します。気が緩んで強度を落とすのが最もよくあるパターン。</div>
+          <div class="tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div>
+        </div>
+        <div class="slide"><div class="tl-inner">
+          この時期にやること：
+          <div class="ck"><span>✓</span><span>週の頻度・強度を維持。むしろ少し上げるくらいがベスト</span></div>
+          <div class="ck"><span>✓</span><span>コーチと3ヶ月間の振り返りを行う</span></div>
+          <div class="ck"><span>✓</span><span>「3ヶ月後も続けるための仕組み」を考え始める</span></div>
+          <div class="ck"><span>✓</span><span>次のフェーズの目標を設定する</span></div>
+          <br><strong>3ヶ月はゴールではなく、スタートラインです。</strong>ここで得た習慣・体の変化を土台に、次の3ヶ月でさらに大きな変化を作れます。
+        </div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CH3 -->
+<div class="sh">
+  <div class="sh-num">03</div>
+  <div class="sh-info">
+    <div class="sh-tag" style="color:#f472b6">RULES</div>
+    <div class="sh-title">目的別 攻略ルール</div>
+  </div>
+</div>
+<div class="goal-wrap">
+  <div class="tab-guide">👇 目的をタップするとルールが切り替わります</div>
+  <div class="tabs">
+    <button class="tab on" onclick="sg(this,'fat')">🔥 脂肪を落とす</button>
+    <button class="tab" onclick="sg(this,'muscle')">💪 筋肉をつける</button>
+    <button class="tab" onclick="sg(this,'stamina')">⚡ 体力を上げる</button>
+    <button class="tab" onclick="sg(this,'health')">🩺 不調を改善</button>
+    <button class="tab" onclick="sg(this,'shape')">✨ 見た目を整える</button>
+  </div>
+  <div class="tab-hint" id="tab-hint">現在：🔥 脂肪を落とす のルールを表示中</div>
+
+  <div class="gblock on" id="g-fat">
+    <div class="goal-desc">脂肪を落とすための大原則は「消費カロリー＞摂取カロリー」のみ。どんなにトレーニングを頑張っても食事が崩れていれば体は変わりません。</div>
+    <div class="rsl ok">やること</div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">摂取カロリーを数字で把握する</div></div><div class="rule-summary">感覚での管理は必ず誤差が出る。1日200〜300kcalの赤字で月約1kgのペースで落とせます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「食べすぎた気がしない」のに体重が落ちない人のほとんどは、カロリーを無意識に過小評価しています。人間の自己申告カロリーは実際より平均20〜30%少なく見積もられるという研究があります。<br><br><strong>具体的な目安：</strong>脂肪1kgを落とすには約7000kcalの赤字が必要です。1日250kcalの赤字を維持すれば1ヶ月約1kg、3ヶ月で約3kgの計算です。急激に減らすより、この「ゆっくり確実」のペースが筋肉を守りながら脂肪だけを落とす最適解です。<br><br><strong>実践方法：</strong>最初の1週間だけでいいので食事を記録してみてください。自分がどこでカロリーを取りすぎているか、パターンが見えます。「ドレッシング」「飲み物」「間食」に無意識の高カロリーが潜んでいることが多いです。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">毎食タンパク質を入れる</div></div><div class="rule-summary">カロリー制限中に最も失いやすいのが筋肉。体重×1.5〜2g/日で筋肉を守りながら脂肪だけ落とせます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">カロリー制限中に筋肉が落ちる最大の原因はタンパク質不足です。体は飢餓状態になると筋肉のアミノ酸をエネルギーに使います。これを防ぐには<strong>毎食タンパク質を摂ること</strong>が最優先です。<br><br><strong>必要量の目安：</strong>体重×1.5〜2g/日。体重60kgなら90〜120g/日が目安です。1食あたり30〜40g確保することで、筋肉の分解を抑えられます。<br><br><strong>手軽な食材：</strong>鶏むね肉100g→約23g、卵1個→約6g、木綿豆腐150g→約10g、プロテイン1杯→約20〜25g。食事で足りない分はプロテインで補完してください。<br><br><strong>特に重要な朝食：</strong>朝食を抜く・パンだけの朝食では午前中から筋肉の分解が始まります。卵1個・ヨーグルト・プロテインを朝に加えるだけで大きく変わります。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">筋トレ＋有酸素の両方を行う</div></div><div class="rule-summary">有酸素は脂肪を燃やし、筋トレは代謝を維持。どちらか片方だけでは効果が半減します。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「有酸素だけ頑張っているのに体重が落ちない」という人のほとんどは、筋肉も一緒に失っています。筋肉が落ちると基礎代謝が下がり、同じ運動量でも消費カロリーが減っていくという悪循環に陥ります。<br><br><strong>それぞれの役割：</strong>有酸素運動は運動中に脂肪を直接燃やします。筋トレは筋肉量を維持・増加させることで安静時の消費カロリー（基礎代謝）を高め、24時間脂肪を燃やしやすい体を作ります。<br><br><strong>理想の組み合わせ：</strong>筋トレ週2〜3回＋有酸素週3〜4回が基本です。同じ日にやる場合は筋トレ→有酸素の順が効果的。先に筋トレで糖質を消費してから有酸素を行うと、脂肪燃焼効率が上がります。<br><br><strong>このアプリでの活用：</strong>トレーニングと回復を交互に選択することで自然とバランスが保たれます。栄養メニューも合わせて使うことで3軸が揃います。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">毎日同じ時間に体重を計る</div></div><div class="rule-summary">朝起きてすぐ・排尿後が最適。1日の数値ではなく週平均のトレンドで判断することが正確。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体重は1日の中でも2〜3kg変動します。夜より朝の方が軽く、塩分の多い食事の翌日は水分を溜め込んで重くなります。この変動を「体脂肪の増減」と誤解して一喜一憂するのが最もよくある失敗パターンです。<br><br><strong>正しい計り方：</strong>毎朝起きてすぐ・トイレを済ませた後・食事前に計ることで変動を最小化できます。同じ条件で計り続けることが重要で、タイミングがバラバラだと意味がありません。<br><br><strong>判断の仕方：</strong>1日の数値ではなく「今週の平均 vs 先週の平均」で判断してください。週平均が0.2〜0.5kg下がっていれば順調です。1日で1kg増えても、それは水分の変動であり脂肪ではありません。<br><br><strong>記録の効果：</strong>毎日記録するだけで食事への意識が上がり、過食が減るという研究があります。このアプリの体重記録機能を毎日使うことでAIの分析精度も上がります。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">睡眠7時間以上を確保する</div></div><div class="rule-summary">睡眠不足は食欲を15〜20%増加させます。ダイエット中は特に睡眠の確保が重要。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">睡眠不足はダイエットの最大の敵の一つです。睡眠時間が6時間以下になると、食欲を増進させるホルモン（グレリン）が増加し、食欲を抑制するホルモン（レプチン）が減少します。食欲が15〜20%増加するとされており、意志力だけで抑えることが難しくなります。<br><br><strong>睡眠不足が引き起こす連鎖：</strong>眠れない→食欲増加→食べすぎ→体重増加→ストレス→眠れない……という悪循環に陥りやすいです。またコルチゾール（ストレスホルモン）が増加し、腹部への脂肪蓄積が促進されます。<br><br><strong>睡眠と脂肪燃焼：</strong>成長ホルモンは眠り始めてから最初の90分（深い睡眠中）に最も多く分泌されます。この成長ホルモンが脂肪を分解してエネルギーとして使う働きを促進します。十分な睡眠は「寝ながら脂肪を燃やす」ための条件です。<br><br><strong>改善のコツ：</strong>就寝90分前に入浴・寝る直前のスマホを避ける・毎日同じ時間に起きることが睡眠の質向上に効果的です。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">停滞期は2週間様子を見る</div></div><div class="rule-summary">体重が動かない停滞期は誰にでも来ます。焦って急に食事を減らすのが最もよくある失敗。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体重が2週間以上全く動かない「停滞期」は、正しくダイエットできている証拠でもあります。体は新しい体重に適応し、消費カロリーを自動的に下げる「代謝適応」という仕組みを持っています。これは飢餓から身を守るための生存本能です。<br><br><strong>停滞期の正しい対処法：</strong>①まず2週間は何もせず様子を見る（まだ体が適応中の場合があります）②2週間変化がなければ、摂取カロリーを100〜150kcal減らすか、有酸素運動を週1回追加します③それでも変化がない場合は、1〜2日カロリーを多く摂る「チートデイ」を入れることで代謝が再活性化することがあります。<br><br><strong>やってはいけない対処：</strong>焦って一気に食事量を減らすのが最悪の選択です。急激な制限は筋肉の分解を加速させ、基礎代謝をさらに低下させます。停滞期に食事を極端に減らした人ほど、再開後に太りやすくなります。<br><br><strong>気持ちの持ち方：</strong>体重が動かない期間も、体の内側では確実に変化が起きています。体組成・睡眠の質・疲れにくさに注目してください。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">水を1日1.5〜2L飲む</div></div><div class="rule-summary">脱水状態では脂肪の分解効率が落ちます。ジュース→水・お茶に変えるだけで大きな差が出ます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体の約60%は水分でできており、水分不足になると代謝が低下します。脂肪の分解には水分が必要で、軽い脱水状態（体重の1〜2%の水分損失）でも代謝効率が落ちます。<br><br><strong>飲み物の落とし穴：</strong>ジュース500ml（約200kcal）・コーヒー（砂糖・ミルク入り）1杯（約100kcal）・スポーツドリンク500ml（約130kcal）は、運動で消費するカロリーに匹敵します。これを水・お茶・無糖コーヒーに変えるだけで、1日200〜400kcalの削減になります。<br><br><strong>食欲抑制効果：</strong>食事の30分前にコップ1杯（200ml）の水を飲むと、食事量が約12〜13%減少するという研究があります。空腹感を感じたときも、まず水を飲むことで偽の食欲（実は喉が渇いているだけ）を見分けられます。<br><br><strong>飲み方のコツ：</strong>「のどが渇いたら飲む」では遅いです。時間を決めて（起床時・食前・トレーニング前後）飲む習慣をつけることが効果的です。</div></div></div>
+    <div class="rsl ng">やってはいけないこと</div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">食事を抜く・極端に減らす</div></div><div class="rule-summary">体が飢餓状態と判断し筋肉を分解。基礎代謝が下がりリバウンドしやすい体になります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「食べなければ痩せる」は最も危険なダイエットの誤解です。食事を抜くと体は飢餓状態と判断し、①エネルギー消費を抑える（基礎代謝を下げる）②筋肉をアミノ酸に分解してエネルギーとして使う、という2つの対応をします。どちらも長期的な脂肪燃焼にとって最悪の結果です。<br><br><strong>リバウンドが起きるメカニズム：</strong>食事制限中に基礎代謝が下がります。食事を戻すと、下がった代謝に対してカロリーが多すぎる状態になり急速に体重が戻ります。しかも戻るのは脂肪で、失ったのは筋肉なので、制限前より太りやすい体になります。<br><br><strong>許容できる赤字の範囲：</strong>1日の赤字は500kcal以内が推奨されています。これ以上の赤字は筋肉の分解が急速に進みます。<br><br><strong>特に危険なパターン：</strong>朝食を抜く・夜だけ食べる・1日1食は、いずれも代謝低下と筋肉分解を加速させます。3食をやや少なめに食べる方が、体への負担が少なく代謝も維持されます。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">有酸素だけやって筋トレをしない</div></div><div class="rule-summary">筋肉が徐々に低下し代謝が下がります。同じカロリーを食べても太りやすくなる悪循環。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「ランニングだけで痩せようとした結果、ひょろひょろになった」というのが有酸素のみダイエットの末路です。体重は落ちても筋肉量も一緒に落ちることで、「小さくなっただけで引き締まっていない」体型になります。<br><br><strong>筋肉が落ちると起きること：</strong>筋肉1kgの損失で基礎代謝が約13kcal/日減少します。3ヶ月で3kg筋肉が落ちると、1日39kcal・年間で14,000kcal以上の消費量が減ります。これは体脂肪約2kgに相当し、何もしなくても年2kg太りやすくなるということです。<br><br><strong>有酸素だけで陥る悪循環：</strong>有酸素→筋肉減少→代謝低下→体重が落ちにくくなる→有酸素を増やす→さらに筋肉が落ちる……。このサイクルに入ると抜け出すのが困難になります。<br><br><strong>正しいアプローチ：</strong>週2〜3回の筋トレで筋肉量を維持しながら、週3〜4回の有酸素で脂肪を燃やすことが最適解です。筋肉が増えれば有酸素の効率自体も上がります。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">炭水化物を完全にカットする</div></div><div class="rule-summary">筋トレのエネルギー源を断つことになります。短期では体重が落ちますが大半は水分の減少。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「糖質制限で10kg痩せた」という話はよく聞きますが、短期の体重減少の大部分は水分とグリコーゲン（筋肉の燃料）の減少です。本当の脂肪の減少ではありません。<br><br><strong>炭水化物が必要な理由：</strong>筋トレの主エネルギー源はグリコーゲン（糖質から作られる）です。糖質が不足するとトレーニング中盤からパフォーマンスが急落し、筋肉が分解されてエネルギーとして使われます。「糖質制限中は筋トレが辛い」という感覚がこれです。<br><br><strong>長期的なリスク：</strong>極端な糖質制限を長期間続けると、基礎代謝が下がりホルモンバランスが乱れます。また精神的な継続困難（炭水化物への強い欲求）から、食べ始めると過食になりやすいです。<br><br><strong>正しい炭水化物の扱い方：</strong>「減らす」のは良いが「なくす」のは不可。1日の糖質を100〜150g程度に抑えながら、タンパク質・脂質とのバランスを取ることが長期継続できる食事法です。特にトレーニング前後の炭水化物は削らないでください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">特定の部位だけ集中して鍛える</div></div><div class="rule-summary">部分痩せは科学的に否定されています。脂肪は全身から均等に落ちます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「お腹の脂肪を落とすために腹筋ばかりやる」「二の腕を細くするために腕のトレーニングだけやる」というアプローチは、科学的に「部分痩せは不可能」と明確に否定されています。<br><br><strong>なぜ部分痩せができないのか：</strong>体は脂肪をエネルギーとして使う際、特定の部位からだけ取り出すことができません。全身の脂肪細胞から均等に取り出されます。どれだけ腹筋をやっても、お腹の脂肪だけ優先的に燃えることはありません。<br><br><strong>腹筋ばかりやるデメリット：</strong>腹筋は小さな筋肉で、毎日やっても消費カロリーは微々たるものです。同じ時間で下半身の大きな筋肉（スクワット・デッドリフト）を鍛える方が、消費カロリーも代謝向上効果もはるかに大きいです。<br><br><strong>正しいアプローチ：</strong>全身の体脂肪率を下げることに集中してください。体脂肪率が下がれば、お腹・顔・腕など全身からバランスよく脂肪が落ちます。気になる部位の筋肉を鍛えることは「形を作る」意味では有効ですが、その部位の脂肪を落とすためではありません。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">体重の数字だけに一喜一憂する</div></div><div class="rule-summary">塩分の多い食事の翌日は水分を溜め込んで体重が増えます。週平均のトレンドで判断してください。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体重計の数値は「体脂肪の量」ではなく「体全体の重さ」です。水分・食事の内容・筋肉量・排便のタイミングによって1〜3kg変動します。この変動を「脂肪の増減」と誤解することで、正しい判断ができなくなります。<br><br><strong>体重が増える主な原因と実態：</strong>塩分の多い食事→水分を溜め込んで翌日1〜2kg増（脂肪ではない）、筋トレ翌日→筋肉の炎症・水分で0.5〜1kg増（脂肪ではない）、生理前→ホルモンの影響で1〜2kg増（脂肪ではない）。これらは3〜4日で自然に戻ります。<br><br><strong>正しい判断方法：</strong>「今週の平均体重 vs 先週の平均体重」を比較してください。週平均が0.2〜0.5kg下がっていれば確実に進んでいます。<br><br><strong>体重以外で判断できること：</strong>服がゆるくなった、写真で比べて顔が細くなった、体力がついた、睡眠の質が上がった。これらは体重に反映されない前進の証拠です。体重が変わらなくても、これらの変化が出ているなら正しい方向に進んでいます。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">週1〜2回の爆発的な運動だけに頼る</div></div><div class="rule-summary">週4〜5回の短時間運動の方が代謝が安定します。週1回の激しい運動は怪我リスクも高い。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「週末だけ2〜3時間走る」「土曜日に気合を入れてジムに行く」というパターンは、消費カロリーの観点からも非効率で、継続性の観点からも続きません。<br><br><strong>エネルギー消費の比較：</strong>週1回2時間のランニング（消費カロリー約800kcal）vs 週5回30分のウォーキング（消費カロリー約1,000kcal）。毎日少しずつの方が週の総消費カロリーが多く、代謝も継続的に高まります。<br><br><strong>週1回の激しい運動のリスク：</strong>体が慣れていない状態で急に高強度の運動をすると、筋肉痛・関節への過負荷・疲労蓄積が起きます。翌日以降2〜3日活動量が落ちるため、週全体のカロリー消費はむしろ少なくなることがあります。<br><br><strong>理想の頻度：</strong>週3〜5回、1回20〜40分の中強度運動が最も効果的です。短くても毎日動くことで代謝が安定し、体が「運動モード」を維持します。このアプリを毎日使うことでこの習慣を自然に身につけられます。</div></div></div>
+  </div>
+
+  <div class="gblock" id="g-muscle">
+    <div class="goal-desc">筋肉が成長するには「適切な刺激（トレーニング）」「材料（タンパク質）」「修復時間（休息）」の3つが全て揃う必要があります。</div>
+    <div class="rsl ok">やること</div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">週に同じ部位を2〜3回鍛える</div></div><div class="rule-summary">週1回より週2〜3回の方が筋肥大効果が高い。週の総トレーニング量を増やすことが最優先。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">筋タンパク合成（筋肉の成長プロセス）は刺激を与えてから24〜48時間後にピークを迎え、72時間程度持続します。週1回では「筋タンパク合成が活発な時間」が少なすぎます。週2〜3回刺激を与えることで、より長い時間筋肉を成長モードに保てます。<br><br><strong>分割の方法：</strong>上半身の日（胸・肩・腕）/下半身の日（脚・お尻・背中）に分けると、同じ部位を週2〜3回鍛えやすくなります。<br><br><strong>週の総ボリュームが最重要：</strong>同じ部位を週に何セット行ったかの合計が筋肥大を決定します。週1回で10セットより、週2回で各5セットの方が効果的です。<br><br><strong>回復の見極め方：</strong>前回のトレーニング部位に筋肉痛が残っている場合は48時間以上空けてください。筋肉痛がなくても48時間は空けることを推奨します。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">体重×1.6〜2.2gのタンパク質を毎日摂る</div></div><div class="rule-summary">体重60kgなら1日96〜132gが目安。食事だけで摂りにくければプロテインで補完してください。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">筋肉はタンパク質（アミノ酸）を材料にして修復・成長します。材料が足りなければどんなに刺激を与えても成長しません。タンパク質の確保は筋肥大の絶対条件です。<br><br><strong>必要量の根拠：</strong>体重1kgあたり1.6〜2.2gが最適とされています。体重70kgなら112〜154g/日が目安です。食事だけで摂りにくい場合はプロテインで補完してください（プロテインは食品です。副作用はありません）。<br><br><strong>摂取タイミングの重要性：</strong>1食あたり30〜40gを均等に分けて摂ることが効果的です。「夜だけ大量に摂る」より「朝・昼・夜・トレーニング後に分散して摂る」方が筋タンパク合成が長く持続します。<br><br><strong>質の高いタンパク源：</strong>鶏むね肉（100g→23g）、卵（1個→6g）、サーモン（100g→22g）、ギリシャヨーグルト（100g→10g）。動物性と植物性を組み合わせると必須アミノ酸のバランスが理想的になります。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">少しずつ重量・回数を増やしていく</div></div><div class="rule-summary">筋肉は同じ刺激にすぐ慣れます。毎回少しでも負荷を上げることが成長の唯一の方法。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">筋肉は「今まで経験したことのない強度」への適応として成長します。同じ重量・回数を続けると筋肉はそれに完全適応してしまい、それ以上の成長は止まります。これが「漸進性過負荷の原則」です。<br><br><strong>負荷を上げる方法（重量以外も有効）：</strong>①重量を増やす（最もシンプルで効果的）②回数を増やす（重量が増やせないとき）③セット数を増やす④インターバルを短くする⑤テンポを変える（ゆっくり下ろすなど）<br><br><strong>具体的な目安：</strong>現在の重量で10回を3セット楽にこなせるようになったら重量を2.5〜5kg増やすのがサインです。新しい重量では6〜8回しかできなくてOK。また10回できるようになったら上げる、この繰り返しです。<br><br><strong>記録の重要性：</strong>前回のトレーニングの重量・回数を記録しておかないと「上がっているか」が分かりません。必ずメモを残してください。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">7〜9時間の睡眠を確保する</div></div><div class="rule-summary">筋肉はトレーニング中ではなく睡眠中に成長します。睡眠5時間以下で筋タンパク合成が著しく低下。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「筋トレは裏切らない」は正確には「筋トレ＋睡眠は裏切らない」です。筋肉はトレーニング中に破壊され、睡眠中に修復・成長します。睡眠なしにはトレーニングの成果は半減します。<br><br><strong>成長ホルモンと睡眠の関係：</strong>成長ホルモンは眠り始めてから最初の90分（ノンレム睡眠の深い段階）に最も多く分泌されます。このホルモンが筋肉の修復・成長と脂肪の分解を促進します。<br><br><strong>テストステロンへの影響：</strong>睡眠時間が1週間で5〜6時間に制限されると、テストステロン（筋肥大の主要ホルモン）が10〜15%低下するとされています。これは10〜15歳分老化するのと同等の影響です。<br><br><strong>睡眠の質を上げる方法：</strong>トレーニングは就寝3時間以上前に終わらせる・就寝90分前の入浴・寝室の温度を18〜20℃に保つ・毎日同じ時間に起きることで体内時計が安定します。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">あと1〜2回できる余力で止める</div></div><div class="rule-summary">RIR理論。毎回限界まで追い込むより週の総負荷量を積み上げる方が長期的な成果が高い。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">RIR（Repetitions In Reserve＝余力回数）という概念です。セットを終えるとき「あと何回できたか」を意識します。RIR1〜2（あと1〜2回できる余力を残す）が筋肥大に最適とされています。<br><br><strong>なぜ「余力を残す」方が良いのか：</strong>毎回限界まで追い込むと神経系への負担が大きく、完全回復に48〜72時間以上かかります。その間の次のトレーニングの質が落ちます。各セットで少し余力を残すことで週の総ボリュームを最大化できます。<br><br><strong>「追い込む」ことの誤解：</strong>研究では、RIR1〜4（余力を残したセット）でも限界まで追い込むセットと同等の筋肥大効果が得られることが示されています。「限界まで追い込まないと意味がない」は根拠のない信念です。<br><br><strong>実践方法：</strong>セットを終えるときに「今あと何回できるか？」を自問してください。「あと1〜2回は絶対できる」と感じるところで止めるのが最適です。最終セットだけ追い込むのは問題ありません。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">トレーニング後30〜60分以内にタンパク質を摂る</div></div><div class="rule-summary">トレーニング直後は筋タンパク合成が最も活発。このタイミングの栄養補給が成長を最大化します。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">筋トレ後は筋タンパク合成（MPS）が高まり、アミノ酸を積極的に取り込もうとする時間帯が開きます。このタイミングで十分なタンパク質を供給することで修復・成長が加速します。<br><br><strong>摂取量の目安：</strong>20〜40gのタンパク質が最適です。1食として20〜40g確保することを意識してください。<br><br><strong>最速の方法：</strong>プロテインシェイクはトレーニング直後に飲める最速の選択肢です。消化・吸収が早く（30〜60分）、筋肉へのアミノ酸供給が素早いです。水に溶かすだけなので準備も簡単。<br><br><strong>食事で摂る場合：</strong>鶏むね肉・サーモン・卵・ギリシャヨーグルトが手軽です。トレーニング後1〜2時間以内を目安に摂ってください。<br><br><strong>炭水化物も合わせて：</strong>タンパク質と炭水化物（バナナ・おにぎり・パン）を組み合わせることでインスリン分泌が促進され、筋タンパク合成がさらに高まります。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">多関節種目（スクワット・ベンチプレス等）を軸にする</div></div><div class="rule-summary">複数の筋肉を同時に動かす種目は短時間で全身に刺激を与えられます。成長ホルモンの分泌量も多くなります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">多関節種目（コンパウンド種目）は複数の関節と筋肉を同時に動かします。単関節種目（アイソレーション種目）は一つの筋肉だけを動かします。筋肥大目的では多関節種目を軸にすることが最も効率的です。<br><br><strong>多関節種目のメリット：</strong>①複数の筋肉を同時に刺激できる（時間効率が高い）②高重量を扱えるため成長ホルモン・テストステロンの分泌量が多くなる③全身の筋力バランスが整う。例えばスクワットは大腿四頭筋・ハムストリング・お尻・体幹・背中を同時に鍛えます。<br><br><strong>器具なし（自重）での代替：</strong>スクワット→自重スクワット・ジャンプスクワット、ベンチプレス→腕立て伏せ・足上げ腕立て、懸垂→斜め懸垂。自宅でも多関節種目は十分できます。<br><br><strong>推奨比率：</strong>多関節種目70〜80%・単関節種目20〜30%が理想です。このアプリのトレーニングメニューはこの比率を考慮して生成されています。</div></div></div>
+    <div class="rsl ng">やってはいけないこと</div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">同じ部位を毎日鍛える</div></div><div class="rule-summary">筋肉は48〜72時間かけて修復・成長します。この時間を与えないとオーバートレーニングになります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「毎日筋トレすれば早く成長する」という誤解は非常に多いです。筋肉は休んでいる間に成長するのであり、鍛えている間ではありません。筋トレは「成長のトリガーを引く行為」に過ぎません。<br><br><strong>回復のメカニズム：</strong>筋トレで筋繊維に微細な損傷→炎症反応→修復→以前より太く強い筋繊維に再生（超回復）。このプロセスに48〜72時間かかります。この時間を与えないと修復が完了しない状態でまた損傷させることになります。<br><br><strong>オーバートレーニングの症状：</strong>パフォーマンスが下がる・常に疲労感がある・睡眠が浅くなる・食欲が落ちる・気分が落ち込む。これらが出たら明確に休養が必要なサインです。<br><br><strong>腹筋だけ例外？：</strong>腹筋は回復が早い筋肉のため毎日やっても大丈夫という説がありますが、週3〜4回の高強度の方が筋肉として発達します。毎日やる場合は強度を下げてください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">高強度の有酸素を長時間やる</div></div><div class="rule-summary">過度な有酸素は脂肪より先に筋肉を分解します。筋肥大目的なら有酸素は低〜中強度で30分以内に。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「筋トレした後にランニング1時間」というパターンが筋肥大の大きな妨げになります。高強度の有酸素を長時間行うと、体はグリコーゲン（糖質）を使い果たし、次のエネルギー源として筋タンパクを分解します。<br><br><strong>「干渉効果」とは：</strong>筋トレと有酸素を同じ日に行うと、筋肥大の効果が有酸素によって減少する「干渉効果」が生じます。特に有酸素を先にやると、筋トレに使うエネルギーが枯渇して質が落ちます。<br><br><strong>正しい有酸素の入れ方（筋肥大目的）：</strong>①有酸素は別の日に行う②同じ日にやる場合は筋トレ後に30分以内③強度は「話せる程度のキツさ」（心拍数65%以下）④週2〜3回まで。これを超えると干渉効果が強くなります。<br><br><strong>有酸素が全く不要ではない：</strong>心肺機能を維持することで筋トレの回復が早まります。適度な有酸素をしている方が長期的に筋肥大効率が高いです。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">毎回同じ重量・回数でトレーニングする</div></div><div class="rule-summary">「慣れ」が最大の敵。AIが毎回異なるメニューを出す理由はここにあります。積極的に試してください。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">筋肉の適応能力は非常に高く、同じ刺激に慣れるのは驚くほど早いです。同じ種目・重量・回数を3〜4週間続けると筋肉はそれに完全適応して成長が止まります。これが「プラトー（停滞期）」です。<br><br><strong>適応が起きるスピード：</strong>神経系の適応は1〜2週間で起きることもあります。「最初の1ヶ月は劇的に成長したのにその後全然変わらない」というのは、この適応が起きているサインです。<br><br><strong>変化させるべき要素：</strong>重量・回数・セット数・種目・インターバル・テンポ（動作のスピード）・グリップ幅など。全てを一度に変える必要はなく、1〜2つの要素を変えるだけで新しい刺激になります。<br><br><strong>AIを活用する：</strong>このアプリは過去の履歴を参照して毎回異なるメニューを生成しています。同じ種目でも負荷設定が変化するため、慣れが起きにくい設計です。AIの提案を積極的に試してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">炭水化物を避ける</div></div><div class="rule-summary">筋トレの主要エネルギー源は糖質です。不足するとトレーニングの質が落ち筋肉が成長しません。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「筋トレしているのに炭水化物を避ける」は、車にガソリンを入れずに走ろうとするのと同じです。筋トレの主エネルギー源はグリコーゲン（糖質から肝臓・筋肉に蓄えられる）で、これなしには高強度のトレーニングができません。<br><br><strong>糖質不足で起きること：</strong>トレーニングの序盤からパフォーマンスが落ちる→後半でフォームが崩れる→筋肉が分解されてエネルギーとして使われる→怪我のリスクが上がる。糖質制限中に筋トレが辛いのはこのためです。<br><br><strong>炭水化物が筋肥大を助ける仕組み：</strong>炭水化物を食べるとインスリンが分泌されます。インスリンは血中のアミノ酸を筋肉に取り込む働きがあり、筋タンパク合成を促進します。特にトレーニング後の炭水化物＋タンパク質の組み合わせは最も効果的です。<br><br><strong>適切な量の目安：</strong>体重1kgあたり3〜5g/日の炭水化物が筋肥大に適切とされています。体重70kgなら210〜350g/日。米・パン・パスタ・果物・芋類から摂取してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">毎回限界まで追い込む</div></div><div class="rule-summary">回復に時間がかかり次のセッションの質が落ちます。週の総負荷量を増やすことを優先してください。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「追い込む＝効果がある」という信念は広く浸透していますが、科学的には「週の総ボリューム（重量×回数×セット数の合計）を増やすこと」が筋肥大の最重要因子です。<br><br><strong>毎回追い込むことのデメリット：</strong>①神経系の疲労が大きく完全回復に72〜96時間かかる②次のトレーニングの質が落ち総ボリュームが減る③フォームが崩れ怪我のリスクが上がる④継続が困難になり脱落する人が増える。<br><br><strong>最適な強度の目安：</strong>RIR（余力回数）1〜2、つまり「あと1〜2回できる余力を残して終える」が最も長期的な成果が高いとされています。最終セットだけ追い込むのは問題ありません。<br><br><strong>「キツさ」と「効果」は別物：</strong>特に翌日歩けないほどの筋肉痛は過度な負荷のサインです。適度な筋肉痛（翌日〜翌々日に軽くある程度）が最適です。</div></div></div>
+  </div>
+
+  <div class="gblock" id="g-stamina">
+    <div class="goal-desc">心肺持久力は継続的な有酸素刺激によって向上します。心臓・肺・血管が刺激に適応することで、同じ運動でも疲れにくくなります。継続が唯一の答えです。</div>
+    <div class="rsl ok">やること</div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">最大心拍数65〜80%の有酸素を週3〜5回</div></div><div class="rule-summary">「話せる程度のキツさ」が目安。30歳なら124〜152bpmのゾーンが最も効果的です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">最大心拍数は「220－年齢」で計算できます。30歳なら最大心拍数190bpmで、65〜80%は124〜152bpmです。この強度域（「話せる程度のキツさ」）が心肺機能向上に最も効果的とされています。<br><br><strong>なぜこの強度域が重要なのか：</strong>低すぎる強度（歩く程度）では心肺への刺激が弱く改善が緩やかです。高すぎる強度（全力疾走）では長時間続けられず、疲労蓄積が大きいです。65〜80%が「刺激になりながら継続できる」最適ゾーンです。<br><br><strong>心拍数が測れない場合の目安：</strong>「隣の人と普通に会話できるが、少しキツい」程度が目安です。ゆっくりジョギング・早歩き・軽い自転車などが相当します。<br><br><strong>頻度と時間：</strong>週3回以上・1回最低20分以上の継続が心肺機能改善に必要とされています。20分未満では継続的な改善効果が得にくいです。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">10分でも毎日動く習慣をつける</div></div><div class="rule-summary">週1回60分より週5回15分の方が心肺機能の改善効果が高いとされています。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">研究では「週1回60分の運動」より「週5回15分の運動」の方が心肺機能の改善効果が高いとされています。毎日少しずつ動くことで体が継続的な刺激に適応します。<br><br><strong>毎日動くことの効果：</strong>心臓・肺・血管は日常的な刺激に適応して能力を高めます。週1回では刺激と刺激の間に7日も空くため、適応が定着しにくいです。毎日動くことで「常に刺激がある状態」を作れます。<br><br><strong>10分でも効果はある？：</strong>はい。10分のウォーキングでも心拍数が上がり、血流が改善されます。毎日10分を3ヶ月続けることで心肺機能は着実に向上します。「少しだけでも毎日」が最も継続しやすく、効果も高いです。<br><br><strong>生活に組み込む方法：</strong>通勤の一駅分を歩く・エレベーターを階段に変える・昼休みに10分歩く。これだけで「毎日動く習慣」が完成します。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">インターバルトレーニングを週1〜2回入れる</div></div><div class="rule-summary">高強度20秒→ゆっくり90秒×8セットを週1〜2回追加するだけで大きな効果が期待できます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">高強度（20〜30秒）と低強度（1〜2分）を交互に繰り返すインターバルトレーニングは、同じ時間の有酸素より心肺機能向上効果が高いとされています。<br><br><strong>なぜ効果が高いのか：</strong>高強度の瞬間に心臓が限界近くまで働き、低強度の休憩中も心拍数が高い状態を維持します。この「心臓に対する高い刺激」が心肺機能の急速な改善をもたらします。<br><br><strong>具体的なプロトコル：</strong>全力に近い運動20〜30秒→ゆっくり歩く1〜2分→これを6〜10回繰り返す。総時間は15〜20分ですが、1時間の有酸素と同等以上の心肺への刺激になります。<br><br><strong>注意点：</strong>週1〜2回で十分です。それ以上は回復が追いつかなくなります。また関節への負荷が大きいため、運動習慣がない方は最初の2〜3週間は通常の有酸素のみで慣らしてからインターバルを取り入れてください。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">下半身の筋トレを合わせて行う</div></div><div class="rule-summary">大きな筋肉（脚・お尻）を鍛えると心拍出量が増え、有酸素のパフォーマンスが向上します。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体力（心肺持久力）を上げるためには有酸素だけでなく、体全体の筋肉量も重要です。特に下半身の大きな筋肉（大腿四頭筋・ハムストリング・臀筋）は体の中で最も大きな筋肉群であり、これを鍛えることで心肺への要求が高まり、持久力が向上します。<br><br><strong>なぜ下半身が重要なのか：</strong>心臓から遠い下半身の大きな筋肉を動かすには、心臓がより多くの血液を送り出す必要があります。これが心拍出量（1回に送り出せる血液量）の増加につながり、心肺機能全体が向上します。<br><br><strong>効果的な下半身種目：</strong>スクワット・ランジ・デッドリフト・ステップアップを週2回入れることで、走力・持久力・疲れにくさが明確に改善します。<br><br><strong>有酸素との組み合わせ：</strong>下半身筋トレを行うと、有酸素運動時の脚の疲れにくさも向上します。筋肉量が増えることで同じ速度での走りが楽になります。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">徐々に距離・時間・強度を伸ばしていく</div></div><div class="rule-summary">最初の2週間は「物足りない」くらいの強度から。以降週ごとに5〜10%ずつ上げていきます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">心肺機能は段階的な負荷増加に適応します。急に強度や距離を上げると関節・腱への負担が増え怪我につながります。「10%ルール」（週ごとの走行距離の増加は前週比10%以内）がランナーの怪我予防の基本とされています。<br><br><strong>最初の2週間の重要性：</strong>運動習慣がない状態から始める場合、最初の2週間は「物足りない」くらいの強度で行うことが非常に重要です。この期間に関節・腱・靭帯がトレーニングに慣れます。筋肉は2〜3週間で適応しますが、腱・靭帯の適応には6〜8週間かかります。<br><br><strong>月別の目標設定例：</strong>1ヶ月目→週3回・20分のウォーキング、2ヶ月目→週3回・30分のウォーキング＋ジョギング、3ヶ月目→週4回・30〜40分のジョギング。このペースで確実に心肺機能が向上します。<br><br><strong>体の声を聞く：</strong>翌日に疲労感が強く残る場合は強度を上げすぎのサインです。「今日は昨日より少し楽だった」と感じるペースが最適です。</div></div></div>
+    <div class="rsl ng">やってはいけないこと</div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">最初から毎日高強度でやる</div></div><div class="rule-summary">体が適応する前に疲労が蓄積します。最初の2週間はウォーキングだけでも十分です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体が適応する前に疲労が蓄積します。特に運動習慣のない状態から急に毎日走り始めると、筋肉より先に関節・腱・靭帯が悲鳴を上げます。<br><br><strong>なぜ関節が先にやられるのか：</strong>筋肉は比較的早く適応します（2〜3週間）が、関節・腱・靭帯の適応には6〜8週間かかります。この「適応速度の差」が怪我の原因です。筋肉は頑張れると感じていても、関節はまだ準備できていません。<br><br><strong>特に多い怪我のパターン：</strong>「やる気になってジョギングを毎日始めた→2週間で膝が痛くなって全部やめた」というのが最もよくある失敗です。最初の2週間はウォーキングだけで十分。ここで地盤を固めることで、その後に安全に強度を上げられます。<br><br><strong>正しいスタートの仕方：</strong>週3回・20〜30分・会話できる強度から始めてください。2週間で違和感がなければ、週4回・30〜40分に上げます。このペースで3ヶ月続けると心肺機能は確実に向上します。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">休養日を作らない</div></div><div class="rule-summary">心肺機能は休息中に向上します。週1〜2日の完全休養または軽い動きが必要です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体力は運動中ではなく、休息中に向上します。運動によって一時的にダメージを受けた体が、休息中に修復されてより高い能力を獲得します（超回復）。<br><br><strong>オーバートレーニング症候群とは：</strong>休養を取らずに運動を続けると「オーバートレーニング症候群」に陥ります。症状は・安静時心拍数の上昇・慢性的な疲労感・パフォーマンスの低下・睡眠の質の悪化・感染症にかかりやすくなる、などです。回復に数週間〜数ヶ月かかることがあります。<br><br><strong>適切な休養の取り方：</strong>週1〜2日の完全休養が推奨されます。完全に何もしない日と、軽いストレッチやウォーキング程度に留める「アクティブリカバリーの日」を組み合わせると良いです。<br><br><strong>「休む」＝「サボる」ではない：</strong>休養日は体が成長する日です。運動後48〜72時間で体はより強くなります。休養日に罪悪感を持つ必要は全くありません。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">同じ種目だけをやり続ける</div></div><div class="rule-summary">体はすぐに同じ運動に適応し消費カロリーが減ります。複数の種目を組み合わせることが重要。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体はすぐに同じ運動に適応し、エネルギー消費効率を上げます（同じ運動でも慣れるにつれてカロリー消費が減る）。同じ有酸素運動を続けると心肺への刺激が弱まり、体力向上の効果も鈍化します。<br><br><strong>適応のスピード：</strong>同じ距離・ペースでのランニングを続けると、4〜6週間で体が完全適応し消費カロリーが初期の70%程度まで低下するという研究があります。<br><br><strong>バリエーションの効果：</strong>異なる種目を組み合わせることで①異なる筋肉・関節に刺激が入る②適応が起きにくい③心肺への刺激が常に新鮮に保たれる、という効果があります。<br><br><strong>おすすめの組み合わせ：</strong>ウォーキング・ジョギング・水泳・自転車・縄跳び・ダンスなど。週3〜4回の有酸素を、2〜3種類の組み合わせで行うことが理想的です。このアプリの回復メニューも毎回異なる提案をしているので積極的に試してみてください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">体調が悪い日でも無理して続ける</div></div><div class="rule-summary">発熱・強い疲労感がある状態での有酸素運動は免疫機能をさらに低下させます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">発熱・強い疲労感・喉の痛みがある状態での有酸素運動は免疫機能をさらに低下させます。風邪の初期に無理して運動すると症状が悪化し、回復に時間がかかります。<br><br><strong>「首より下」のルール：</strong>スポーツ医学でよく使われる判断基準があります。「首より上の症状（鼻水・軽い喉の痛み）のみなら軽い運動はOK。首より下の症状（発熱・全身倦怠感・筋肉痛・咳）があれば運動は中止」というものです。<br><br><strong>無理して運動するリスク：</strong>風邪のウイルスが心臓に感染する「ウイルス性心筋炎」のリスクがあります。まれですが運動中に突然死に至るケースも報告されています。体調不良時の激しい運動は絶対に避けてください。<br><br><strong>「休む」の判断：</strong>体調不良のとき「今日休んだら筋力が落ちる」と心配する必要はありません。2〜3日休んでも筋力・体力のダウンは最小限です。完全に回復してからの方が質の高いトレーニングができます。</div></div></div>
+  </div>
+
+  <div class="gblock" id="g-health">
+    <div class="goal-desc">不調の多くは「筋肉の硬直」「血流の低下」「体幹の弱さ」「姿勢の崩れ」に起因します。「気持ちいい範囲」が絶対的な基準で、痛みを無視したトレーニングは悪化の原因になります。</div>
+    <div class="rsl ok">やること</div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">痛みが出たら即中止・痛みのない範囲だけ動かす</div></div><div class="rule-summary">「慣れれば治る」は非常に危険。炎症を放置すると慢性化し回復に数ヶ月〜数年かかることがあります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">痛みは体からの警告信号です。「慣れれば治る」「ちょっと痛い程度なら大丈夫」という考えは不調改善において非常に危険です。炎症がある状態で負荷をかけ続けると急性炎症が慢性化し、回復に数ヶ月〜数年かかることがあります。<br><br><strong>急性期と慢性期の違い：</strong>受傷後48〜72時間が「急性期」。この期間は安静・冷却・圧迫・挙上（RICE処置）が基本です。4〜5日以上経過した「慢性期」からは、痛みのない範囲での穏やかな動きが回復を助けます。<br><br><strong>「気持ちいい」が基準：</strong>ストレッチや動きで「気持ちいい感覚がある」なら続けてOK。「ちょっと痛いけど我慢できる」なら止めてください。この基準を厳守することが大切です。<br><br><strong>受診すべき症状：</strong>安静時も痛みがある・しびれがある・ある動作で激しく痛む・痛みが2週間以上続く。これらは必ず医療機関を受診してください。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">毎日10〜15分のストレッチを習慣にする</div></div><div class="rule-summary">デスクワーク起因の肩こり・腰痛は股関節・胸椎の柔軟性低下が根本原因であることが多いです。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">ストレッチは筋肉の緊張を緩和し血流を改善します。現代人に多い「デスクワーク起因の肩こり・腰痛」は、股関節・胸椎（背骨の中部）・肩周りの柔軟性低下が根本原因であることが多いです。<br><br><strong>ストレッチのタイミング：</strong>就寝前が最も効果的です。副交感神経が活性化され、筋肉が弛緩しやすくなっています。また睡眠の質向上にもつながります。入浴後の身体が温まっているタイミングがさらに効果的です。<br><br><strong>優先すべき部位：</strong>①股関節（長時間座ることで硬くなりやすく、腰痛の主原因）②胸椎（猫背の原因・肩こりに直結）③肩周り（スマホ・PC作業で常に緊張している）<br><br><strong>静的ストレッチと動的ストレッチ：</strong>就寝前・疲れを取りたいときは「静的ストレッチ」（20〜30秒キープ）が効果的です。運動前は「動的ストレッチ」（ゆっくり動かしながら関節を温める）を使い分けてください。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">体幹（腹横筋・多裂筋）を優先して鍛える</div></div><div class="rule-summary">慢性腰痛・肩こりの多くは体幹の安定性不足が根本原因。プランク・ドローイン・バードドッグが効果的。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">慢性腰痛・肩こりの多くは「体幹の安定性不足」が根本原因です。腹横筋（お腹の深層にある筋肉）と多裂筋（背骨に沿った深層筋）が弱いと、脊柱が不安定になり腰・肩への負担が集中します。<br><br><strong>腹横筋の役割：</strong>コルセットのように腰椎を内側から支える筋肉です。これが弱いと腰椎が不安定になり、慢性的な腰痛・ぎっくり腰の原因になります。腹筋の「シックスパック」とは異なる深層の筋肉で、鍛え方も違います。<br><br><strong>効果的な種目：</strong>ドローイン（お腹をへこませて30秒キープ）→腹横筋に直接アプローチ、プランク（肘をついて体を一直線に保つ）→体幹全体を安定させる、バードドッグ（四つんばいで対角の手脚を伸ばす）→多裂筋と体幹の協調性を高める。<br><br><strong>続けることの重要性：</strong>体幹の安定性が改善されるまで最低4〜6週間かかります。毎日10〜15分続けることで、徐々に腰・肩への負担が軽減されていきます。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">ウォーキングを毎日20〜30分行う</div></div><div class="rule-summary">肩こり・腰痛・倦怠感・不眠の背景には血流不足があります。穏やかな有酸素が最適です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">低強度のウォーキングは全身の血流を改善し、コルチゾール（ストレスホルモン）を低下させます。肩こり・腰痛・倦怠感・不眠など多くの不調の背景には「血流不足」と「ストレスホルモンの蓄積」があります。<br><br><strong>ウォーキングが不調に効く理由：</strong>歩くと脚の筋肉が収縮・弛緩を繰り返し、「筋ポンプ作用」によって全身に血液を送り返します。長時間座ったままでいると下半身に血液が溜まり、全身の血流が低下します。ウォーキングはこれをリセットします。<br><br><strong>セロトニンとウォーキング：</strong>一定のリズムで歩くことで脳内のセロトニン（幸福感・安定感に関わる神経伝達物質）の分泌が促進されます。うつ・不眠・倦怠感の改善に有酸素運動が効果的とされる根拠の一つです。<br><br><strong>食後のウォーキング効果：</strong>食後30分以内に20分ウォーキングすることで、食後の血糖値の急上昇を抑え、消化を助け、眠気を軽減します。特に昼食後のウォーキングは午後のパフォーマンス向上にも効果的です。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">症状が続く場合は必ず医療機関を受診する</div></div><div class="rule-summary">2週間以上続く痛み・しびれ・発熱を伴う不調は医療的な判断が必要です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">AIとトレーニングでサポートできることには明確な限界があります。「2週間以上続く痛み」「しびれ」「ある動作で激しく痛む」「発熱を伴う不調」は医療的な判断が必要です。<br><br><strong>自己判断の危険性：</strong>腰痛と思っていたら椎間板ヘルニア・腎臓の問題・腫瘍だったというケースがあります。肩こりだと思っていたら頸椎症だったというケースも。運動で改善できる症状と、医療介入が必要な症状は、専門家でないと見分けが難しいです。<br><br><strong>受診すべき症状のチェックリスト：</strong>・安静時にも痛みがある・手足にしびれや感覚の鈍さがある・痛みが夜間に強くなる・発熱・食欲不振・体重減少を伴う・怪我から2週間以上経過しても改善しない・以前に比べて著しく体力が低下している。一つでも当てはまれば受診を強く推奨します。<br><br><strong>医師の診断後にAIを活用：</strong>診断を受けた後、「この動作はOK・NG」という情報をAIに伝えて活用してください。医療と組み合わせることでより安全に回復を促進できます。</div></div></div>
+    <div class="rsl ng">やってはいけないこと</div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">不調部位に強い負荷をかけ続ける</div></div><div class="rule-summary">「根性で乗り越える」は不調改善においては完全に逆効果。炎症を増悪させます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「根性で乗り越える」「慣れれば治る」という考えは不調改善において完全に逆効果です。炎症がある部位への強い負荷は炎症反応を増悪させます。<br><br><strong>炎症の悪化メカニズム：</strong>炎症中の組織に機械的な負荷をかけると、炎症性サイトカインの放出が増加し、損傷が拡大します。「ちょっと痛いけど頑張る」を繰り返すことで、急性炎症が慢性炎症に移行し、回復に何倍もの時間がかかるようになります。<br><br><strong>特に危険なパターン：</strong>腰痛があるのにスクワットを続ける・膝が痛いのにランニングを続ける・肩が痛いのに腕立て伏せを続ける。いずれも短期的には「慣れた気がする」ことがありますが、組織の損傷は蓄積されています。<br><br><strong>正しい対処：</strong>急性期（受傷後48〜72時間）は安静・冷却が基本。その後の慢性期に痛みのない範囲での穏やかな動きを少しずつ取り入れます。痛みが増したらすぐ止めて、医療機関に相談してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">痛み止めを飲んで運動を続ける</div></div><div class="rule-summary">感覚を麻痺させてトレーニングを続けると軟骨・靭帯・腱への深刻なダメージが蓄積します。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">痛みは「これ以上負荷をかけるな」という体の警告信号です。痛み止め（NSAIDs・アセトアミノフェン）で感覚を麻痺させてトレーニングを続けることは、警告システムをオフにしながら損傷を拡大させる行為です。<br><br><strong>痛み止めの危険な使い方：</strong>痛み止めを飲む→痛みを感じなくなる→限界を超えた負荷をかける→組織への損傷が拡大する→薬が切れると激しい痛みが来る。このサイクルが繰り返されると慢性的な組織損傷につながります。<br><br><strong>特に危険な組み合わせ：</strong>スポーツ前に痛み止めを飲んで試合・練習に臨むことで、重篤な怪我（靭帯断裂・骨折）に至るケースが報告されています。<br><br><strong>痛み止めの正しい用途：</strong>炎症による激しい痛みを一時的に和らげて休息を取るための薬です。運動を続けるための薬ではありません。痛み止めが必要なほどの痛みがある場合は、必ず運動を中止して医療機関を受診してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">完全に安静にして動かない</div></div><div class="rule-summary">適度な動きは血流を促し回復を早めます。動かないことが逆効果になる場合があります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">怪我や不調があると「完全に安静にしなければ」と思いがちですが、これは一部の場合を除いて正しくありません。痛みのない範囲での適度な動きは血流を促進し、回復を早めます。<br><br><strong>完全安静のデメリット：</strong>①筋肉が2〜3日で萎縮し始める②関節の可動域が低下する③血流が低下して回復が遅れる④精神的に落ち込みやすくなる。特に長期間の完全安静は、回復後に再び同じ怪我をするリスクを高めます。<br><br><strong>推奨されるアプローチ（POLICE原則）：</strong>Protection（保護）・Optimal Loading（最適な負荷）・Ice（冷却）・Compression（圧迫）・Elevation（挙上）。「完全安静」より「最適な負荷をかけながら回復する」方が現代医学では推奨されています。<br><br><strong>何をやっていいかの判断：</strong>医師や理学療法士に「どの動きはOKで、どの動きはNGか」を確認してください。具体的に「この種目はOK、これはNG」と明確にしてもらい、その範囲内でアプリを活用してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">強いマッサージで患部を揉む</div></div><div class="rule-summary">炎症がある部位への強い圧迫は炎症を悪化させます。急性期は温める・軽くほぐす程度が正解。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「凝りをほぐすために強く揉む」は急性炎症期には完全に逆効果です。炎症がある部位への強い圧迫・摩擦は炎症反応をさらに悪化させます。<br><br><strong>なぜ強いマッサージが悪いのか：</strong>炎症中の組織は血管が拡張し、炎症性物質（サイトカイン）が集中しています。この状態で強い圧力を加えると、組織への機械的ストレスが増加し、炎症が広がります。<br><br><strong>急性期（受傷後〜5日程度）の正しいケア：</strong>冷やす（10〜15分・氷嚢で冷却）・圧迫（弾性包帯で軽く圧迫）・挙上（心臓より高い位置に保つ）。この3つが浮腫み（腫れ）を抑え炎症の拡大を防ぎます。<br><br><strong>慢性期（5日〜）からのマッサージ：</strong>急性炎症が落ち着いた後からは、軽い圧力でのマッサージが血流を改善し回復を促進します。「気持ちいい程度の圧力」が基準です。痛みを感じる強さは強すぎます。</div></div></div>
+  </div>
+
+  <div class="gblock" id="g-shape">
+    <div class="goal-desc">体脂肪を落としながら筋肉をつける「リコンプ」が目標です。見た目の改善は体重の変化より遅れて現れます。鏡・写真・服のフィット感で判断することが重要です。</div>
+    <div class="rsl ok">やること</div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">筋トレ週3〜4回・有酸素週3〜5回を両立する</div></div><div class="rule-summary">有酸素だけでは「ただ小さくなるだけ」。筋トレがなければメリハリのある体型にはなりません。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「体型を整える」には「体脂肪を落とす（有酸素）」と「筋肉をつけて体の形を作る（筋トレ）」の両方が必要です。有酸素だけでは「ただ小さくなるだけ」で、筋トレだけでは「体脂肪が覆い隠して引き締まって見えない」状態になります。<br><br><strong>なぜ両方必要なのか：</strong>鍛えた筋肉も、上に脂肪がついていれば見えません。脂肪を落として初めて筋肉が浮き出て「引き締まって見える」状態になります。逆に脂肪だけ落とすと、筋肉がなく「ただ痩せた」だけの体型になります。<br><br><strong>具体的なスケジュール例：</strong>月→筋トレ、火→有酸素、水→休養、木→筋トレ、金→有酸素、土→筋トレ（か有酸素）、日→休養。週5〜6日動き、1〜2日休む構成が見た目改善には最も効果的です。<br><br><strong>優先順位：</strong>どちらかを先に始めるなら筋トレを優先してください。筋肉量が増えると有酸素の効率も上がり、基礎代謝も向上するため、後から有酸素を加えるとより効果的です。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">タンパク質を確保しながらカロリーをやや抑える</div></div><div class="rule-summary">タンパク質（体重×1.6〜2g）確保しながら1日200〜300kcalの緩やかな赤字状態が最適です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「見た目を整える」では体脂肪を落としながら筋肉を守る（またはつける）「リコンプ」が目標です。急激なカロリー制限は筋肉を失い「ただ痩せた」体型になります。<br><br><strong>最適なカロリー設定：</strong>1日の基礎代謝＋活動代謝から200〜300kcal引いた値が目標摂取カロリーです。例えば1日の消費カロリーが2000kcalなら、1700〜1800kcalが目標です。これ以上減らすと筋肉が失われます。<br><br><strong>タンパク質の優先確保：</strong>カロリーを削る場合は脂質・精製炭水化物から削り、タンパク質は体重×1.6〜2g/日を維持してください。タンパク質は満腹感も高く、食べすぎを防ぐ効果もあります。<br><br><strong>「食べないダイエット」との根本的な違い：</strong>食べないダイエットは体重が落ちても筋肉も落ちます。リコンプは体重変化が小さくても体組成が改善します。鏡や服のフィット感で判断することが重要です。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">体重より体型・体脂肪率・鏡で判断する</div></div><div class="rule-summary">月1回の体脂肪率計測と同じ条件での写真撮影が最も正確な変化の記録方法です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体重計の数値は「見た目の良さ」とは必ずしも一致しません。筋肉は脂肪より密度が高く重いため、筋肉が増えると体重が増えても見た目は引き締まります。<br><br><strong>体重が増えても体型が良くなるケース：</strong>体重+2kg・体脂肪率-3%という変化は「体組成が大きく改善した」状態です。鏡を見ると明らかに引き締まっているにも関わらず体重計だけを見て「失敗した」と思う人が多いです。<br><br><strong>正しい変化の記録方法：</strong>①毎月1日・起床後・同じ場所・同じポーズで写真を撮る②体脂肪率を月1回計測する（同じ体重計・同じ時間帯）③服のフィット感（ウエストのゆるみ・肩幅の変化）④鏡を毎日見る習慣をつける。これらの複合的な指標で判断することが重要です。<br><br><strong>体重を完全に無視していいわけではない：</strong>週平均のトレンドは参考にしてください。ただし「今週の平均 vs 先週の平均」で判断し、1日の変動は無視することが正しい使い方です。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">姿勢を改善する（体幹・股関節・肩周り）</div></div><div class="rule-summary">猫背が改善されるだけでお腹が引き締まって見え、肩が開くことで胸周りが広く見えます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">同じ体型でも姿勢が良くなるだけで見た目は劇的に変わります。猫背が改善されるとお腹が引き締まって見え、肩が開くことで胸周りが広く・肩が細く見えます。姿勢改善は最もコスパの高い見た目改善手段です。<br><br><strong>姿勢が悪くなる主な原因：</strong>長時間のデスクワーク・スマホ操作・運転で①胸椎（背骨の中部）が硬直して丸まる②股関節屈筋が硬直して前傾する③肩前部が硬直して巻き肩になる。この3つが複合して起きるのが現代人の典型的な「悪い姿勢」です。<br><br><strong>効果的なトレーニング：</strong>胸椎の柔軟性（胸椎回旋・キャット&カウ）→猫背の根本改善、股関節屈筋のストレッチ（ランジストレッチ）→反り腰・前傾の改善、肩後部の強化（フェイスプル・ローイング系）→巻き肩の改善。<br><br><strong>日常での意識：</strong>座るときに「坐骨で座る（お尻の骨で体重を支える）」「頭を糸で上に引っ張られているイメージ」を持つだけで姿勢が大きく変わります。最初は意識しないと戻りますが、3〜4週間で習慣化します。</div></div></div>
+    <div class="rule ok" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✓</div><div class="rule-title">気になる部位周辺を重点的に鍛える</div></div><div class="rule-summary">部分痩せは不可能ですが部分的な筋肉をつけることは可能。脂肪を落としながら形を作ります。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">部分痩せは科学的に不可能ですが、部分的な筋肉をつけることで体の「形」を変えることは可能です。脂肪を全体から落としながら、気になる部位の筋肉をつけることで、見た目の変化を最大化できます。<br><br><strong>部位別のアプローチ：</strong>お腹→腹筋・背中・体幹を鍛えることでウエストが引き締まって見える、脚→スクワット・ランジ・デッドリフトで太ももの形が変わる・筋肉がついて引き締まる、二の腕→トライセップス系の種目（ディップス・トライセップスプレス）で裏側の筋肉がつく、お尻→ヒップスラスト・スクワット・ランジでボリュームが出る。<br><br><strong>全体の体脂肪率を先に下げる：</strong>気になる部位の筋肉を鍛えても、上に脂肪がついていれば形は変わりません。全体の体脂肪率を落とすことが先決で、そこに部位別の筋トレを加えることで効果が最大化します。<br><br><strong>変化が出るまでの期間：</strong>筋肉がついて形が変わり始めるまで最低8〜12週間かかります。焦らず継続することが唯一の方法です。</div></div></div>
+    <div class="rsl ng">やってはいけないこと</div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">体重だけを目標にする</div></div><div class="rule-summary">「体重○kg」より「体脂肪率○%」「着られなかった服が着られる」という目標の方が適切です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">体重は「見た目の良さ」を測る最も不完全な指標の一つです。体重が同じでも、体脂肪率が20%と30%では見た目に大きな差があります。また体重-5kgでも筋肉が落ちた場合と脂肪が落ちた場合では、見た目の変化は全く異なります。<br><br><strong>「体重○kg」という目標の問題：</strong>例えば「体重55kgになりたい」という目標で、現在60kgから筋トレ+食事管理で3ヶ月経過したとします。体重は58kgにしかなっていないのに、体脂肪率は25%→18%に下がり、見た目は劇的に改善しているケースがあります。体重だけを見ると「失敗」ですが、実際は大成功です。<br><br><strong>より適切な目標設定：</strong>「体脂肪率○%以下にする」「○○の服が着られるようになる」「腹筋が見えるようにする」「体重計の数字より鏡の自分が好きになる」。これらの方が見た目改善の目標として適切です。<br><br><strong>体重を完全に無視していいわけではない：</strong>体重の週平均トレンドは参考にしてください。ただし唯一の指標にはしないことが重要です。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">SNSの他人の体型と比べる</div></div><div class="rule-summary">SNSの体型は最良の状態・最良の角度・加工が入っています。比べるべきは「1ヶ月前の自分」だけです。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">SNSに投稿される体型写真は「最良の状態・最良の角度・最良の光・加工」が加えられています。毎日の自分の体型と比べることに何の意味もなく、モチベーションを下げるだけです。<br><br><strong>SNSの「普通」は本当ではない：</strong>ボディビルダーやフィットネスインフルエンサーのほとんどは、写真のために数週間かけて体を絞り（減量期）、脱水状態で撮影します。その「仕上がり状態」を常時維持しているわけではありません。また筋肉の大きさや形、脂肪のつき方には骨格・遺伝子による大きな差があります。<br><br><strong>遺伝的要因の影響：</strong>筋肉の付き方（筋腹の長さ・付着点）・体脂肪の分布・骨格（肩幅・骨盤の大きさ）は遺伝的に決まる部分が大きく、トレーニングで変えられる範囲に限界があります。自分の骨格を最大限に活かすことが目標であり、他人の骨格に近づこうとするのは無駄な努力です。<br><br><strong>正しい比較対象：</strong>「1ヶ月前の自分」「3ヶ月前の自分」との比較だけが意味のある比較です。自分の変化の軌跡に集中してください。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">短期間で劇的な変化を期待する</div></div><div class="rule-summary">見た目の変化が他人に分かるほど現れるまで最低3ヶ月。焦りが怪我とリバウンドを招きます。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「2週間で腹筋を割る」「1ヶ月で10kg痩せる」は生理学的に不可能か、可能であっても筋肉の大量喪失を伴う危険な方法です。見た目の変化には生理学的な時間が必要です。<br><br><strong>変化が見えるまでの時間軸：</strong>2〜3週間→体内の変化が始まる（代謝改善・ホルモン変化）、4〜6週間→本人が鏡で変化に気づき始める、8〜12週間→他人が変化に気づく、3〜6ヶ月→劇的な見た目の変化が現れる。この時間軸は生理学的に変えられません。<br><br><strong>「早く変えたい」焦りが引き起こすこと：</strong>過度な食事制限→筋肉の喪失・リバウンド、過度なトレーニング→怪我・オーバートレーニング、効果のない「痩せ薬」への投資、精神的な燃え尽き・諦め。焦りは最も高い確率で失敗をもたらします。<br><br><strong>正しい期待値の設定：</strong>3ヶ月で「自分が変化に気づく」、6ヶ月で「他人が変化に気づく」、1年で「体型が大きく変わる」。この長期的な視点で継続できる人が、最も大きな変化を手に入れます。</div></div></div>
+    <div class="rule ng" onclick="this.classList.toggle('open')"><div class="rule-head"><div class="rule-top"><div class="rule-badge">✗</div><div class="rule-title">特定の食材を「悪」と決めつける</div></div><div class="rule-summary">炭水化物・脂質・糖質はどれも必要な栄養素。カロリー収支の管理が本質で特定食材の排除は不要です。</div><div class="rule-tap tap-hint"><span class="tap-icon">▼</span><span class="tap-open"></span></div></div><div class="slide"><div class="rule-inner">「炭水化物は太る」「脂質は悪い」「糖質ゼロじゃないと意味がない」などの極端な考え方は、長期的な継続を妨げ、かえって体型改善の妨げになります。<br><br><strong>極端な制限が続かない理由：</strong>完全に禁止した食材は「禁断の食べ物」となり、食べてしまったときに過食のトリガーになります。「糖質制限中に一口ケーキを食べた→もうダメだ→ドカ食い」というパターンが典型例です。<br><br><strong>食材に「良い・悪い」はない：</strong>問題は「食材」ではなく「カロリーの総量と栄養バランス」です。ケーキも白米も適量であればダイエットの妨げにはなりません。逆に「健康食」でも食べすぎれば体脂肪になります。<br><br><strong>長期的に続く食事法の特徴：</strong>①禁止食材がない（食べたいものを適量食べられる）②空腹感が強くない（タンパク質・食物繊維を充分摂ることで満腹感が持続）③社会生活に支障がない（外食・会食でも対応できる）。この3つを満たす食事法だけが長期的に機能します。</div></div></div>
+  </div>
+
+</div>
+
+<script>
+const hints=['🔥 脂肪を落とす','💪 筋肉をつける','⚡ 体力を上げる','🩺 不調を改善','✨ 見た目を整える'];
+function sg(btn,id){
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on')});
+  document.querySelectorAll('.gblock').forEach(function(b){b.classList.remove('on')});
+  btn.classList.add('on');
+  document.getElementById('g-'+id).classList.add('on');
+  var idx=Array.from(document.querySelectorAll('.tab')).indexOf(btn);
+  document.getElementById('tab-hint').textContent='現在：'+hints[idx]+' のルールを表示中';
+}
+</script>
+</body>
+</html>
