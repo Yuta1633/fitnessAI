@@ -900,6 +900,7 @@ function switchRecordTab(tab) {
     rtabBody.style.color = 'var(--muted)';
     rtabWorkout.style.borderBottomColor = 'var(--accent)';
     rtabWorkout.style.color = 'var(--white)';
+    wlFetch._retry = 0;
     wlInit();
   }
 }
@@ -909,9 +910,22 @@ function switchRecordTab(tab) {
    ============================================================ */
 let wlLogs = [];
 let wlEventsReady = false;
+let _wlSb = null;
+
+function wlGetClient() {
+  if (_wlSb) return _wlSb;
+  // supabase.jsと同じキーでクライアントを直接生成
+  var url = 'https://xlaboiimqsesglstdjqj.supabase.co';
+  var key = 'sb_publishable_9fxRahudPNG9gHRJKkPD3Q_s8m-OUna';
+  if (window.supabase && window.supabase.createClient) {
+    _wlSb = window.supabase.createClient(url, key);
+  } else if (window.__supabaseClient__) {
+    _wlSb = window.__supabaseClient__;
+  }
+  return _wlSb;
+}
 
 function wlInit() {
-  // イベント登録は最初の1回のみ
   if (!wlEventsReady) {
     wlEventsReady = true;
     document.getElementById('wl-date').value = new Date().toISOString().split('T')[0];
@@ -920,7 +934,6 @@ function wlInit() {
       if (e.key === 'Enter') wlAdd();
     });
   }
-  // 毎回データを再取得
   var listEl = document.getElementById('wl-list');
   if (listEl) listEl.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>';
   var volEl = document.getElementById('wl-vol-num');
@@ -930,22 +943,30 @@ function wlInit() {
 }
 
 function wlFetch() {
-  // supabase.jsのwindow.__supabaseClient__を使用
-  // script.jsがmoduleのため少し遅れてセットされる可能性があるので待つ
-  if (!window.__supabaseClient__) {
-    setTimeout(wlFetch, 200);
+  // CDNのsupabaseを使う（@supabase/supabase-js がグローバルにない場合はwindow.__supabaseClient__を使う）
+  var sb = window.__supabaseClient__;
+  if (!sb) {
+    // まだセットされていなければ少し待ってリトライ（最大10回）
+    if (!wlFetch._retry) wlFetch._retry = 0;
+    wlFetch._retry++;
+    if (wlFetch._retry < 10) {
+      setTimeout(wlFetch, 300);
+    } else {
+      wlFetch._retry = 0;
+      wlShowMsg('#ff4d6a', 'Supabase接続エラー。ページを再読み込みしてください。');
+    }
     return;
   }
-  var sb = window.__supabaseClient__;
+  wlFetch._retry = 0;
+
   sb.auth.getSession().then(function(res) {
-    var session = res.data && res.data.session;
-    if (!session) {
-      wlShowMsg('var(--muted)', 'ログインしてください');
+    if (!res.data || !res.data.session) {
+      wlShowMsg('var(--muted)', 'ログインが必要です');
       return;
     }
-    var email = session.user.email;
+    var email = res.data.session.user.email;
 
-    sb.from('workout_logs')
+    return sb.from('workout_logs')
       .select('*')
       .eq('user_email', email)
       .order('date', { ascending: false })
