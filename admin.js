@@ -106,11 +106,22 @@ async function loadSummary() {
   const activeCount = activeUserIds.size;
   const allowedCount = (allowedUsers || []).length;
 
-  let expiredCount = 0;
+  // email→user_idマップ
+  const emailToUserId = {};
+  (allUsers || []).forEach(u => { emailToUserId[u.email] = u.id; });
+
+  // 期限切れ かつ 今週アクティブなユーザーを検出
+  const expiredActiveUsers = [];
   (allowedUsers || []).forEach(u => {
     const { daysLeft } = getExpireInfo(u.created_at);
-    if (daysLeft !== null && daysLeft < 0) expiredCount++;
+    if (daysLeft !== null && daysLeft < 0) {
+      const uid = emailToUserId[u.email];
+      if (uid && activeUserIds.has(uid)) {
+        expiredActiveUsers.push(u);
+      }
+    }
   });
+  window._expiredActiveUsers = expiredActiveUsers;
 
   const methodCount = { nutrition: 0, training: 0, recovery: 0 };
   (weeklyChats || []).forEach(h => {
@@ -120,45 +131,54 @@ async function loadSummary() {
   document.getElementById('s-total').textContent = totalUsers;
   document.getElementById('s-active').textContent = activeCount;
   document.getElementById('s-allowed').textContent = allowedCount;
-  document.getElementById('s-expired').textContent = expiredCount;
+
+  const expiredEl = document.getElementById('s-expired');
+  expiredEl.textContent = expiredActiveUsers.length;
+  expiredEl.style.cursor = expiredActiveUsers.length > 0 ? 'pointer' : 'default';
+  if (expiredActiveUsers.length > 0) {
+    expiredEl.onclick = () => showExpiredModal(expiredActiveUsers);
+  }
+
   document.getElementById('s-nutrition').textContent = methodCount.nutrition;
   document.getElementById('s-training').textContent = methodCount.training;
   document.getElementById('s-recovery').textContent = methodCount.recovery;
-
-  // 期限切れ一覧
-  loadExpiredUsers(allowedUsers || []);
 }
 
-// ============================================================
-// 期限切れ一覧
-// ============================================================
-function loadExpiredUsers(allowedUsers) {
-  const expiredList = document.getElementById('expired-list');
-  const expiring = allowedUsers
-    .map(u => ({ ...u, expireInfo: getExpireInfo(u.created_at) }))
-    .filter(u => u.expireInfo.daysLeft !== null && u.expireInfo.daysLeft < 30)
-    .sort((a, b) => a.expireInfo.daysLeft - b.expireInfo.daysLeft);
-
-  if (expiring.length === 0) {
-    expiredList.innerHTML = '<p style="color:var(--muted); font-size:13px;">期限切れ・期限間近のユーザーなし</p>';
-    return;
+function showExpiredModal(users) {
+  let modal = document.getElementById('expired-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'expired-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+    document.body.appendChild(modal);
   }
-
-  expiredList.innerHTML = expiring.map(u => {
-    const { label, cls } = u.expireInfo;
+  const rows = users.map(u => {
     const purchase = new Date(u.created_at);
-    const purchaseStr = purchase.toISOString().split('T')[0];
-    return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#1e1e1e; border:1px solid var(--border); border-radius:10px; margin-bottom:8px;">
-        <div>
-          <p style="font-size:13px; color:var(--white); margin-bottom:3px;">${escapeHtml(u.email)}</p>
-          <p style="font-size:11px; color:var(--muted);">購入日: ${purchaseStr}</p>
-        </div>
-        <span class="expire-badge ${cls}">${label}</span>
-      </div>
-    `;
+    const expire = new Date(purchase);
+    expire.setMonth(expire.getMonth() + 3);
+    const expireStr = expire.toISOString().split('T')[0];
+    return `<div style="padding:12px 14px;border-bottom:1px solid var(--border);">
+      <p style="font-size:13px;color:#ff4d6a;font-weight:700;">${escapeHtml(u.email)}</p>
+      <p style="font-size:11px;color:var(--muted);margin-top:2px;">期限切れ: ${expireStr}</p>
+    </div>`;
   }).join('');
+
+  modal.innerHTML = `
+    <div style="background:#111;border:1px solid var(--border);border-radius:16px;max-width:480px;width:100%;overflow:hidden;">
+      <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <p style="font-size:14px;font-weight:700;color:#ff4d6a;">⚠️ 期限切れなのに今週ログインしているユーザー</p>
+        <button onclick="document.getElementById('expired-modal').style.display='none'" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;">×</button>
+      </div>
+      ${rows}
+      <div style="padding:12px 18px;">
+        <p style="font-size:11px;color:var(--muted);">これらのユーザーはcheckAllowedのバグか、手動での許可が残っている可能性があります。</p>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
 }
+
+
 
 // ============================================================
 // ユーザー詳細取得
