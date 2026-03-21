@@ -251,12 +251,14 @@ async function saveProfile(userId, name) {
 async function checkAllowed(email) {
   const { data } = await supabase
     .from('allowed_users')
-    .select('id, expires_at')
+    .select('id, created_at')
     .eq('email', email)
     .maybeSingle();
   if (!data) return false;
-  if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
-  return true;
+  const purchase = new Date(data.created_at);
+  const expire = new Date(purchase);
+  expire.setMonth(expire.getMonth() + 3);
+  return new Date() <= expire;
 }
 
 async function checkIsAdmin(userId) {
