@@ -908,20 +908,22 @@ function switchRecordTab(tab) {
    トレーニング記録ロジック
    ============================================================ */
 let wlLogs = [];
-let wlInitialized = false;
+let wlEventsReady = false;
 
 async function wlInit() {
-  // イベントは最初の1回だけ登録
-  if (!wlInitialized) {
-    wlInitialized = true;
+  // イベント登録は最初の1回のみ
+  if (!wlEventsReady) {
+    wlEventsReady = true;
     document.getElementById('wl-date').value = new Date().toISOString().split('T')[0];
     document.getElementById('wl-add-btn').addEventListener('click', wlAdd);
     document.getElementById('wl-exercise').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') wlAdd();
     });
   }
-  // データは毎回再取得
-  document.getElementById('wl-list').innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>';
+  // データは毎回必ず再取得
+  var listEl = document.getElementById('wl-list');
+  if (listEl) listEl.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>';
+  wlLogs = [];
   await wlLoad();
   wlRender();
 }
@@ -947,29 +949,62 @@ async function wlGetFromDate() {
 }
 
 async function wlWaitForSupabase() {
-  for (var i = 0; i < 30; i++) {
+  // 最大5秒待つ（50回 × 100ms）
+  for (var i = 0; i < 50; i++) {
     if (window.__supabaseClient__) return window.__supabaseClient__;
     await new Promise(function(r) { setTimeout(r, 100); });
   }
   return null;
 }
 
+async function wlGetEmailSafe() {
+  var sb = await wlWaitForSupabase();
+  if (!sb) return null;
+  try {
+    var res = await sb.auth.getSession();
+    return (res.data && res.data.session && res.data.session.user) ? res.data.session.user.email : null;
+  } catch(e) { return null; }
+}
+
+async function wlGetFromDateSafe(email) {
+  var sb = window.__supabaseClient__;
+  if (!sb || !email) return null;
+  try {
+    var res = await sb.from('allowed_users').select('created_at').eq('email', email).maybeSingle();
+    if (!res.data) return null;
+    return res.data.created_at.split('T')[0];
+  } catch(e) { return null; }
+}
+
 async function wlLoad() {
-  const sb = await wlWaitForSupabase();
-  if (!sb) { console.warn('Supabase未初期化'); return; }
-  const email = await wlGetEmail();
-  const fromDate = await wlGetFromDate();
-  if (!email || !fromDate) return;
+  var sb = await wlWaitForSupabase();
+  if (!sb) {
+    console.warn('Supabase未初期化 - 読み込みスキップ');
+    return;
+  }
+  var email = await wlGetEmailSafe();
+  if (!email) {
+    console.warn('メール未取得');
+    return;
+  }
+  var fromDate = await wlGetFromDateSafe(email);
+  if (!fromDate) {
+    console.warn('購入日未取得');
+    return;
+  }
 
-  const { data } = await sb
-    .from('workout_logs')
-    .select('*')
-    .eq('user_email', email)
-    .gte('date', fromDate)
-    .order('date', { ascending: false })
-    .order('created_at', { ascending: false });
-
-  wlLogs = data || [];
+  try {
+    var res = await sb
+      .from('workout_logs')
+      .select('*')
+      .eq('user_email', email)
+      .gte('date', fromDate)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+    wlLogs = res.data || [];
+  } catch(e) {
+    console.error('wlLoad error:', e);
+  }
 }
 
 async function wlAdd() {
