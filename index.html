@@ -910,7 +910,7 @@ function switchRecordTab(tab) {
 let wlLogs = [];
 let wlEventsReady = false;
 
-async function wlInit() {
+function wlInit() {
   // イベント登録は最初の1回のみ
   if (!wlEventsReady) {
     wlEventsReady = true;
@@ -920,75 +920,56 @@ async function wlInit() {
       if (e.key === 'Enter') wlAdd();
     });
   }
-  // データは毎回必ず再取得
+  // 毎回データを再取得
   var listEl = document.getElementById('wl-list');
   if (listEl) listEl.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>';
+  var volEl = document.getElementById('wl-vol-num');
+  if (volEl) volEl.textContent = '--';
   wlLogs = [];
-  await wlLoad();
-  wlRender();
+  wlFetch();
 }
 
-async function wlGetSb() {
-  // __supabaseClient__ が来るまで最大5秒待つ
-  for (var i = 0; i < 50; i++) {
-    if (window.__supabaseClient__) return window.__supabaseClient__;
-    await new Promise(function(r) { setTimeout(r, 100); });
-  }
-  return null;
-}
-
-async function wlLoad() {
-  var sb = await wlGetSb();
-  if (!sb) {
-    wlShowError('Supabase接続エラー。ページを再読み込みしてください。');
+function wlFetch() {
+  // supabase.jsのwindow.__supabaseClient__を使用
+  // script.jsがmoduleのため少し遅れてセットされる可能性があるので待つ
+  if (!window.__supabaseClient__) {
+    setTimeout(wlFetch, 200);
     return;
   }
-
-  // セッション取得
-  var sessionRes = await sb.auth.getSession();
-  var session = sessionRes.data && sessionRes.data.session;
-  if (!session) {
-    wlShowError('ログインが必要です。');
-    return;
-  }
-  var email = session.user.email;
-
-  // 購入日取得（取れなければ全件取得）
-  var fromDate = null;
-  try {
-    var allowedRes = await sb.from('allowed_users').select('created_at').eq('email', email).maybeSingle();
-    if (allowedRes.data && allowedRes.data.created_at) {
-      fromDate = allowedRes.data.created_at.split('T')[0];
+  var sb = window.__supabaseClient__;
+  sb.auth.getSession().then(function(res) {
+    var session = res.data && res.data.session;
+    if (!session) {
+      wlShowMsg('var(--muted)', 'ログインしてください');
+      return;
     }
-  } catch(e) {}
+    var email = session.user.email;
 
-  // ログ取得
-  try {
-    var query = sb
-      .from('workout_logs')
+    sb.from('workout_logs')
       .select('*')
       .eq('user_email', email)
       .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (fromDate) query = query.gte('date', fromDate);
-
-    var res = await query;
-    if (res.error) throw res.error;
-    wlLogs = res.data || [];
-  } catch(e) {
-    console.error('wlLoad error:', e);
-    wlShowError('記録の読み込みに失敗しました: ' + e.message);
-  }
+      .order('created_at', { ascending: false })
+      .then(function(res2) {
+        if (res2.error) {
+          wlShowMsg('#ff4d6a', '読み込みエラー: ' + res2.error.message);
+          return;
+        }
+        wlLogs = res2.data || [];
+        wlRender();
+      });
+  }).catch(function(e) {
+    wlShowMsg('#ff4d6a', 'エラー: ' + e.message);
+  });
 }
 
-function wlShowError(msg) {
+function wlShowMsg(color, msg) {
   var el = document.getElementById('wl-list');
-  if (el) el.innerHTML = '<p style="color:#ff4d6a; font-size:13px; text-align:center; padding:30px 0;">' + msg + '</p>';
+  if (el) el.innerHTML = '<p style="color:' + color + '; font-size:13px; text-align:center; padding:30px 0;">' + msg + '</p>';
 }
 
 async function wlGetEmailForWrite() {
-  var sb = await wlGetSb();
+  var sb = window.__supabaseClient__;
   if (!sb) return null;
   var res = await sb.auth.getSession();
   return (res.data && res.data.session) ? res.data.session.user.email : null;
