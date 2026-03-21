@@ -147,6 +147,19 @@
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
       AIコーチに戻る
     </button>
+
+    <!-- 記録タブ切り替え -->
+    <div style="display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--black); position:sticky; top:0; z-index:10;">
+      <button onclick="switchRecordTab('body')" id="rtab-body"
+        style="flex:1; padding:14px 0; background:none; border:none; border-bottom:2px solid var(--accent); color:var(--white); font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all 0.2s;">
+        体組成記録
+      </button>
+      <button onclick="switchRecordTab('workout')" id="rtab-workout"
+        style="flex:1; padding:14px 0; background:none; border:none; border-bottom:2px solid transparent; color:var(--muted); font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all 0.2s;">
+        トレーニング記録
+      </button>
+    </div>
+
     <div class="record-panel-content">
 
     <div id="dashboard">
@@ -222,6 +235,48 @@
       </div>
 
     </div><!-- dashboard閉じ -->
+
+    <!-- ======================================================
+         トレーニング記録パネル
+         ====================================================== -->
+    <div id="workout-panel" style="display:none; padding:16px 0;">
+
+      <!-- 今週のボリューム -->
+      <div class="card visible" style="margin-bottom:14px;">
+        <p class="section-tag">WEEKLY VOLUME</p>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+          <div>
+            <span id="wl-vol-num" style="font-family:'Bebas Neue',sans-serif; font-size:48px; color:var(--accent); line-height:1;">--</span>
+            <span style="font-size:13px; color:var(--muted); margin-left:4px;">kg</span>
+          </div>
+          <div id="wl-vol-vs" style="font-size:12px; color:var(--muted); text-align:right; line-height:1.7;">先週比を計算中...</div>
+        </div>
+      </div>
+
+      <!-- 記録フォーム -->
+      <div class="card visible" style="margin-bottom:14px;">
+        <p class="section-tag">ADD LOG</p>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+          <input type="text" id="wl-exercise" placeholder="種目名（例：ベンチプレス）" class="checkin-input" style="width:100%;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <input type="number" id="wl-sets" placeholder="セット数" class="checkin-input" min="1" max="20" inputmode="numeric">
+            <input type="number" id="wl-reps" placeholder="回数/セット" class="checkin-input" min="1" max="100" inputmode="numeric">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal">
+            <input type="date" id="wl-date" class="checkin-input">
+          </div>
+        </div>
+        <button id="wl-add-btn" class="checkin-submit">記録する</button>
+      </div>
+
+      <!-- 記録リスト -->
+      <p class="section-tag" style="margin-bottom:12px; padding-left:2px;">HISTORY</p>
+      <div id="wl-list">
+        <p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>
+      </div>
+
+    </div><!-- workout-panel閉じ -->
 
     </div><!-- record-panel-content閉じ -->
   </div><!-- record-panel閉じ -->
@@ -608,7 +663,6 @@
 
   <!-- ======================================================
        ボトムナビゲーションバー
-       ★ ログイン前は非表示。script.jsのupdateUI()でログイン後に表示。
        ====================================================== -->
   <nav class="bottom-nav" style="display:none;">
     <button class="nav-tab active" id="nav-home" onclick="switchTab('home')">
@@ -655,9 +709,7 @@ function selectPlan(plan) {
     split6: document.getElementById('plan-split6'),
   };
   const note = document.getElementById('plan-note');
-  Object.values(btns).forEach(b => {
-    b.classList.remove('active');
-  });
+  Object.values(btns).forEach(b => b.classList.remove('active'));
   btns[plan].classList.add('active');
   if (plan === 'onetime') {
     note.textContent = '税込・買い切り';
@@ -760,7 +812,6 @@ function openTool(file, title) {
   const overlay = document.getElementById('tool-overlay');
   const iframe = document.getElementById('tool-iframe');
   const titleEl = document.getElementById('overlay-title');
-
   titleEl.textContent = title;
   iframe.src = '/' + file;
   overlay.classList.add('open');
@@ -770,7 +821,6 @@ function openTool(file, title) {
 function closeToolOverlay() {
   const overlay = document.getElementById('tool-overlay');
   const iframe = document.getElementById('tool-iframe');
-
   overlay.classList.remove('open');
   iframe.src = '';
   document.body.style.overflow = '';
@@ -795,12 +845,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// bfcache対策：別サイトから戻ってきたとき強制リロード
 window.addEventListener('pageshow', function(e) {
   if (e.persisted) window.location.reload();
 });
 
-// タブを離れて戻ったとき、会話中でなければリロード
 let hiddenAt = null;
 document.addEventListener('visibilitychange', function() {
   if (document.visibilityState === 'hidden') {
@@ -808,7 +856,6 @@ document.addEventListener('visibilitychange', function() {
   } else if (document.visibilityState === 'visible' && hiddenAt) {
     const elapsed = Date.now() - hiddenAt;
     hiddenAt = null;
-    // 会話中（チャット履歴あり）はリロードしない
     const chatHistory = document.getElementById('chat-history');
     const hasChat = chatHistory && chatHistory.children.length > 0;
     if (!hasChat && elapsed > 3000) {
@@ -816,6 +863,259 @@ document.addEventListener('visibilitychange', function() {
     }
   }
 });
+
+/* ============================================================
+   記録タブ切り替え
+   ============================================================ */
+function switchRecordTab(tab) {
+  const bodyPanel = document.getElementById('dashboard');
+  const workoutPanel = document.getElementById('workout-panel');
+  const rtabBody = document.getElementById('rtab-body');
+  const rtabWorkout = document.getElementById('rtab-workout');
+
+  if (tab === 'body') {
+    bodyPanel.style.display = 'block';
+    workoutPanel.style.display = 'none';
+    rtabBody.style.borderBottomColor = 'var(--accent)';
+    rtabBody.style.color = 'var(--white)';
+    rtabWorkout.style.borderBottomColor = 'transparent';
+    rtabWorkout.style.color = 'var(--muted)';
+  } else {
+    bodyPanel.style.display = 'none';
+    workoutPanel.style.display = 'block';
+    rtabBody.style.borderBottomColor = 'transparent';
+    rtabBody.style.color = 'var(--muted)';
+    rtabWorkout.style.borderBottomColor = 'var(--accent)';
+    rtabWorkout.style.color = 'var(--white)';
+    wlInit();
+  }
+}
+
+/* ============================================================
+   トレーニング記録ロジック
+   ============================================================ */
+let wlLogs = [];
+let wlInitialized = false;
+
+async function wlInit() {
+  if (wlInitialized) return;
+  wlInitialized = true;
+
+  document.getElementById('wl-date').value = new Date().toISOString().split('T')[0];
+
+  await wlLoad();
+  wlRender();
+
+  document.getElementById('wl-add-btn').addEventListener('click', wlAdd);
+  document.getElementById('wl-exercise').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') wlAdd();
+  });
+}
+
+async function wlGetEmail() {
+  const sb = window.__supabaseClient__;
+  if (!sb) return null;
+  const { data: { session } } = await sb.auth.getSession();
+  return session?.user?.email || null;
+}
+
+async function wlGetFromDate() {
+  const sb = window.__supabaseClient__;
+  const email = await wlGetEmail();
+  if (!sb || !email) return null;
+  const { data } = await sb
+    .from('allowed_users')
+    .select('created_at')
+    .eq('email', email)
+    .maybeSingle();
+  if (!data) return null;
+  return data.created_at.split('T')[0];
+}
+
+async function wlLoad() {
+  const sb = window.__supabaseClient__;
+  const email = await wlGetEmail();
+  const fromDate = await wlGetFromDate();
+  if (!sb || !email || !fromDate) return;
+
+  const { data } = await sb
+    .from('workout_logs')
+    .select('*')
+    .eq('user_email', email)
+    .gte('date', fromDate)
+    .order('date', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  wlLogs = data || [];
+}
+
+async function wlAdd() {
+  const exercise = document.getElementById('wl-exercise').value.trim();
+  const sets = parseInt(document.getElementById('wl-sets').value);
+  const reps = parseInt(document.getElementById('wl-reps').value);
+  const weight = parseFloat(document.getElementById('wl-weight').value);
+  const date = document.getElementById('wl-date').value;
+
+  if (!exercise) { wlToast('⚠️ 種目名を入力してください'); return; }
+  if (!sets || sets < 1) { wlToast('⚠️ セット数を入力してください'); return; }
+  if (!reps || reps < 1) { wlToast('⚠️ 回数を入力してください'); return; }
+  if (isNaN(weight) || weight < 0) { wlToast('⚠️ 重量を入力してください'); return; }
+  if (!date) { wlToast('⚠️ 日付を選択してください'); return; }
+
+  const btn = document.getElementById('wl-add-btn');
+  btn.disabled = true;
+  btn.textContent = '保存中...';
+
+  try {
+    const sb = window.__supabaseClient__;
+    const email = await wlGetEmail();
+    const { data, error } = await sb
+      .from('workout_logs')
+      .insert([{ user_email: email, date, exercise, sets, reps, weight }])
+      .select()
+      .single();
+    if (error) throw error;
+    wlLogs.unshift(data);
+    wlRender();
+    document.getElementById('wl-exercise').value = '';
+    document.getElementById('wl-sets').value = '';
+    document.getElementById('wl-reps').value = '';
+    document.getElementById('wl-weight').value = '';
+    document.getElementById('wl-exercise').focus();
+    wlToast('✅ 記録しました！');
+  } catch (e) {
+    console.error(e);
+    wlToast('❌ 保存に失敗しました');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '記録する';
+  }
+}
+
+async function wlDelete(id) {
+  try {
+    const sb = window.__supabaseClient__;
+    const email = await wlGetEmail();
+    const { error } = await sb
+      .from('workout_logs')
+      .delete()
+      .eq('id', id)
+      .eq('user_email', email);
+    if (error) throw error;
+    wlLogs = wlLogs.filter(function(l) { return l.id !== id; });
+    wlRender();
+    wlToast('🗑️ 削除しました');
+  } catch (e) {
+    wlToast('❌ 削除に失敗しました');
+  }
+}
+
+function wlCalcVolume(offsetWeeks) {
+  const now = new Date();
+  const day = now.getDay();
+  const start = new Date(now);
+  start.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offsetWeeks * 7);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return wlLogs
+    .filter(function(l) { const d = new Date(l.date); return d >= start && d <= end; })
+    .reduce(function(sum, l) { return sum + l.sets * l.reps * l.weight; }, 0);
+}
+
+function wlEsc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function wlRender() {
+  // ボリューム更新
+  const thisWeek = wlCalcVolume(0);
+  const lastWeek = wlCalcVolume(-1);
+  const volEl = document.getElementById('wl-vol-num');
+  const vsEl = document.getElementById('wl-vol-vs');
+  if (volEl) volEl.textContent = thisWeek.toLocaleString();
+  if (vsEl) {
+    if (lastWeek === 0) {
+      vsEl.innerHTML = '<span style="color:var(--muted)">先週のデータなし</span>';
+    } else {
+      const diff = thisWeek - lastWeek;
+      const pct = Math.round((diff / lastWeek) * 100);
+      if (diff > 0) {
+        vsEl.innerHTML = '先週比 <span style="color:var(--accent);font-weight:700;">▲' + pct + '%</span><br>+' + diff.toLocaleString() + 'kg';
+      } else if (diff < 0) {
+        vsEl.innerHTML = '先週比 <span style="color:#ff4d6a;font-weight:700;">▼' + Math.abs(pct) + '%</span><br>' + diff.toLocaleString() + 'kg';
+      } else {
+        vsEl.textContent = '先週と同じ';
+      }
+    }
+  }
+
+  // ログリスト
+  const container = document.getElementById('wl-list');
+  if (!container) return;
+
+  if (!wlLogs.length) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:40px 0;">まだ記録がありません<br>最初のトレーニングを記録しよう！💪</p>';
+    return;
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const weekdays = ['日','月','火','水','木','金','土'];
+
+  const grouped = {};
+  wlLogs.forEach(function(l) {
+    if (!grouped[l.date]) grouped[l.date] = [];
+    grouped[l.date].push(l);
+  });
+
+  container.innerHTML = Object.keys(grouped).sort(function(a, b) { return b.localeCompare(a); }).map(function(date) {
+    let label;
+    if (date === todayStr) {
+      label = '今日';
+    } else {
+      const d = new Date(date + 'T00:00:00');
+      label = (d.getMonth() + 1) + '月' + d.getDate() + '日（' + weekdays[d.getDay()] + '）';
+    }
+    const items = grouped[date].map(function(l) {
+      const vol = l.sets * l.reps * l.weight;
+      return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + wlEsc(l.exercise) + '</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-top:2px;">' + l.sets + 'セット × ' + l.reps + '回 × ' + l.weight + 'kg</div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-left:12px;flex-shrink:0;">'
+        + '<div style="text-align:right;">'
+        + '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:22px;color:var(--accent);line-height:1;">' + vol.toLocaleString() + '</div>'
+        + '<div style="font-size:10px;color:var(--muted);">kg vol</div>'
+        + '</div>'
+        + '<button onclick="wlDelete(\'' + l.id + '\')" style="background:none;border:none;color:#3a3a4a;font-size:18px;cursor:pointer;padding:4px;transition:color 0.2s;" onmouseover="this.style.color=\'#ff4d6a\'" onmouseout="this.style.color=\'#3a3a4a\'">×</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+    return '<div style="margin-bottom:16px;"><div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;padding-left:2px;">' + label + '</div>' + items + '</div>';
+  }).join('');
+}
+
+function wlToast(msg) {
+  let t = document.getElementById('wl-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'wl-toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--white);color:var(--black);padding:12px 24px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;white-space:nowrap;z-index:9999;font-family:"Noto Sans JP",sans-serif;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2500);
+}
 </script>
 </body>
 </html>
