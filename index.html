@@ -270,7 +270,13 @@
             <input type="number" id="wl-reps" placeholder="回数/セット" class="checkin-input" min="1" max="100" inputmode="numeric">
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal">
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal" style="flex:1; min-width:0;">
+              <button onclick="document.getElementById('wl-weight').value='0'" type="button"
+                style="flex-shrink:0; padding:0 10px; height:44px; background:#1a1a24; border:1px solid #2a2a38; border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">
+                自重
+              </button>
+            </div>
             <input type="date" id="wl-date" class="checkin-input">
           </div>
         </div>
@@ -939,11 +945,20 @@ async function wlGetFromDate() {
   return data.created_at.split('T')[0];
 }
 
+async function wlWaitForSupabase() {
+  for (var i = 0; i < 30; i++) {
+    if (window.__supabaseClient__) return window.__supabaseClient__;
+    await new Promise(function(r) { setTimeout(r, 100); });
+  }
+  return null;
+}
+
 async function wlLoad() {
-  const sb = window.__supabaseClient__;
+  const sb = await wlWaitForSupabase();
+  if (!sb) { console.warn('Supabase未初期化'); return; }
   const email = await wlGetEmail();
   const fromDate = await wlGetFromDate();
-  if (!sb || !email || !fromDate) return;
+  if (!email || !fromDate) return;
 
   const { data } = await sb
     .from('workout_logs')
