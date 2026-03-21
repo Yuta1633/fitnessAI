@@ -245,13 +245,18 @@ async function saveProfile(userId, name) {
   return !error;
 }
 
+// ============================================================
+// ★ 変更箇所：expires_at チェックを追加
+// ============================================================
 async function checkAllowed(email) {
   const { data } = await supabase
     .from('allowed_users')
-    .select('id')
+    .select('id, expires_at')
     .eq('email', email)
     .maybeSingle();
-  return !!data;
+  if (!data) return false;
+  if (data.expires_at && new Date(data.expires_at) < new Date()) return false;
+  return true;
 }
 
 async function checkIsAdmin(userId) {
@@ -854,15 +859,6 @@ async function showQuestionStep(questions) {
             scienceAdvice = `運動1〜2時間前は消化しやすい炭水化物中心の食事が推奨（Burke et al. 2011）。脂質・食物繊維を控えることでトレーニング中の不快感を防ぎパフォーマンスが向上する。`;
           } else if (selectedSub === 'トレーニング後の食事がわからない') {
             scienceAdvice = `運動後30〜60分以内にタンパク質20〜40g＋炭水化物を摂ることで筋タンパク合成が最大化（Ivy et al. 2002）。体型改善には筋肉を増やしながら脂肪を落とすことが最も効果的。`;
-          } else {
-            scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          }
-      } else if (selectedGoal === '5') {
-          const weeklyLoss = weight ? (weight * 0.005).toFixed(1) : '0.4';
-          if (selectedSub === 'お腹を引き締めたい') {
-            scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '下半身が気になる') {
-            scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。カロリー収支-200〜300kcalを維持しつつタンパク質を体重×1.6g確保。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else {
             scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
