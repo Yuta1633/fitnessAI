@@ -262,10 +262,16 @@
             <input type="number" id="wl-sets" placeholder="セット数" class="checkin-input" min="1" max="20" inputmode="numeric">
             <input type="number" id="wl-reps" placeholder="回数/セット" class="checkin-input" min="1" max="100" inputmode="numeric">
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal">
-            <input type="date" id="wl-date" class="checkin-input">
-          </div>
+         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+  <div style="display:flex; gap:6px; align-items:center;">
+    <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal" style="flex:1; min-width:0;">
+    <button onclick="document.getElementById('wl-weight').value='0'" type="button"
+      style="flex-shrink:0; padding:0 10px; height:44px; background:#1a1a24; border:1px solid #2a2a38; border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">
+      自重
+    </button>
+  </div>
+  <input type="date" id="wl-date" class="checkin-input">
+</div>
         </div>
         <button id="wl-add-btn" class="checkin-submit">記録する</button>
       </div>
