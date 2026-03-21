@@ -858,24 +858,9 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-window.addEventListener('pageshow', function(e) {
-  if (e.persisted) window.location.reload();
-});
 
-let hiddenAt = null;
-document.addEventListener('visibilitychange', function() {
-  if (document.visibilityState === 'hidden') {
-    hiddenAt = Date.now();
-  } else if (document.visibilityState === 'visible' && hiddenAt) {
-    const elapsed = Date.now() - hiddenAt;
-    hiddenAt = null;
-    const chatHistory = document.getElementById('chat-history');
-    const hasChat = chatHistory && chatHistory.children.length > 0;
-    if (!hasChat && elapsed > 3000) {
-      window.location.reload();
-    }
-  }
-});
+
+
 
 /* ============================================================
    記録タブ切り替え
