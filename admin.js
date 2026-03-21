@@ -8,6 +8,19 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function getExpireInfo(createdAt) {
+  if (!createdAt) return { label: '不明', cls: 'expire-warn', daysLeft: null };
+  const purchase = new Date(createdAt);
+  const expire = new Date(purchase);
+  expire.setMonth(expire.getMonth() + 3);
+  const now = new Date();
+  const daysLeft = Math.ceil((expire - now) / (1000 * 60 * 60 * 24));
+  const expireStr = expire.toISOString().split('T')[0];
+  if (daysLeft < 0) return { label: `期限切れ (${expireStr})`, cls: 'expire-expired', daysLeft };
+  if (daysLeft <= 14) return { label: `残${daysLeft}日 (${expireStr})`, cls: 'expire-warn', daysLeft };
+  return { label: `残${daysLeft}日 (${expireStr})`, cls: 'expire-ok', daysLeft };
+}
+
 const authCheck        = document.getElementById('auth-check');
 const adminContent     = document.getElementById('admin-content');
 const serviceStatus    = document.getElementById('service-status');
@@ -20,33 +33,25 @@ async function checkAdmin() {
     authCheck.innerHTML = '<p style="color:var(--red); text-align:center;">ログインしてください</p>';
     return;
   }
-
-  const { data } = await supabase
-    .from('admins')
-    .select('user_id')
-    .eq('user_id', session.user.id)
-    .single();
-
+  const { data } = await supabase.from('admins').select('user_id').eq('user_id', session.user.id).single();
   if (!data) {
     authCheck.innerHTML = '<p style="color:var(--red); text-align:center;">アクセス権限がありません</p>';
     return;
   }
-
   authCheck.style.display = 'none';
   adminContent.style.display = 'block';
   loadServiceStatus();
   loadAllowedUsers();
   loadUsers().catch(e => console.error('loadUsersエラー:', e));
   loadReferralStats();
+  loadSummary();
 }
 
+// ============================================================
+// サービス停止
+// ============================================================
 async function loadServiceStatus() {
-  const { data } = await supabase
-    .from('service_settings')
-    .select('value')
-    .eq('key', 'service_active')
-    .single();
-
+  const { data } = await supabase.from('service_settings').select('value').eq('key', 'service_active').single();
   updateServiceUI(data?.value === 'true');
 }
 
@@ -67,21 +72,97 @@ function updateServiceUI(isActive) {
 }
 
 toggleServiceBtn.addEventListener('click', async () => {
-  const { data } = await supabase
-    .from('service_settings')
-    .select('value')
-    .eq('key', 'service_active')
-    .single();
-
+  const { data } = await supabase.from('service_settings').select('value').eq('key', 'service_active').single();
   const newValue = data?.value === 'true' ? 'false' : 'true';
-  await supabase
-    .from('service_settings')
-    .update({ value: newValue })
-    .eq('key', 'service_active');
-
+  await supabase.from('service_settings').update({ value: newValue }).eq('key', 'service_active');
   updateServiceUI(newValue === 'true');
 });
 
+// ============================================================
+// 全体サマリー
+// ============================================================
+async function loadSummary() {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+  const mondayStr = monday.toISOString().split('T')[0];
+  const mondayStart = mondayStr + 'T00:00:00';
+
+  const [
+    { data: allUsers },
+    { data: allowedUsers },
+    { data: weeklyUsage },
+    { data: weeklyChats }
+  ] = await Promise.all([
+    supabase.from('all_users').select('id, email'),
+    supabase.from('allowed_users').select('email, created_at'),
+    supabase.from('usage_limits').select('user_id, count, date').gte('date', mondayStr),
+    supabase.from('chat_history').select('method').gte('created_at', mondayStart)
+  ]);
+
+  const totalUsers = (allUsers || []).length;
+  const activeUserIds = new Set((weeklyUsage || []).filter(r => r.count > 0).map(r => r.user_id));
+  const activeCount = activeUserIds.size;
+  const allowedCount = (allowedUsers || []).length;
+
+  let expiredCount = 0;
+  (allowedUsers || []).forEach(u => {
+    const { daysLeft } = getExpireInfo(u.created_at);
+    if (daysLeft !== null && daysLeft < 0) expiredCount++;
+  });
+
+  const methodCount = { nutrition: 0, training: 0, recovery: 0 };
+  (weeklyChats || []).forEach(h => {
+    if (methodCount[h.method] !== undefined) methodCount[h.method]++;
+  });
+
+  document.getElementById('s-total').textContent = totalUsers;
+  document.getElementById('s-active').textContent = activeCount;
+  document.getElementById('s-allowed').textContent = allowedCount;
+  document.getElementById('s-expired').textContent = expiredCount;
+  document.getElementById('s-nutrition').textContent = methodCount.nutrition;
+  document.getElementById('s-training').textContent = methodCount.training;
+  document.getElementById('s-recovery').textContent = methodCount.recovery;
+
+  // 期限切れ一覧
+  loadExpiredUsers(allowedUsers || []);
+}
+
+// ============================================================
+// 期限切れ一覧
+// ============================================================
+function loadExpiredUsers(allowedUsers) {
+  const expiredList = document.getElementById('expired-list');
+  const expiring = allowedUsers
+    .map(u => ({ ...u, expireInfo: getExpireInfo(u.created_at) }))
+    .filter(u => u.expireInfo.daysLeft !== null && u.expireInfo.daysLeft < 30)
+    .sort((a, b) => a.expireInfo.daysLeft - b.expireInfo.daysLeft);
+
+  if (expiring.length === 0) {
+    expiredList.innerHTML = '<p style="color:var(--muted); font-size:13px;">期限切れ・期限間近のユーザーなし</p>';
+    return;
+  }
+
+  expiredList.innerHTML = expiring.map(u => {
+    const { label, cls } = u.expireInfo;
+    const purchase = new Date(u.created_at);
+    const purchaseStr = purchase.toISOString().split('T')[0];
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; background:#1e1e1e; border:1px solid var(--border); border-radius:10px; margin-bottom:8px;">
+        <div>
+          <p style="font-size:13px; color:var(--white); margin-bottom:3px;">${escapeHtml(u.email)}</p>
+          <p style="font-size:11px; color:var(--muted);">購入日: ${purchaseStr}</p>
+        </div>
+        <span class="expire-badge ${cls}">${label}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// ユーザー詳細取得
+// ============================================================
 async function loadUserDetail(userId) {
   const today = new Date();
   const day = today.getDay();
@@ -89,24 +170,33 @@ async function loadUserDetail(userId) {
   const monday = new Date(today);
   monday.setDate(today.getDate() + diff);
   const mondayStr = monday.toISOString().split('T')[0];
-  const mondayStart = `${mondayStr}T00:00:00`;
+  const mondayStart = mondayStr + 'T00:00:00';
 
-  const { data: usageData } = await supabase
-    .from('usage_limits')
-    .select('date, count')
-    .eq('user_id', userId)
-    .order('date', { ascending: false });
-
-  const { data: bodyDatesData } = await supabase
-    .from('body_records')
-    .select('recorded_at')
-    .eq('user_id', userId);
+  const [
+    { data: usageData },
+    { data: bodyDatesData },
+    { data: chatData },
+    { data: bodyData },
+    { data: startData },
+    { data: goalData },
+    { data: consentData },
+    { data: analysisData },
+    { data: workoutData }
+  ] = await Promise.all([
+    supabase.from('usage_limits').select('date, count').eq('user_id', userId).order('date', { ascending: false }),
+    supabase.from('body_records').select('recorded_at').eq('user_id', userId),
+    supabase.from('chat_history').select('method, goal, sub, messages, created_at').eq('user_id', userId).gte('created_at', mondayStart).order('created_at', { ascending: false }),
+    supabase.from('body_records').select('weight, body_fat, recorded_at, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
+    supabase.from('body_records').select('weight, body_fat, recorded_at, created_at').eq('user_id', userId).order('created_at', { ascending: true }).limit(1),
+    supabase.from('user_goals').select('goal_weight, goal_body_fat').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_consents').select('consented_at, terms_version, privacy_version').eq('user_id', userId).order('consented_at', { ascending: false }).limit(1),
+    supabase.from('personal_analysis').select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+    supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20)
+  ]);
 
   const activeDates = new Set();
   (usageData || []).filter(r => r.count > 0).forEach(r => activeDates.add(r.date));
-  (bodyDatesData || []).forEach(r => {
-    if (r.recorded_at) activeDates.add(r.recorded_at);
-  });
+  (bodyDatesData || []).forEach(r => { if (r.recorded_at) activeDates.add(r.recorded_at); });
 
   const todayStr = today.toISOString().split('T')[0];
   const yesterday = new Date(today);
@@ -118,80 +208,38 @@ async function loadUserDetail(userId) {
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      if (activeDates.has(dateStr)) { streak++; } else { break; }
+      if (activeDates.has(d.toISOString().split('T')[0])) streak++;
+      else break;
     }
   } else if (activeDates.has(yesterdayStr)) {
     for (let i = 1; i < 365; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      if (activeDates.has(dateStr)) { streak++; } else { break; }
+      if (activeDates.has(d.toISOString().split('T')[0])) streak++;
+      else break;
     }
   }
 
-  const weeklyTotal = (usageData || [])
-    .filter(r => r.date >= mondayStr)
-    .reduce((sum, r) => sum + r.count, 0);
-
-  const { data: chatData } = await supabase
-    .from('chat_history')
-    .select('method, goal, sub, messages, created_at')
-    .eq('user_id', userId)
-    .gte('created_at', mondayStart)
-    .order('created_at', { ascending: false });
-
+  const weeklyTotal = (usageData || []).filter(r => r.date >= mondayStr).reduce((sum, r) => sum + r.count, 0);
   const methodCount = { nutrition: 0, training: 0, recovery: 0 };
-  (chatData || []).forEach(h => {
-    if (methodCount[h.method] !== undefined) methodCount[h.method]++;
-  });
+  (chatData || []).forEach(h => { if (methodCount[h.method] !== undefined) methodCount[h.method]++; });
 
-  const { data: bodyData } = await supabase
-    .from('body_records')
-    .select('weight, body_fat, recorded_at, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  const { data: startData } = await supabase
-    .from('body_records')
-    .select('weight, body_fat, recorded_at, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
-    .limit(1);
-
-  const { data: goalData } = await supabase
-    .from('user_goals')
-    .select('goal_weight, goal_body_fat')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  const { data: consentData } = await supabase
-    .from('user_consents')
-    .select('consented_at, terms_version, privacy_version')
-    .eq('user_id', userId)
-    .order('consented_at', { ascending: false })
-    .limit(1);
-
-  const startRecord = (startData && startData.length > 0) ? startData[0] : null;
   const totalDays = activeDates.size;
-  const firstUsage = (() => {
-    const allDates = [...activeDates].sort();
-    return allDates.length > 0 ? allDates[0] : null;
-  })();
-
+  const firstUsage = [...activeDates].sort()[0] || null;
   const consent = (consentData && consentData.length > 0) ? consentData[0] : null;
+  const startRecord = (startData && startData.length > 0) ? startData[0] : null;
 
-  const { data: analysisData } = await supabase
-    .from('personal_analysis')
-    .select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  return { streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData: bodyData || [], startRecord, goalData: goalData || null, consent, analysisData: analysisData || [] };
+  return {
+    streak, weeklyTotal, totalDays, firstUsage, methodCount,
+    bodyData: bodyData || [], startRecord, goalData: goalData || null,
+    consent, analysisData: analysisData || [],
+    workoutData: workoutData || []
+  };
 }
 
+// ============================================================
+// ユーザー詳細HTML生成
+// ============================================================
 function renderAdminGauge(label, unit, startVal, currentVal, goalVal, color) {
   if (startVal == null || currentVal == null || goalVal == null) return '';
   const isIncrease = goalVal > startVal;
@@ -223,9 +271,10 @@ function renderAdminGauge(label, unit, startVal, currentVal, goalVal, color) {
   `;
 }
 
-function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData, startRecord, goalData, consent, analysisData }) {
+function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData, startRecord, goalData, consent, analysisData, workoutData }) {
   const methodLabel = { nutrition: '🥗 栄養', training: '🏋️ トレーニング', recovery: '😴 回復' };
 
+  // 同意状態
   let consentHtml = '';
   if (consent) {
     const date = new Date(consent.consented_at);
@@ -234,12 +283,11 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
       <div style="margin-bottom:14px;">
         <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">CONSENT STATUS</p>
         <div style="background:#1a2a1a; border:1px solid var(--accent); border-radius:10px; padding:12px 14px;">
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
             <span style="font-size:16px;">✅</span>
             <p style="font-size:13px; color:var(--accent); font-weight:700;">同意済み</p>
           </div>
           <p style="font-size:12px; color:var(--muted);">同意日時：${dateStr}</p>
-          <p style="font-size:11px; color:var(--muted); margin-top:2px;">利用規約 v${consent.terms_version}　／　プライバシーポリシー v${consent.privacy_version}</p>
         </div>
       </div>
     `;
@@ -257,6 +305,7 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     `;
   }
 
+  // 統計
   const statsHtml = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
       <div style="background:#111; border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center;">
@@ -280,6 +329,7 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     </div>
   `;
 
+  // 今週の内訳
   const weeklyHtml = `
     <div style="margin-bottom:14px;">
       <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">WEEKLY REPORT</p>
@@ -294,66 +344,21 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     </div>
   `;
 
-  let bodyHtml = '';
-  if (bodyData && bodyData.length > 0) {
-    const pageSize = 5;
-    const recordId = 'body-' + Math.random().toString(36).slice(2, 8);
-    const initialRows = bodyData.slice(0, pageSize);
-    const hasMore = bodyData.length > pageSize;
-    const dataEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(bodyData))));
-    bodyHtml = `
-      <div style="margin-bottom:14px;">
-        <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">BODY RECORD</p>
-        <div id="${recordId}-list" style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
-          ${initialRows.map(r => `
-            <div style="display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border);">
-              <p style="font-size:12px; color:var(--muted);">${r.recorded_at ? r.recorded_at : '-'}</p>
-              <p style="font-size:12px; color:var(--white);">${r.weight != null ? r.weight + 'kg' : '-'} ／ ${r.body_fat != null ? r.body_fat + '%' : '-'}</p>
-            </div>
-          `).join('')}
-        </div>
-        <div id="${recordId}-btns" style="display:flex; gap:8px; margin-top:8px;">
-          ${hasMore ? `<button data-record-id="${recordId}" data-encoded="${dataEncoded}" data-shown="5" data-action="more" style="flex:1; padding:7px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer;">過去${Math.min(pageSize, bodyData.length - pageSize)}件を表示</button>` : ''}
-        </div>
-      </div>
-    `;
-  }
-
+  // 目標・進捗
   let goalHtml = '';
   if (goalData && (goalData.goal_weight != null || goalData.goal_body_fat != null)) {
     const parts = [];
     if (goalData.goal_weight != null) parts.push(`目標体重: <strong>${goalData.goal_weight}kg</strong>`);
     if (goalData.goal_body_fat != null) parts.push(`目標体脂肪率: <strong>${goalData.goal_body_fat}%</strong>`);
-
     let gaugeHtml = '';
     if (goalData.goal_weight != null) {
       const currentWeight = bodyData.find(r => r.weight != null)?.weight ?? null;
       const startWeight = [...bodyData].reverse().find(r => r.weight != null)?.weight ?? null;
-      if (currentWeight != null) {
-        if (startWeight != null && startWeight !== currentWeight) {
-          gaugeHtml += renderAdminGauge('体重', 'kg', startWeight, currentWeight, goalData.goal_weight, 'var(--accent)');
-        } else {
-          const remaining = Math.abs(currentWeight - goalData.goal_weight).toFixed(1);
-          const reached = goalData.goal_weight > currentWeight ? currentWeight >= goalData.goal_weight : currentWeight <= goalData.goal_weight;
-          gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 現在 <strong style="color:var(--white);">${currentWeight}kg</strong> → 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　${reached ? '目標達成！🎉' : `あと ${remaining}kg`}</p>`;
-        }
-      } else {
-        gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　（記録なし）</p>`;
-      }
-    }
-    if (goalData.goal_body_fat != null) {
-      const currentBodyFat = bodyData.find(r => r.body_fat != null)?.body_fat ?? null;
-      const startBodyFat = [...bodyData].reverse().find(r => r.body_fat != null)?.body_fat ?? null;
-      if (currentBodyFat != null) {
-        if (startBodyFat != null && startBodyFat !== currentBodyFat) {
-          gaugeHtml += renderAdminGauge('体脂肪率', '%', startBodyFat, currentBodyFat, goalData.goal_body_fat, '#4fc3f7');
-        } else {
-          const remaining = Math.abs(currentBodyFat - goalData.goal_body_fat).toFixed(1);
-          const reached = goalData.goal_body_fat > currentBodyFat ? currentBodyFat >= goalData.goal_body_fat : currentBodyFat <= goalData.goal_body_fat;
-          gaugeHtml += `<p style="font-size:12px; color:var(--muted);">体脂肪率: 現在 <strong style="color:var(--white);">${currentBodyFat}%</strong> → 目標 <strong style="color:#4fc3f7;">${goalData.goal_body_fat}%</strong>　${reached ? '目標達成！🎉' : `あと ${remaining}%`}</p>`;
-        }
-      } else {
-        gaugeHtml += `<p style="font-size:12px; color:var(--muted);">体脂肪率: 目標 <strong style="color:#4fc3f7;">${goalData.goal_body_fat}%</strong>　（記録なし）</p>`;
+      if (currentWeight != null && startWeight != null && startWeight !== currentWeight) {
+        gaugeHtml += renderAdminGauge('体重', 'kg', startWeight, currentWeight, goalData.goal_weight, 'var(--accent)');
+      } else if (currentWeight != null) {
+        const remaining = Math.abs(currentWeight - goalData.goal_weight).toFixed(1);
+        gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 現在 <strong style="color:var(--white);">${currentWeight}kg</strong> → 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　あと ${remaining}kg</p>`;
       }
     }
     goalHtml = `
@@ -367,23 +372,71 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     `;
   }
 
+  // 体組成記録
+  let bodyHtml = '';
+  if (bodyData && bodyData.length > 0) {
+    const rows = bodyData.slice(0, 5).map(r => `
+      <div style="display:flex; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--border);">
+        <p style="font-size:12px; color:var(--muted);">${r.recorded_at || '-'}</p>
+        <p style="font-size:12px; color:var(--white);">${r.weight != null ? r.weight + 'kg' : '-'} ／ ${r.body_fat != null ? r.body_fat + '%' : '-'}</p>
+      </div>
+    `).join('');
+    bodyHtml = `
+      <div style="margin-bottom:14px;">
+        <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">BODY RECORD</p>
+        <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">${rows}</div>
+      </div>
+    `;
+  }
+
+  // トレーニング記録
+  let workoutHtml = '';
+  if (workoutData && workoutData.length > 0) {
+    const rows = workoutData.slice(0, 10).map(l => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border);">
+        <div>
+          <p style="font-size:13px; color:var(--white); font-weight:700;">${escapeHtml(l.exercise)}</p>
+          <p style="font-size:11px; color:var(--muted);">${l.sets}セット × ${l.reps}回 × ${l.weight}kg</p>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--accent);">${(l.sets * l.reps * l.weight).toLocaleString()}</p>
+          <p style="font-size:10px; color:var(--muted);">${l.date}</p>
+        </div>
+      </div>
+    `).join('');
+    workoutHtml = `
+      <div style="margin-bottom:14px;">
+        <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">WORKOUT LOG</p>
+        <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">${rows}</div>
+      </div>
+    `;
+  }
+
+  // パーソナル分析
   let analysisHtml = '';
   if (analysisData && analysisData.length > 0) {
     analysisHtml = `<div style="margin-bottom:14px;"><p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">PERSONAL ANALYSIS</p><div style="display:flex; flex-direction:column; gap:8px;">`;
     analysisData.forEach(function(item) {
-      var date = new Date(item.created_at);
-      var dateStr = date.getFullYear() + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
-      var total = (item.nutrition_count || 0) + (item.training_count || 0) + (item.recovery_count || 0);
-      var nPct = total > 0 ? Math.round((item.nutrition_count || 0) / total * 100) : 0;
-      var tPct = total > 0 ? Math.round((item.training_count || 0) / total * 100) : 0;
-      var rPct = total > 0 ? Math.round((item.recovery_count || 0) / total * 100) : 0;
-      var detailId = 'pa-detail-' + Math.random().toString(36).slice(2, 8);
-      analysisHtml += `<div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;"><div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}'); d.style.display=d.style.display==='none'?'block':'none';"><div><div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;"><span style="font-size:13px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">${item.type_name || '未分類'}</span><span style="font-size:11px; color:var(--muted);">🔥${item.streak || 0}日連続</span></div><div style="font-size:11px; color:var(--muted);">${dateStr}　🥗${nPct}% 🏋️${tPct}% 😴${rPct}%</div></div><span style="font-size:12px; color:var(--muted);">▼</span></div><div id="${detailId}" style="display:none; padding:0 14px 14px; border-top:1px solid var(--border);"><div style="padding-top:12px;"><div style="display:flex; gap:6px; margin-bottom:10px;"><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🥗</span><br><strong style="font-size:12px; color:#4ade80;">${item.nutrition_count || 0}</strong></div><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">🏋️</span><br><strong style="font-size:12px; color:#f59e0b;">${item.training_count || 0}</strong></div><div style="flex:1; background:#1a1a1a; border:1px solid var(--border); border-radius:6px; padding:6px; text-align:center;"><span style="font-size:11px; color:var(--muted);">😴</span><br><strong style="font-size:12px; color:#818cf8;">${item.recovery_count || 0}</strong></div></div><div style="background:#1a1a1a; border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(item.full_result || '結果なし')}</div></div></div></div>`;
+      const date = new Date(item.created_at);
+      const dateStr = date.getFullYear() + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0');
+      const detailId = 'pa-' + Math.random().toString(36).slice(2, 8);
+      analysisHtml += `
+        <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}'); d.style.display=d.style.display==='none'?'block':'none';">
+            <div>
+              <span style="font-size:12px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">${escapeHtml(item.type_name || '未分類')}</span>
+              <span style="font-size:11px; color:var(--muted); margin-left:8px;">${dateStr} 🔥${item.streak || 0}日</span>
+            </div>
+            <span style="font-size:12px; color:var(--muted);">▼</span>
+          </div>
+          <div id="${detailId}" style="display:none; padding:12px 14px; border-top:1px solid var(--border); font-size:12px; color:var(--white); line-height:1.8; white-space:pre-wrap;">${escapeHtml(item.full_result || '')}</div>
+        </div>
+      `;
     });
     analysisHtml += '</div></div>';
   }
 
-  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + analysisHtml;
+  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + workoutHtml + analysisHtml;
 }
 
 // ============================================================
@@ -408,15 +461,29 @@ function renderAllowedPage() {
   const pageData = allowedAllData.slice(start, start + ALLOWED_PER_PAGE);
 
   let html = pageData.map(u => {
+    const { label, cls } = getExpireInfo(u.created_at);
     const date = new Date(u.created_at);
     const dateStr = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}/${String(date.getDate()).padStart(2,'0')}`;
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#1e1e1e; border:1px solid var(--border); border-radius:8px;">
-        <div>
-          <p style="font-size:13px; color:var(--white);">${u.email}</p>
-          <p style="font-size:11px; color:var(--muted);">追加日: ${dateStr}${u.referral_code ? '　紹介コード: <strong style="color:var(--accent);">' + escapeHtml(u.referral_code) + '</strong>' : ''}${u.memo ? '　メモ: ' + u.memo : ''}</p>
+      <div style="padding:12px 14px; background:#1e1e1e; border:1px solid var(--border); border-radius:10px; margin-bottom:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <div style="flex:1; min-width:0;">
+            <p style="font-size:13px; color:var(--white); margin-bottom:4px; word-break:break-all;">${escapeHtml(u.email)}</p>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+              <p style="font-size:11px; color:var(--muted);">購入日: ${dateStr}</p>
+              <span class="expire-badge ${cls}">${label}</span>
+              ${u.referral_code ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(79,195,247,0.15); color:#4fc3f7; border:1px solid rgba(79,195,247,0.3);">📣 ${escapeHtml(u.referral_code)}</span>` : ''}
+            </div>
+            <div style="margin-top:8px; display:flex; gap:6px; align-items:center;">
+              <input type="text" placeholder="メモを追加..." value="${escapeHtml(u.memo || '')}"
+                style="flex:1; padding:6px 10px; background:#111; border:1px solid var(--border); border-radius:8px; color:var(--white); font-size:12px; outline:none; font-family:'Noto Sans JP',sans-serif;"
+                data-memo-id="${u.id}" onkeydown="if(event.key==='Enter') saveMemo('${u.id}', this.value)">
+              <button onclick="saveMemo('${u.id}', document.querySelector('[data-memo-id=\\'${u.id}\\']').value)"
+                style="padding:6px 12px; background:#1a2a1a; border:1px solid var(--accent); border-radius:8px; color:var(--accent); font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;">保存</button>
+            </div>
+          </div>
+          <button data-allowed-id="${u.id}" style="padding:6px 12px; border-radius:6px; border:1px solid var(--red); background:transparent; color:var(--red); cursor:pointer; font-size:11px; flex-shrink:0;">解除</button>
         </div>
-        <button data-allowed-id="${u.id}" style="padding:6px 14px; border-radius:6px; border:1px solid var(--red); background:transparent; color:var(--red); cursor:pointer; font-size:12px;">解除</button>
       </div>
     `;
   }).join('');
@@ -467,42 +534,51 @@ async function loadAllowedUsers() {
     allowedList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
     return;
   }
-
   allowedAllData = data || [];
   allowedPage = 1;
   renderAllowedPage();
 }
 
+// メモ保存
+window.saveMemo = async function(id, memo) {
+  const { error } = await supabase.from('allowed_users').update({ memo }).eq('id', id);
+  if (error) {
+    alert('メモの保存に失敗しました');
+  } else {
+    // 該当ユーザーのメモをローカルでも更新
+    const u = allowedAllData.find(u => u.id === id);
+    if (u) u.memo = memo;
+    // 保存ボタンを一時的に変化させてフィードバック
+    const btn = document.querySelector(`[data-memo-id="${id}"]`);
+    if (btn) {
+      const saveBtn = btn.nextElementSibling;
+      if (saveBtn) {
+        const orig = saveBtn.textContent;
+        saveBtn.textContent = '✓ 保存済';
+        setTimeout(() => { saveBtn.textContent = orig; }, 1500);
+      }
+    }
+  }
+};
+
 addAllowedBtn.addEventListener('click', async () => {
   const email = allowedEmailInput.value.trim().toLowerCase();
-  if (!email || !email.includes('@')) {
-    alert('有効なメールアドレスを入力してください');
-    return;
-  }
-
+  if (!email || !email.includes('@')) { alert('有効なメールアドレスを入力してください'); return; }
   addAllowedBtn.disabled = true;
   addAllowedBtn.textContent = '追加中...';
-
   const { error } = await supabase.from('allowed_users').insert({ email });
-
   if (error) {
-    if (error.code === '23505') {
-      alert('このメールアドレスは既に追加されています');
-    } else {
-      alert('追加に失敗しました: ' + error.message);
-    }
+    if (error.code === '23505') alert('このメールアドレスは既に追加されています');
+    else alert('追加に失敗しました: ' + error.message);
   } else {
     allowedEmailInput.value = '';
     loadAllowedUsers();
   }
-
   addAllowedBtn.disabled = false;
   addAllowedBtn.textContent = '追加';
 });
 
-allowedEmailInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') addAllowedBtn.click();
-});
+allowedEmailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addAllowedBtn.click(); });
 
 // ============================================================
 // ユーザー一覧
@@ -514,7 +590,6 @@ let usersPage = 1;
 
 function renderUserPage() {
   userList.innerHTML = '';
-
   if (!usersFiltered || usersFiltered.length === 0) {
     userList.innerHTML = '<p style="color:var(--muted);">該当するユーザーなし</p>';
     return;
@@ -525,7 +600,8 @@ function renderUserPage() {
   const start = (usersPage - 1) * USERS_PER_PAGE;
   const pageData = usersFiltered.slice(start, start + USERS_PER_PAGE);
 
-  pageData.forEach(({ user, name, info, isBlocked, hasConsent, isAllowed, referralCode }) => {
+  pageData.forEach(({ user, name, info, isBlocked, hasConsent, isAllowed, referralCode, allowedCreatedAt }) => {
+    const { label: expireLabel, cls: expireCls } = getExpireInfo(allowedCreatedAt);
     const div = document.createElement('div');
     div.style.cssText = 'background:#1e1e1e; border:1px solid var(--border); border-radius:12px; margin-bottom:8px; overflow:hidden;';
 
@@ -534,10 +610,11 @@ function renderUserPage() {
     header.innerHTML = `
       <div style="flex:1; min-width:0;">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
-          ${name ? `<p style="font-size:14px; color:var(--white); font-weight:700;">${name}</p>` : `<p style="font-size:12px; color:#666; font-style:italic;">名前未登録</p>`}
-          <p style="font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${user.email}</p>
+          ${name ? `<p style="font-size:14px; color:var(--white); font-weight:700;">${escapeHtml(name)}</p>` : `<p style="font-size:12px; color:#666; font-style:italic;">名前未登録</p>`}
+          <p style="font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(user.email)}</p>
           <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; ${isAllowed ? 'background:#1a2a1a; color:var(--accent); border:1px solid var(--accent);' : 'background:#2a1a1a; color:var(--red); border:1px solid var(--red);'}">${isAllowed ? '許可' : '未許可'}</span>
           <span style="font-size:10px; padding:2px 6px; border-radius:4px; font-weight:700; ${hasConsent ? 'background:#1a2a1a; color:var(--accent); border:1px solid var(--accent);' : 'background:#2a1a1a; color:var(--red); border:1px solid var(--red);'}">${hasConsent ? '同意済' : '未同意'}</span>
+          ${isAllowed ? `<span class="expire-badge ${expireCls}">${expireLabel}</span>` : ''}
           ${referralCode ? `<span style="font-size:10px; padding:2px 6px; border-radius:4px; background:rgba(79,195,247,0.15); color:#4fc3f7; border:1px solid rgba(79,195,247,0.3);">📣 ${escapeHtml(referralCode)}</span>` : ''}
         </div>
         <p style="font-size:12px; color:var(--muted);">今日: ${info.today}回 ／ 累計: ${info.total}回</p>
@@ -558,7 +635,6 @@ function renderUserPage() {
 
     header.addEventListener('mouseenter', () => { if (detailArea.style.display === 'none') header.style.background = '#252525'; });
     header.addEventListener('mouseleave', () => { header.style.background = ''; });
-
     header.addEventListener('click', async (e) => {
       if (e.target.tagName === 'BUTTON') return;
       const icon = header.querySelector('.toggle-icon');
@@ -585,9 +661,7 @@ function renderUserPage() {
   });
 
   const paginationDiv = document.createElement('div');
-  paginationDiv.id = 'users-pagination';
   paginationDiv.style.cssText = 'display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;';
-
   if (totalPages > 1) {
     paginationDiv.innerHTML = `
       <button id="users-prev" ${usersPage <= 1 ? 'disabled' : ''} style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:${usersPage <= 1 ? '#333' : 'var(--muted)'}; cursor:${usersPage <= 1 ? 'not-allowed' : 'pointer'}; font-size:12px;">← 前へ</button>
@@ -597,7 +671,6 @@ function renderUserPage() {
   } else {
     paginationDiv.innerHTML = `<span style="font-size:11px; color:var(--muted);">全${usersFiltered.length}件</span>`;
   }
-
   userList.appendChild(paginationDiv);
 
   const prevBtn = document.getElementById('users-prev');
@@ -609,20 +682,28 @@ function renderUserPage() {
 async function loadUsers() {
   const today = new Date().toISOString().split('T')[0];
 
-  const { data: allUsers } = await supabase.from('all_users').select('id, email, created_at');
-  const { data: profileData } = await supabase.from('user_profiles').select('user_id, name');
+  const [
+    { data: allUsers },
+    { data: profileData },
+    { data: usageData },
+    { data: blockData },
+    { data: consentData },
+    { data: allowedData }
+  ] = await Promise.all([
+    supabase.from('all_users').select('id, email, created_at'),
+    supabase.from('user_profiles').select('user_id, name'),
+    supabase.from('usage_limits').select('user_id, count, date'),
+    supabase.from('blocked_users').select('user_id'),
+    supabase.from('user_consents').select('user_id, consented_at'),
+    supabase.from('allowed_users').select('email, referral_code, created_at')
+  ]);
+
   const profileMap = {};
   (profileData || []).forEach(p => { profileMap[p.user_id] = p.name; });
-
-  const { data: usageData } = await supabase.from('usage_limits').select('user_id, count, date');
-  const { data: blockData } = await supabase.from('blocked_users').select('user_id');
-  const { data: consentData } = await supabase.from('user_consents').select('user_id, consented_at');
-  const { data: allowedData } = await supabase.from('allowed_users').select('email, referral_code');
-
   const blockedIds = new Set((blockData || []).map(b => b.user_id));
   const consentedIds = new Set((consentData || []).map(c => c.user_id));
   const allowedMap = {};
-  (allowedData || []).forEach(a => { allowedMap[a.email] = a.referral_code || ''; });
+  (allowedData || []).forEach(a => { allowedMap[a.email] = { referralCode: a.referral_code || '', createdAt: a.created_at }; });
 
   const userMap = {};
   (usageData || []).forEach(row => {
@@ -643,7 +724,8 @@ async function loadUsers() {
     isBlocked: blockedIds.has(user.id),
     hasConsent: consentedIds.has(user.id),
     isAllowed: user.email in allowedMap,
-    referralCode: allowedMap[user.email] || '',
+    referralCode: allowedMap[user.email]?.referralCode || '',
+    allowedCreatedAt: allowedMap[user.email]?.createdAt || null,
   }));
 
   usersFiltered = [...usersAllData];
@@ -651,7 +733,6 @@ async function loadUsers() {
   renderUserPage();
 
   const searchInput = document.getElementById('user-search');
-  searchInput.placeholder = '名前・メールアドレスで検索...';
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase();
     usersFiltered = usersAllData.filter(u =>
@@ -683,150 +764,12 @@ async function toggleBlock(e, userId) {
   btn.disabled = false;
 }
 
-const RECORD_PAGE_SIZE = 5;
-
-function renderAdminRecordList(recordId, records, shown) {
-  const listEl = document.getElementById(recordId + '-list');
-  const btnsEl = document.getElementById(recordId + '-btns');
-  if (!listEl || !btnsEl) return;
-
-  const displayRecords = records.slice(0, shown);
-  const hasMore = records.length > shown;
-  const hasLess = shown > RECORD_PAGE_SIZE;
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(records))));
-
-  listEl.innerHTML = displayRecords.map(r => `
-    <div style="display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border);">
-      <p style="font-size:12px; color:var(--muted);">${r.recorded_at ? r.recorded_at : '-'}</p>
-      <p style="font-size:12px; color:var(--white);">${r.weight != null ? r.weight + 'kg' : '-'} ／ ${r.body_fat != null ? r.body_fat + '%' : '-'}</p>
-    </div>
-  `).join('');
-
-  btnsEl.innerHTML = '';
-  if (hasMore) {
-    const btn = document.createElement('button');
-    btn.textContent = `過去${Math.min(RECORD_PAGE_SIZE, records.length - shown)}件を表示`;
-    btn.style.cssText = 'flex:1; padding:7px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer;';
-    btn.dataset.recordId = recordId;
-    btn.dataset.encoded = encoded;
-    btn.dataset.shown = shown + RECORD_PAGE_SIZE;
-    btn.dataset.action = 'more';
-    btnsEl.appendChild(btn);
-  }
-  if (hasLess) {
-    const btn = document.createElement('button');
-    btn.textContent = '非表示にする';
-    btn.style.cssText = 'flex:1; padding:7px; background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; font-size:12px; cursor:pointer;';
-    btn.dataset.recordId = recordId;
-    btn.dataset.encoded = encoded;
-    btn.dataset.shown = RECORD_PAGE_SIZE;
-    btn.dataset.action = 'less';
-    btnsEl.appendChild(btn);
-  }
-}
-
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  const action = btn.dataset.action;
-  if (action !== 'more' && action !== 'less') return;
-  const recordId = btn.dataset.recordId;
-  const shown = parseInt(btn.dataset.shown);
-  const records = JSON.parse(decodeURIComponent(escape(atob(btn.dataset.encoded))));
-  renderAdminRecordList(recordId, records, shown);
-});
-
-// ============================================================
-// タイプ診断結果一覧
-// ============================================================
-var ANALYSIS_PER_PAGE = 10;
-var analysisAllData = [];
-var analysisPage = 1;
-
-async function loadAnalysisResults() {
-  var analysisList = document.getElementById('analysis-list');
-  if (!analysisList) return;
-
-  var { data, error } = await supabase
-    .from('personal_analysis')
-    .select('id, user_id, type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    analysisList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
-    return;
-  }
-
-  var { data: allUsers } = await supabase.from('all_users').select('id, email');
-  var emailMap = {};
-  (allUsers || []).forEach(function(u) { emailMap[u.id] = u.email; });
-
-  analysisAllData = data || [];
-  analysisPage = 1;
-  renderAnalysisPage(analysisList, emailMap);
-}
-
-function renderAnalysisPage(listEl, emailMap) {
-  if (!analysisAllData || analysisAllData.length === 0) {
-    listEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">診断結果なし</p>';
-    return;
-  }
-
-  var totalPages = Math.ceil(analysisAllData.length / ANALYSIS_PER_PAGE);
-  var start = (analysisPage - 1) * ANALYSIS_PER_PAGE;
-  var pageData = analysisAllData.slice(start, start + ANALYSIS_PER_PAGE);
-
-  var html = '';
-  pageData.forEach(function(item) {
-    var date = new Date(item.created_at);
-    var dateStr = date.getFullYear() + '/' + String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0') + ' ' + String(date.getHours()).padStart(2,'0') + ':' + String(date.getMinutes()).padStart(2,'0');
-    var email = emailMap[item.user_id] || '不明';
-    var total = (item.nutrition_count || 0) + (item.training_count || 0) + (item.recovery_count || 0);
-    var nPct = total > 0 ? Math.round((item.nutrition_count || 0) / total * 100) : 0;
-    var tPct = total > 0 ? Math.round((item.training_count || 0) / total * 100) : 0;
-    var rPct = total > 0 ? Math.round((item.recovery_count || 0) / total * 100) : 0;
-    var itemId = 'analysis-' + item.id.slice(0, 8);
-
-    html += '<div style="background:#1e1e1e; border:1px solid var(--border); border-radius:12px; overflow:hidden;">';
-    html += '<div id="' + itemId + '-header" style="display:flex; justify-content:space-between; align-items:center; padding:14px 18px; cursor:pointer;" data-target="' + itemId + '-detail">';
-    html += '<div style="flex:1;"><div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;"><span style="font-size:13px; color:var(--white);">' + escapeHtml(email) + '</span><span style="font-size:12px; padding:2px 8px; background:#1a2a1a; border:1px solid var(--accent); border-radius:6px; color:var(--accent); font-weight:700;">' + escapeHtml(item.type_name || '未分類') + '</span></div><div style="display:flex; gap:12px; font-size:11px; color:var(--muted);"><span>' + dateStr + '</span><span>🔥 ' + (item.streak || 0) + '日連続</span><span>🥗' + nPct + '% 🏋️' + tPct + '% 😴' + rPct + '%</span></div></div>';
-    html += '<span style="font-size:12px; color:var(--muted);">▼</span></div>';
-    html += '<div id="' + itemId + '-detail" style="display:none; padding:0 18px 16px; border-top:1px solid var(--border);"><div style="padding-top:14px;"><div style="display:flex; gap:8px; margin-bottom:12px;"><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🥗 栄養</span><br><strong style="color:#4ade80;">' + (item.nutrition_count || 0) + '回</strong></div><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">🏋️ トレ</span><br><strong style="color:#f59e0b;">' + (item.training_count || 0) + '回</strong></div><div style="flex:1; background:#111; border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;"><span style="font-size:12px; color:var(--muted);">😴 回復</span><br><strong style="color:#818cf8;">' + (item.recovery_count || 0) + '回</strong></div></div>';
-    html += '<div style="background:#111; border:1px solid var(--border); border-radius:10px; padding:14px; font-size:13px; color:var(--white); line-height:1.8; white-space:pre-wrap;">' + escapeHtml(item.full_result || '結果なし') + '</div></div></div></div>';
-  });
-
-  if (totalPages > 1) {
-    html += '<div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;"><button id="analysis-prev" ' + (analysisPage <= 1 ? 'disabled' : '') + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage <= 1 ? '#333' : 'var(--muted)') + '; cursor:' + (analysisPage <= 1 ? 'not-allowed' : 'pointer') + '; font-size:12px;">← 前へ</button><span style="font-size:12px; color:var(--muted);">' + analysisPage + ' / ' + totalPages + '（全' + analysisAllData.length + '件）</span><button id="analysis-next" ' + (analysisPage >= totalPages ? 'disabled' : '') + ' style="padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:transparent; color:' + (analysisPage >= totalPages ? '#333' : 'var(--muted)') + '; cursor:' + (analysisPage >= totalPages ? 'not-allowed' : 'pointer') + '; font-size:12px;">次へ →</button></div>';
-  } else {
-    html += '<p style="font-size:11px; color:var(--muted); text-align:center; margin-top:8px;">全' + analysisAllData.length + '件</p>';
-  }
-
-  listEl.innerHTML = html;
-
-  pageData.forEach(function(item) {
-    var itemId = 'analysis-' + item.id.slice(0, 8);
-    var header = document.getElementById(itemId + '-header');
-    if (header) {
-      header.addEventListener('click', function() {
-        var detail = document.getElementById(itemId + '-detail');
-        if (detail.style.display === 'none') { detail.style.display = 'block'; } else { detail.style.display = 'none'; }
-      });
-    }
-  });
-
-  var prevBtn = document.getElementById('analysis-prev');
-  var nextBtn = document.getElementById('analysis-next');
-  if (prevBtn) prevBtn.addEventListener('click', function() { analysisPage--; renderAnalysisPage(listEl, emailMap); });
-  if (nextBtn) nextBtn.addEventListener('click', function() { analysisPage++; renderAnalysisPage(listEl, emailMap); });
-}
-
 // ============================================================
 // 紹介コード別実績
 // ============================================================
 async function loadReferralStats() {
   const referralList = document.getElementById('referral-list');
   if (!referralList) return;
-
   referralList.innerHTML = '<p style="color:var(--muted); font-size:13px;">読み込み中...</p>';
 
   try {
@@ -842,7 +785,6 @@ async function loadReferralStats() {
       return;
     }
 
-    // コード別に集計
     const codeMap = {};
     data.forEach(u => {
       const code = u.referral_code || '不明';
@@ -853,23 +795,16 @@ async function loadReferralStats() {
     let html = '';
     Object.entries(codeMap).sort((a, b) => b[1].length - a[1].length).forEach(([code, users]) => {
       const revenue = users.length * 99800;
-      const commission20 = Math.floor(revenue * 0.20);
-      const commission25 = Math.floor(revenue * 0.25);
-      const commission30 = Math.floor(revenue * 0.30);
-      const commission35 = Math.floor(revenue * 0.35);
       html += `
         <div style="background:#1e1e1e; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden;">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid var(--border);">
             <div>
               <p style="font-size:18px; font-weight:700; color:var(--accent); letter-spacing:0.15em; margin-bottom:4px;">${escapeHtml(code)}</p>
-              <p style="font-size:12px; color:var(--muted);">${users.length}件の購入 ／ 売上合計 ¥${revenue.toLocaleString()}</p>
+              <p style="font-size:12px; color:var(--muted);">${users.length}件 ／ 売上合計 ¥${revenue.toLocaleString()}</p>
             </div>
             <div style="text-align:right; flex-shrink:0; margin-left:16px;">
               <p style="font-size:11px; color:var(--muted); margin-bottom:4px;">報酬目安</p>
-              <p style="font-size:12px; color:#ccc;">20%: <strong style="color:var(--accent);">¥${commission20.toLocaleString()}</strong></p>
-              <p style="font-size:12px; color:#ccc;">25%: <strong style="color:var(--accent);">¥${commission25.toLocaleString()}</strong></p>
-              <p style="font-size:12px; color:#ccc;">30%: <strong style="color:var(--accent);">¥${commission30.toLocaleString()}</strong></p>
-              <p style="font-size:12px; color:#ccc;">35%: <strong style="color:var(--accent);">¥${commission35.toLocaleString()}</strong></p>
+              ${[20,25,30,35].map(pct => `<p style="font-size:12px; color:#ccc;">${pct}%: <strong style="color:var(--accent);">¥${Math.floor(revenue * pct / 100).toLocaleString()}</strong></p>`).join('')}
             </div>
           </div>
           <div style="padding:10px 18px;">
@@ -882,10 +817,8 @@ async function loadReferralStats() {
         </div>
       `;
     });
-
     referralList.innerHTML = html;
   } catch (e) {
-    console.error('referral stats error:', e);
     referralList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
   }
 }
