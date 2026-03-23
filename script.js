@@ -661,10 +661,14 @@ async function showQuestionStep(questions) {
         target.c = Math.max(5, Math.round(target.c * (target.cal / (target.cal + sakeCal))));
       }
 
-      // ── 2食時の科学的補正（消化能力・血糖安定・現実的食事量） ──
+      // ── 脂質最低ライン（全食数共通・体重ベース）──
+      // 科学的最低ライン: 0.6g/kg/day をその日の食数で按分
+      const fatMinDaily = weight * 0.6;
+      const fatMinMeal = Math.round(fatMinDaily / (totalMeals || 3));
+      if (target.f < fatMinMeal) target.f = fatMinMeal;
+
+      // ── 2食時の追加補正（消化能力・血糖安定・現実的食事量） ──
       if (totalMeals === 2) {
-        // 脂質最低ライン: ホルモン維持・停滞防止のため1食18g以上を確保
-        if (target.f < 18) target.f = 18;
         // 炭水化物上限: 体重×1.5gを上限に血糖スパイクを抑制
         const maxC = Math.round(weight * 1.5);
         if (target.c > maxC) target.c = maxC;
