@@ -418,6 +418,20 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       if (subWeight.calPenalty && meal.cal > targetCal * 1.1) score += subWeight.calPenalty;
     }
 
+    // ── 最低必要量チェック（身体条件から逆算された必要量を下回る候補を抑制） ──
+    // ① カロリー成立ライン: targetCalの60%未満は1食として不足
+    if (targetCal > 0 && meal.cal / targetCal < 0.60) {
+      score += 25;
+    }
+    // ② タンパク質成立ライン: targetPの50%未満は筋肉維持・代謝維持に不足
+    if (targetP > 0 && meal.p / targetP < 0.50) {
+      score += 20;
+    }
+    // ③ かなり空腹時の成立ライン強化: 70%未満も不足と判断
+    if (hunger === 'かなり空腹' && targetCal > 0 && meal.cal / targetCal < 0.70) {
+      score += 15;
+    }
+
     return { meal, score };
   });
 
