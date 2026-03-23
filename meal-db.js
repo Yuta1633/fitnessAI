@@ -361,12 +361,20 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       Math.abs(mealFPct - targetFPct) * (2 - proteinWeight) * 0.5 +
       Math.abs(mealCPct - targetCPct) * (2 - proteinWeight) * 0.5;
 
-    // ── カロリー乖離ペナルティ（最重要） ──
+    // ── カロリー乖離ペナルティ（空腹度で許容幅を調整） ──
+    // 空腹度 → 許容上限/下限の倍率（targetCalは変えず選択範囲だけ変える）
+    const hungerTolerance = {
+      'かなり空腹':           { upper: 1.15, lower: 0.85 },  // +15% / -15%
+      '少し空腹':             { upper: 1.05, lower: 0.90 },  // +5%  / -10%
+      'そこまで空腹じゃない': { upper: 0.95, lower: 0.80 },  // -5%  / -20%
+      'なんとなく食べたい':   { upper: 0.90, lower: 0.75 }   // -10% / -25%
+    };
+    const tol = hungerTolerance[hunger] || { upper: 1.0, lower: 0.85 };
     const calRatio = meal.cal / targetCal;
-    if (calRatio < 0.5)      score += 25;
-    else if (calRatio < 0.7) score += 12;
-    else if (calRatio > 1.5) score += 15;
-    else if (calRatio > 1.3) score += 8;
+    if (calRatio < tol.lower * 0.6) score += 25;       // 極端に少ない
+    else if (calRatio < tol.lower)   score += 12;       // 許容下限を下回る
+    else if (calRatio > tol.upper * 1.3) score += 15;   // 極端に多い
+    else if (calRatio > tol.upper)   score += 8;         // 許容上限を超える
 
     // ── 時間帯ペナルティ ──
     if (timeOfDay === '朝') {

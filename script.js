@@ -903,8 +903,8 @@ async function showQuestionStep(questions) {
 
       // 食材量をスケーリングする関数
       function scaleMeal(m, targetCal) {
-        // スケール上限: 2.0倍まで（食材量が非現実的にならないよう制限）
-        const ratio = Math.min(2.0, Math.max(0.5, targetCal / m.cal));
+        // スケール上限: 1.4倍まで（食材量が非現実的にならないよう制限）
+        const ratio = Math.min(1.4, Math.max(0.5, targetCal / m.cal));
         const scaledIngredients = m.ingredients.map(ing => {
           return ing
             .replace(/([\d.]+)\s*(g|ml)/g, (_, num, unit) => {
