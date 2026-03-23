@@ -567,6 +567,37 @@ const TIME_DISTRIBUTION = {
   }
 };
 
+// ── 食事回数×何食目 別の1食あたり配分率 ──
+// totalMeals + mealIndex が指定された場合に TIME_DISTRIBUTION の代わりに使用
+const MEAL_DISTRIBUTION = {
+  2: {
+    1: { cal: 0.55, p: 0.50, f: 0.55, c: 0.58 },
+    2: { cal: 0.45, p: 0.50, f: 0.45, c: 0.42 },
+    '間食': { cal: 0.08, p: 0.08, f: 0.08, c: 0.08 }
+  },
+  3: {
+    1: { cal: 0.28, p: 0.28, f: 0.26, c: 0.30 },
+    2: { cal: 0.38, p: 0.35, f: 0.38, c: 0.40 },
+    3: { cal: 0.34, p: 0.37, f: 0.36, c: 0.30 },
+    '間食': { cal: 0.05, p: 0.05, f: 0.05, c: 0.05 }
+  },
+  4: {
+    1: { cal: 0.25, p: 0.25, f: 0.25, c: 0.28 },
+    2: { cal: 0.30, p: 0.28, f: 0.30, c: 0.32 },
+    3: { cal: 0.25, p: 0.27, f: 0.25, c: 0.22 },
+    4: { cal: 0.20, p: 0.20, f: 0.20, c: 0.18 },
+    '間食': { cal: 0.08, p: 0.08, f: 0.08, c: 0.08 }
+  },
+  5: {
+    1: { cal: 0.22, p: 0.22, f: 0.22, c: 0.24 },
+    2: { cal: 0.23, p: 0.22, f: 0.23, c: 0.24 },
+    3: { cal: 0.22, p: 0.22, f: 0.22, c: 0.22 },
+    4: { cal: 0.18, p: 0.18, f: 0.18, c: 0.17 },
+    5: { cal: 0.15, p: 0.16, f: 0.15, c: 0.13 },
+    '間食': { cal: 0.06, p: 0.06, f: 0.06, c: 0.06 }
+  }
+};
+
 // 空腹感は食事ターゲットへの直接補正ではなく、
 // selectMealsのスコアリングで反映する（過食・空腹感を食材選択で調整）
 const HUNGER_ADJUSTMENT = {
@@ -590,11 +621,13 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, hunger } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
-  const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
-  const timeDist = goalDist[timeOfDay] || goalDist['昼'];
+  // 食事回数+何食目 → MEAL_DISTRIBUTION、なければ従来の TIME_DISTRIBUTION
+  const timeDist = (totalMeals && mealIndex !== null && mealIndex !== undefined)
+    ? (MEAL_DISTRIBUTION[totalMeals]?.[mealIndex] || MEAL_DISTRIBUTION[3][2])
+    : ((TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'])[timeOfDay] || (TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'])['昼']);
 
   // 目標体重との差によるカロリー調整（1kgあたり±30kcal、最大±300kcal/日）
   let gapAdjust = 0;
@@ -666,6 +699,7 @@ window.NutritionDB = {
   calculatePFCRange,
   createPFCBadgeHTML,
   TIME_DISTRIBUTION,
+  MEAL_DISTRIBUTION,
   HUNGER_ADJUSTMENT,
   GOAL_COEFFICIENTS,
   COOKING_METHODS: {}

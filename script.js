@@ -393,25 +393,39 @@ logoutBtn.addEventListener('click', async () => {
 const QUESTIONS = {
   nutrition: [
     {
-      label: '① 今の時間帯は？',
+      label: '① 1日何食ですか？',
+      options: ['2食', '3食', '4食', '5食']
+    },
+    {
+      label: '② 今は何食目ですか？',
+      dynamicOptions: (answers) => {
+        const n = parseInt(answers[0]);  // '3食' → 3
+        const opts = [];
+        for (let i = 1; i <= n; i++) opts.push(`${i}食目`);
+        opts.push('間食');
+        return opts;
+      }
+    },
+    {
+      label: '③ 今の時間帯は？',
       options: ['朝', '昼', '夕方', '夜', '間食']
     },
     {
-      label: '② 今日の食事の場所は？',
+      label: '④ 今日の食事の場所は？',
       options: [
         '家で食べる', '外食にしたい', 'コンビニ',
         'スーパー・惣菜', 'お弁当を作る', 'デリバリー'
       ]
     },
     {
-      label: '③ 食べ方・気分は？',
+      label: '⑤ 食べ方・気分は？',
       options: [
         '特になし', '揚げ物を食べたい', 'お酒を飲みたい',
         '間食したい', '食べる時間があまりない', '節約したい'
       ]
     },
     {
-      label: '③-2 何を飲みますか？（お酒を飲みたい場合のみ）',
+      label: '⑤-2 何を飲みますか？（お酒を飲みたい場合のみ）',
       options: [
         'ビール（350ml）', 'ハイボール・チューハイ（350ml）',
         '日本酒（180ml・1合）', 'ワイン（200ml）',
@@ -420,7 +434,7 @@ const QUESTIONS = {
       conditionalOn: 'お酒を飲みたい'
     },
     {
-      label: '④ プロテインは飲んでいますか？',
+      label: '⑥ プロテインは飲んでいますか？',
       options: [
         '飲んでいない',
         '飲んでいる（1日1回）',
@@ -429,7 +443,7 @@ const QUESTIONS = {
       ]
     },
     {
-      label: '⑤ 今の空腹感は？',
+      label: '⑦ 今の空腹感は？',
       options: [
         'かなり空腹', '少し空腹', 'そこまで空腹じゃない', 'なんとなく食べたい'
       ]
@@ -529,16 +543,22 @@ async function showQuestionStep(questions) {
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
+      // 食事回数・何食目を取得
+      const totalMeals = questionAnswers[0] ? parseInt(questionAnswers[0]) : null;  // '3食' → 3
+      const mealIndexRaw = questionAnswers[1];  // '2食目' or '間食' or undefined
+      const mealIndex = mealIndexRaw === '間食' ? '間食'
+        : mealIndexRaw ? parseInt(mealIndexRaw) : null;  // 2 or '間食' or null
+
       // moodがDBのtimeSlotと合わない場合に強制変換
-      const _rawTime = questionAnswers[0];
-      const _mood2 = questionAnswers[2];
+      const _rawTime = questionAnswers[2];
+      const _mood2 = questionAnswers[4];
       const timeOfDay = _mood2 === '間食したい' ? '間食'
         : _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime === '間食' && _mood2 !== '間食したい' ? '昼'
         : _rawTime === '夕方' && _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime;
-      const mood = questionAnswers[2];
-      let location = questionAnswers[1];
+      const mood = questionAnswers[4];
+      let location = questionAnswers[3];
 
       // ── location変換ロジック（優先度順に適用） ──
       // 1. 間食時間帯×時短×お弁当 → コンビニ（最優先・順序重要）
@@ -565,10 +585,10 @@ async function showQuestionStep(questions) {
       else if (location === 'デリバリー' && mood === '間食したい') {
         location = 'コンビニ';
       }
-      // お酒設問はconditional（インデックス3）: nullの場合はスキップされた
-      const sakeChoice = questionAnswers[3] !== null ? questionAnswers[3] : null;
-      const proteinSupp = questionAnswers[4];
-      const hunger = questionAnswers[5];
+      // お酒設問はconditional（インデックス5）: nullの場合はスキップされた
+      const sakeChoice = questionAnswers[5] !== null ? questionAnswers[5] : null;
+      const proteinSupp = questionAnswers[6];
+      const hunger = questionAnswers[7];
 
       // お酒のカロリーと種類別調整
       const SAKE_INFO = {
@@ -614,6 +634,8 @@ async function showQuestionStep(questions) {
         currentBF,
         targetBF: null,
         goalWeight,
+        totalMeals,
+        mealIndex,
         timeOfDay,
         hunger
       });
@@ -1019,7 +1041,10 @@ async function showQuestionStep(questions) {
   const btnGroup = document.createElement('div');
   btnGroup.className = 'option-buttons';
 
-  q.options.forEach((opt, i) => {
+  // dynamicOptions: 前の回答に応じて選択肢を動的生成
+  const options = q.dynamicOptions ? q.dynamicOptions(questionAnswers) : q.options;
+
+  options.forEach((opt, i) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
     btn.textContent = `${i + 1}. ${opt}`;
