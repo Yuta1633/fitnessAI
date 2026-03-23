@@ -558,6 +558,11 @@ async function showQuestionStep(questions) {
     // nutrition debugログ・API呼び出しでも参照するためスコープ外で宣言
     let totalMeals = null;
     let mealIndex = null;
+    let timeOfDay = null;
+    let location = null;
+    let mood = null;
+    let proteinSupp = null;
+    let hunger = null;
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
@@ -570,13 +575,13 @@ async function showQuestionStep(questions) {
       // moodがDBのtimeSlotと合わない場合に強制変換
       const _rawTime = questionAnswers[2];
       const _mood2 = questionAnswers[4];
-      const timeOfDay = _mood2 === '間食したい' ? '間食'
+      timeOfDay = _mood2 === '間食したい' ? '間食'
         : _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime === '間食' && _mood2 !== '間食したい' ? '昼'
         : _rawTime === '夕方' && _mood2 === 'お酒を飲みたい' ? '夜'
         : _rawTime;
-      const mood = questionAnswers[4];
-      let location = questionAnswers[3];
+      mood = questionAnswers[4];
+      location = questionAnswers[3];
 
       // ── location変換ロジック（優先度順に適用） ──
       // 1. 間食時間帯×時短×お弁当 → コンビニ（最優先・順序重要）
@@ -605,8 +610,8 @@ async function showQuestionStep(questions) {
       }
       // お酒設問はconditional（インデックス5）: nullの場合はスキップされた
       const sakeChoice = questionAnswers[5] !== null ? questionAnswers[5] : null;
-      const proteinSupp = questionAnswers[6];
-      const hunger = questionAnswers[7];
+      proteinSupp = questionAnswers[6];
+      hunger = questionAnswers[7];
 
       // お酒のカロリーと種類別調整
       const SAKE_INFO = {
