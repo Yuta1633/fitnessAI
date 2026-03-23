@@ -652,7 +652,7 @@ async function showQuestionStep(questions) {
       });
 
       // プロテイン分を1食あたりに按分して差し引く
-      const proteinPerMeal = Math.round(proteinFromSupp / 3);
+      const proteinPerMeal = Math.round(proteinFromSupp / (totalMeals || 3));
       const adjustedP = Math.max(10, target.p - proteinPerMeal);
 
       // お酒カロリーを食事ターゲットから差し引く
