@@ -512,9 +512,9 @@ function calculateItemsPFC(items) {
 // pPerKg:   1日のタンパク質目標 / kg
 // fRatio:   脂質が1日カロリーに占める割合
 const GOAL_COEFFICIENTS = {
-  reduction: { calPerKg: 28, pPerKg: 1.8, fRatio: 0.22 },  // 減量（適度な赤字）
-  muscle:    { calPerKg: 38, pPerKg: 2.0, fRatio: 0.27 },  // 増量（適度な余剰）
-  health:    { calPerKg: 33, pPerKg: 1.5, fRatio: 0.27 }   // 維持・体力・不調
+  reduction: { calPerKg: 28, pPerKg: 2.0, fRatio: 0.20 },  // 減量（P高め・F低め）
+  muscle:    { calPerKg: 38, pPerKg: 2.2, fRatio: 0.25 },  // 増量（P高め・C確保）
+  health:    { calPerKg: 33, pPerKg: 1.7, fRatio: 0.25 }   // 維持・体力・不調
 };
 
 // ── 目的別・時間帯別の1食あたり配分率 ──
