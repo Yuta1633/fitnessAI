@@ -679,7 +679,16 @@ function calculateMealTarget(params) {
     else if (currentBF <= 15) fRatio = Math.min(0.30, coeff.fRatio + 0.02);
   }
 
-  const dailyF   = dailyCal * fRatio / 9;
+  let dailyF   = dailyCal * fRatio / 9;
+
+  // ── 脂質の安全下限（ホルモン合成・細胞膜維持に必要な最低量） ──
+  // 体重×0.6g または 総カロリーの20%のうち大きい方を最低ラインとする
+  const minFat = Math.max(weight * 0.6, dailyCal * 0.20 / 9);
+  if (dailyF < minFat) {
+    dailyF = minFat;
+  }
+
+  // 脂質補正後の残りカロリーから炭水化物を算出（cal・Pは維持）
   const dailyC   = Math.max(0, (dailyCal - dailyP * 4 - dailyF * 9) / 4);
 
   const mealCal = dailyCal * timeDist.cal;
