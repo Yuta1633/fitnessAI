@@ -433,6 +433,11 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
     if (targetP > 0 && meal.p / targetP < 0.50) {
       score += 20;
     }
+    // ②-b タンパク質不足の連続ペナルティ: 不足gに比例してスコア悪化
+    if (targetP > 0 && meal.p < targetP) {
+      const pShortage = targetP - meal.p;
+      score += pShortage * 0.5;
+    }
     // ③ かなり空腹時の成立ライン強化: 70%未満も不足と判断
     if (hunger === 'かなり空腹' && targetCal > 0 && meal.cal / targetCal < 0.70) {
       score += 15;
