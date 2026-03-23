@@ -249,6 +249,37 @@ const MEAL_DB = [
   { id: 'g4b04', name: '煮物弁当（消化優先）', ingredients: ['大根 80g（煮る）', 'にんじん 50g', '鶏ささみ 100g', '白米 120g', '梅干し 1個'], cal: 340, p: 26, f: 4, c: 50, goals: ['4'], locations: ['お弁当を作る'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
   { id: 'g5b04', name: 'タンパク質引き締め弁当', ingredients: ['鶏ささみ 160g（蒸す）', 'ブロッコリー 80g', 'ゆで卵 1個', '白米 90g', 'ミニトマト 4個'], cal: 340, p: 38, f: 6, c: 34, goals: ['5'], locations: ['お弁当を作る'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
 
+  // ── goal 1 脂質適正メニュー追加（f: 10〜18g帯） ──
+  // 家で食べる
+  { id: 'g1h07', name: '鮭の塩焼き＋卵＋白米＋味噌汁', ingredients: ['鮭 1切れ', '卵 1個（ゆで）', '白米 120g', '味噌汁 1杯'], cal: 430, p: 30, f: 12, c: 50, goals: ['1'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g1h08', name: '納豆卵かけご飯＋味噌汁', ingredients: ['納豆 1パック', '卵 1個', '白米 120g', '味噌汁 1杯'], cal: 400, p: 22, f: 13, c: 48, goals: ['1'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g1h09', name: 'サバの塩焼き＋白米＋ほうれん草', ingredients: ['サバ 1切れ', '白米 120g', 'ほうれん草 80g（茹でる）'], cal: 440, p: 28, f: 14, c: 46, goals: ['1'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g1h10', name: '鶏胸肉と卵の炒め＋白米', ingredients: ['鶏胸肉 120g', '卵 2個', '白米 120g', 'ブロッコリー 60g'], cal: 450, p: 38, f: 14, c: 40, goals: ['1'], locations: ['家で食べる'], mood: 'any', timeSlot: ['昼', '夜'] },
+  { id: 'g1h11', name: '蒸し鶏サラダ（オリーブオイル）＋白米', ingredients: ['鶏胸肉 130g（蒸す）', 'レタス 80g', 'トマト 50g', 'オリーブオイル 小さじ1', '白米 120g'], cal: 410, p: 32, f: 10, c: 44, goals: ['1'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  // コンビニ
+  { id: 'g1c06', name: 'サバ缶＋おにぎり＋サラダ', ingredients: ['サバ缶水煮 1缶', 'おにぎり 1個', 'サラダ 1袋'], cal: 400, p: 28, f: 12, c: 42, goals: ['1'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g1c07', name: 'ゆで卵2個＋ナッツ小袋＋おにぎり', ingredients: ['ゆで卵 2個', 'ミックスナッツ 25g', 'おにぎり 1個'], cal: 430, p: 22, f: 18, c: 40, goals: ['1'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g1c08', name: '豆腐バー＋ゆで卵＋鮭おにぎり', ingredients: ['豆腐バー 1個', 'ゆで卵 1個', 'おにぎり 1個（鮭）'], cal: 370, p: 26, f: 10, c: 40, goals: ['1'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  // 外食
+  { id: 'g1r06', name: 'サバの味噌煮定食（ライス少なめ）', ingredients: ['サバ味噌煮 1切れ', '白米 100g', '味噌汁 1杯', '小鉢'], cal: 440, p: 26, f: 16, c: 46, goals: ['1'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['昼', '夕方', '夜'] },
+  { id: 'g1r07', name: '鮭定食＋卵焼き', ingredients: ['鮭 1切れ', '卵焼き 1個', '白米 100g', '味噌汁 1杯'], cal: 430, p: 30, f: 14, c: 44, goals: ['1'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g1r08', name: '豚しゃぶ定食（ライス少なめ）', ingredients: ['豚もも 120g（しゃぶしゃぶ）', '豆腐 100g', '白米 100g', 'ポン酢'], cal: 400, p: 28, f: 12, c: 42, goals: ['1'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['昼', '夕方', '夜'] },
+
+  // ── goal 5 脂質適正メニュー追加（f: 10〜18g帯） ──
+  // 家で食べる
+  { id: 'g5h07', name: '鮭＋卵＋白米少なめ＋味噌汁', ingredients: ['鮭 1切れ', '卵 1個（ゆで）', '白米 100g', '味噌汁 1杯'], cal: 400, p: 30, f: 12, c: 42, goals: ['5'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g5h08', name: 'サバ缶と豆腐の和定食', ingredients: ['サバ缶水煮 1缶', '豆腐 100g', '白米 100g', 'ほうれん草 60g'], cal: 420, p: 32, f: 14, c: 38, goals: ['5'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g5h09', name: '納豆と卵の和定食', ingredients: ['納豆 1パック', '卵 1個', '白米 100g', '味噌汁 1杯', 'ほうれん草 60g'], cal: 390, p: 22, f: 13, c: 42, goals: ['5'], locations: ['家で食べる'], mood: 'any', timeSlot: ['朝', '昼', '夜'] },
+  { id: 'g5h10', name: '鶏むね肉と卵のオリーブ炒め＋玄米', ingredients: ['鶏胸肉 120g', '卵 1個', 'オリーブオイル 小さじ1', '玄米 100g', 'ブロッコリー 80g'], cal: 420, p: 36, f: 12, c: 38, goals: ['5'], locations: ['家で食べる'], mood: 'any', timeSlot: ['昼', '夜'] },
+  // コンビニ
+  { id: 'g5c06', name: 'サバ缶＋おにぎり＋ゆで卵', ingredients: ['サバ缶水煮 1缶', 'おにぎり 1個', 'ゆで卵 1個'], cal: 400, p: 32, f: 13, c: 38, goals: ['5'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g5c07', name: 'ゆで卵2個＋ナッツ小袋＋豆乳', ingredients: ['ゆで卵 2個', 'ミックスナッツ 20g', '豆乳 200ml'], cal: 370, p: 24, f: 18, c: 14, goals: ['5'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g5c08', name: '豆腐バー＋チーズ＋鮭おにぎり', ingredients: ['豆腐バー 1個', 'チーズ 1枚', 'おにぎり 1個（鮭）'], cal: 380, p: 26, f: 12, c: 40, goals: ['5'], locations: ['コンビニ'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  // 外食
+  { id: 'g5r06', name: 'サバの味噌煮定食（ライス少なめ）', ingredients: ['サバ味噌煮 1切れ', '白米 80g', '味噌汁 1杯', '小鉢'], cal: 410, p: 26, f: 16, c: 38, goals: ['5'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['昼', '夕方', '夜'] },
+  { id: 'g5r07', name: '鮭と卵焼き定食（ライス少なめ）', ingredients: ['鮭 1切れ', '卵焼き 1個', '白米 80g', '味噌汁 1杯'], cal: 400, p: 30, f: 14, c: 36, goals: ['5'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['朝', '昼', '夕方', '夜'] },
+  { id: 'g5r08', name: '豚しゃぶサラダ定食（ライス少なめ）', ingredients: ['豚もも 100g（しゃぶしゃぶ）', 'レタス 100g', '豆腐 80g', '白米 80g', 'ポン酢'], cal: 380, p: 26, f: 12, c: 36, goals: ['5'], locations: ['外食にしたい'], mood: 'any', timeSlot: ['昼', '夕方', '夜'] },
+
   // 夜向け時短フォールバック用（any mood、夜も含む）
   { id: 'g1t_night01', name: 'サラダチキン＋白米＋味噌汁', ingredients: ['サラダチキン 1個', '白米 120g', '味噌汁 1杯'], cal: 415, p: 30, f: 4, c: 58, goals: ['1'], locations: ['家で食べる', 'コンビニ', 'スーパー・惣菜', 'デリバリー'], mood: 'any', timeSlot: ['夜'] },
   { id: 'g2t_night01', name: 'ゆで卵3個＋白米大盛＋味噌汁', ingredients: ['ゆで卵 3個', '白米 200g', '味噌汁 1杯'], cal: 610, p: 32, f: 20, c: 74, goals: ['2'], locations: ['家で食べる', 'コンビニ', 'スーパー・惣菜'], mood: 'any', timeSlot: ['夜'] },
