@@ -665,8 +665,9 @@ async function showQuestionStep(questions) {
       if (totalMeals === 2) {
         // 脂質最低ライン: ホルモン維持・停滞防止のため1食18g以上を確保
         if (target.f < 18) target.f = 18;
-        // 炭水化物上限: 1食で血糖スパイクを起こさない範囲に制限
-        if (target.c > 110) target.c = 110;
+        // 炭水化物上限: 体重×1.5gを上限に血糖スパイクを抑制
+        const maxC = Math.round(weight * 1.5);
+        if (target.c > maxC) target.c = maxC;
       }
 
       // ── 被り防止: LocalStorageから表示済みIDを取得 ──
