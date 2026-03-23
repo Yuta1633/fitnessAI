@@ -661,6 +661,12 @@ async function showQuestionStep(questions) {
         target.c = Math.max(5, Math.round(target.c * (target.cal / (target.cal + sakeCal))));
       }
 
+      // ── タンパク質最低ライン（全食数共通・体重ベース）──
+      // 科学的最低ライン: 1.8g/kg/day をその日の食数で按分
+      const proteinMinDaily = weight * 1.8;
+      const proteinMinMeal = Math.round(proteinMinDaily / (totalMeals || 3));
+      if (target.p < proteinMinMeal) target.p = proteinMinMeal;
+
       // ── 脂質最低ライン（全食数共通・体重ベース）──
       // 科学的最低ライン: 0.6g/kg/day をその日の食数で按分
       const fatMinDaily = weight * 0.6;
