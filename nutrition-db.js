@@ -607,6 +607,27 @@ const HUNGER_ADJUSTMENT = {
   'なんとなく食べたい':   1.0
 };
 
+// ── 間食を含む場合に通常食の配分を再正規化する ──
+// 間食分を通常食から按分で差し引き、合計が1.0になるようにする
+// snackDist: 間食の配分率オブジェクト { cal, p, f, c }
+// mealDist:  選択された通常食の配分率オブジェクト { cal, p, f, c }
+// totalNormalDists: その食数の通常食すべての配分率の配列
+function normalizeForSnack(mealDist, snackDist, totalNormalDists) {
+  if (!snackDist) return mealDist;
+  // 通常食合計を計算
+  const sum = { cal: 0, p: 0, f: 0, c: 0 };
+  for (const d of totalNormalDists) {
+    sum.cal += d.cal; sum.p += d.p; sum.f += d.f; sum.c += d.c;
+  }
+  // 通常食 + 間食で合計1.0になるよう、通常食側を縮小
+  return {
+    cal: mealDist.cal * (1 - snackDist.cal) / sum.cal,
+    p:   mealDist.p   * (1 - snackDist.p)   / sum.p,
+    f:   mealDist.f   * (1 - snackDist.f)   / sum.f,
+    c:   mealDist.c   * (1 - snackDist.c)   / sum.c
+  };
+}
+
 function getGoalCoefficients(goalNum, currentBF, targetBF) {
   switch (goalNum) {
     case '1': return GOAL_COEFFICIENTS.reduction;
@@ -625,9 +646,26 @@ function calculateMealTarget(params) {
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
   // 食事回数+何食目 → MEAL_DISTRIBUTION、なければ従来の TIME_DISTRIBUTION
-  const timeDist = (totalMeals && mealIndex !== null && mealIndex !== undefined)
-    ? (MEAL_DISTRIBUTION[totalMeals]?.[mealIndex] || MEAL_DISTRIBUTION[3][2])
-    : ((TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'])[timeOfDay] || (TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'])['昼']);
+  let timeDist;
+  if (totalMeals && mealIndex !== null && mealIndex !== undefined) {
+    const mealGroup = MEAL_DISTRIBUTION[totalMeals] || MEAL_DISTRIBUTION[3];
+    if (mealIndex === '間食') {
+      // 間食はそのまま返す
+      timeDist = mealGroup['間食'] || MEAL_DISTRIBUTION[3]['間食'];
+    } else {
+      // 通常食: 間食ありの場合は按分で縮小して合計1.0を維持
+      const rawDist = mealGroup[mealIndex] || mealGroup[1];
+      const snackDist = mealGroup['間食'];
+      // 通常食の配分率一覧を収集（数値キーのみ）
+      const normalDists = Object.keys(mealGroup)
+        .filter(k => k !== '間食')
+        .map(k => mealGroup[k]);
+      timeDist = normalizeForSnack(rawDist, snackDist, normalDists);
+    }
+  } else {
+    const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
+    timeDist = goalDist[timeOfDay] || goalDist['昼'];
+  }
 
   // 目標体重との差によるカロリー調整（1kgあたり±30kcal、最大±300kcal/日）
   let gapAdjust = 0;
