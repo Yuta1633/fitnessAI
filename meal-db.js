@@ -358,8 +358,16 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
 
     let score =
       Math.abs(mealPPct - targetPPct) * proteinWeight +
-      Math.abs(mealFPct - targetFPct) * (2 - proteinWeight) * 0.5 +
-      Math.abs(mealCPct - targetCPct) * (2 - proteinWeight) * 0.5;
+      Math.abs(mealFPct - targetFPct) * 0.8 +
+      Math.abs(mealCPct - targetCPct) * 0.4;
+
+    // ── 脂質グラム乖離ペナルティ（target.fから大幅に低い候補を抑制） ──
+    if (targetF > 0) {
+      const fGapRatio = meal.f / targetF;
+      if (fGapRatio < 0.4) score += 15;       // target.fの40%未満 → 強いペナルティ
+      else if (fGapRatio < 0.6) score += 8;    // 60%未満 → 中程度
+      else if (fGapRatio < 0.75) score += 3;   // 75%未満 → 軽いペナルティ
+    }
 
     // ── カロリー乖離ペナルティ（空腹度で許容幅を調整） ──
     // 空腹度 → 許容上限/下限の倍率（targetCalは変えず選択範囲だけ変える）
@@ -391,7 +399,10 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
 
     // ── 空腹感スコア調整 ──
     if (hunger === 'かなり空腹') {
-      if (mealPPct > 28) score -= 8;
+      if (mealPPct > 28) score -= 5;
+      // targetCalより大幅に低い候補を抑制（空腹時に軽食が出るのを防ぐ）
+      if (calRatio < 0.75) score += 12;
+      else if (calRatio < 0.85) score += 5;
     } else if (hunger === 'そこまで空腹じゃない' || hunger === 'なんとなく食べたい') {
       if (meal.cal < targetCal) score -= 5;
       if (meal.cal > targetCal * 1.2) score += 8;
