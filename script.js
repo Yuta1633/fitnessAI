@@ -651,7 +651,13 @@ async function showQuestionStep(questions) {
         hunger
       });
 
-      // プロテイン分を1食あたりに按分して差し引く
+      // ── タンパク質最低ライン（全食数共通・体重ベース）──
+      // 科学的最低ライン: 1.8g/kg/day をその日の食数で按分
+      const proteinMinDaily = weight * 1.8;
+      const proteinMinMeal = Math.round(proteinMinDaily / (totalMeals || 3));
+      if (target.p < proteinMinMeal) target.p = proteinMinMeal;
+
+      // プロテイン分を1食あたりに按分して差し引く（最低ライン補正後に計算）
       const proteinPerMeal = Math.round(proteinFromSupp / (totalMeals || 3));
       const adjustedP = Math.max(10, target.p - proteinPerMeal);
 
@@ -660,12 +666,6 @@ async function showQuestionStep(questions) {
         target.cal = Math.max(100, target.cal - sakeCal);
         target.c = Math.max(5, Math.round(target.c * (target.cal / (target.cal + sakeCal))));
       }
-
-      // ── タンパク質最低ライン（全食数共通・体重ベース）──
-      // 科学的最低ライン: 1.8g/kg/day をその日の食数で按分
-      const proteinMinDaily = weight * 1.8;
-      const proteinMinMeal = Math.round(proteinMinDaily / (totalMeals || 3));
-      if (target.p < proteinMinMeal) target.p = proteinMinMeal;
 
       // ── 脂質最低ライン（全食数共通・体重ベース）──
       // 科学的最低ライン: 0.6g/kg/day をその日の食数で按分
