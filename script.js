@@ -903,8 +903,8 @@ async function showQuestionStep(questions) {
 
       // 食材量をスケーリングする関数
       function scaleMeal(m, targetCal) {
-        // スケール上限: 1.4倍まで（食材量が非現実的にならないよう制限）
-        const ratio = Math.min(1.4, Math.max(0.5, targetCal / m.cal));
+        // スケール上限: 2.0倍まで（2食など高カロリー必要時に対応）
+        const ratio = Math.min(2.0, Math.max(0.5, targetCal / m.cal));
         const scaledIngredients = m.ingredients.map(ing => {
           return ing
             .replace(/([\d.]+)\s*(g|ml)/g, (_, num, unit) => {
@@ -913,8 +913,8 @@ async function showQuestionStep(questions) {
             })
             .replace(/([\d.]+)\s*(個|本|杯|枚|パック|缶|皿|食|玉|切れ)/g, (_, num, unit) => {
               const original = parseFloat(num);
-              // 個数系は元の数+1まで（2本→最大3本、1食→最大2食）
-              const scaled = Math.min(original + 1, Math.max(1, Math.round(original * ratio)));
+              // 個数系は元の数×2まで（2本→最大4本、1食→最大2食）
+              const scaled = Math.min(Math.ceil(original * 2), Math.max(1, Math.round(original * ratio)));
               return `${scaled}${unit}`;
             });
         });
