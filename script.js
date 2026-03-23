@@ -736,12 +736,12 @@ async function showQuestionStep(questions) {
         if (!_subWeight) Object.assign({}, sakeWeight);
       }
 
-      let meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay, _proteinWeight, _subWeight, hunger);
+      let meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, _shownIds, timeOfDay, _proteinWeight, _subWeight, hunger);
       if (meals.length === 0) {
         // 全候補を出し切った → リセット
         _shownIds = [];
         localStorage.removeItem(_comboKey);
-        meals = selectMeals(target.cal, target.p, target.f, target.c, selectedGoal, location, mood, [], timeOfDay, _proteinWeight, _subWeight, hunger);
+        meals = selectMeals(target.cal, adjustedP, target.f, target.c, selectedGoal, location, mood, [], timeOfDay, _proteinWeight, _subWeight, hunger);
         console.log('MEAL_DB: 全候補を出し切ったためリセット', { selectedGoal, location, mood });
       }
 
