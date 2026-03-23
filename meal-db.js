@@ -438,10 +438,11 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       const pShortage = targetP - meal.p;
       score += pShortage * 0.5;
     }
-    // ②-c 脂質不足の連続ペナルティ: 不足gに比例してスコア悪化
+    // ②-c 脂質不足の連続ペナルティ: 不足gに比例してスコア悪化（夜は強化）
     if (targetF > 0 && meal.f < targetF) {
       const fShortage = targetF - meal.f;
-      score += fShortage * 0.6;
+      const fatPenaltyMultiplier = (timeOfDay === '夜') ? 0.9 : 0.6;
+      score += fShortage * fatPenaltyMultiplier;
     }
     // ③ かなり空腹時の成立ライン強化: 70%未満も不足と判断
     if (hunger === 'かなり空腹' && targetCal > 0 && meal.cal / targetCal < 0.70) {
