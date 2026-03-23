@@ -605,7 +605,15 @@ function calculateMealTarget(params) {
 
   const dailyCal = weight * coeff.calPerKg + gapAdjust;
   const dailyP   = weight * coeff.pPerKg;
-  const dailyF   = dailyCal * coeff.fRatio / 9;
+
+  // 体脂肪率による脂質割合の微調整
+  let fRatio = coeff.fRatio;
+  if (currentBF !== null && currentBF !== undefined) {
+    if (currentBF >= 25) fRatio = Math.max(0.17, coeff.fRatio - 0.03);
+    else if (currentBF <= 15) fRatio = Math.min(0.30, coeff.fRatio + 0.02);
+  }
+
+  const dailyF   = dailyCal * fRatio / 9;
   const dailyC   = Math.max(0, (dailyCal - dailyP * 4 - dailyF * 9) / 4);
 
   const mealCal = dailyCal * timeDist.cal;
