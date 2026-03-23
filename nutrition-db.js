@@ -653,14 +653,9 @@ function calculateMealTarget(params) {
       // 間食はそのまま返す
       timeDist = mealGroup['間食'] || MEAL_DISTRIBUTION[3]['間食'];
     } else {
-      // 通常食: 間食ありの場合は按分で縮小して合計1.0を維持
-      const rawDist = mealGroup[mealIndex] || mealGroup[1];
-      const snackDist = mealGroup['間食'];
-      // 通常食の配分率一覧を収集（数値キーのみ）
-      const normalDists = Object.keys(mealGroup)
-        .filter(k => k !== '間食')
-        .map(k => mealGroup[k]);
-      timeDist = normalizeForSnack(rawDist, snackDist, normalDists);
+      // 通常食: 通常食の比率はそのまま使用（合計1.0）
+      // 間食の縮小は間食が選ばれたときのみ適用（上のif分岐）
+      timeDist = mealGroup[mealIndex] || mealGroup[1];
     }
   } else {
     const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
