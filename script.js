@@ -555,12 +555,16 @@ async function showQuestionStep(questions) {
       if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
     }
 
+    // nutrition debugログ・API呼び出しでも参照するためスコープ外で宣言
+    let totalMeals = null;
+    let mealIndex = null;
+
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
       // 食事回数・何食目を取得
-      const totalMeals = questionAnswers[0] ? parseInt(questionAnswers[0]) : null;  // '3食' → 3
+      totalMeals = questionAnswers[0] ? parseInt(questionAnswers[0]) : null;  // '3食' → 3
       const mealIndexRaw = questionAnswers[1];  // '2食目' or '間食' or undefined
-      const mealIndex = mealIndexRaw === '間食' ? '間食'
+      mealIndex = mealIndexRaw === '間食' ? '間食'
         : mealIndexRaw ? parseInt(mealIndexRaw) : null;  // 2 or '間食' or null
 
       // moodがDBのtimeSlotと合わない場合に強制変換
