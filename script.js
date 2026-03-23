@@ -1020,7 +1020,7 @@ async function showQuestionStep(questions) {
 
   // conditionalOn: 特定の回答のときだけ表示する設問
   if (q.conditionalOn) {
-    const prevAnswer = questionAnswers[currentQuestionIndex - 1];
+    const prevAnswer = questionAnswers.at(-1);
     if (prevAnswer !== q.conditionalOn) {
       // スキップ: nullをpushして次へ
       questionAnswers.push(null);
