@@ -979,6 +979,19 @@ async function showQuestionStep(questions) {
       // ストリーミング対応
       loadingIndicator.classList.add('hidden');
       const streamDiv = addStreamingMessage();
+      console.log('nutrition debug', {
+        questionAnswers,
+        totalMeals,
+        mealIndex,
+        timeOfDay,
+        location,
+        mood,
+        proteinSupp,
+        hunger,
+        selectedGoal,
+        selectedMethod,
+        selectedSub
+      });
       try {
         const text = await callAPIStream(conversationHistory, (partial) => {
           updateStreamingMessage(streamDiv, partial);
@@ -1010,8 +1023,9 @@ async function showQuestionStep(questions) {
 
     } catch (err) {
       loadingIndicator.classList.add('hidden');
-      addMessage('assistant', '【エラー】通信に失敗しました。');
-      console.error('showQuestionStepエラー:', err);
+      addMessage('assistant', `【エラー】${err?.message || err}`);
+      console.error('showQuestionStepエラー詳細:', err);
+      if (err?.stack) console.error(err.stack);
     }
     return;
   }
