@@ -541,6 +541,20 @@ async function showQuestionStep(questions) {
       .join('\n');
     addMessage('user', summary);
 
+    // 体重・体脂肪率・目標体重を取得（nutrition判定・体重未入力注意文の両方で使用）
+    let weightRecorded = false;
+    let weight = 60;
+    let currentBF = null;
+    let goalWeight = null;
+    if (cachedUserContext) {
+      const weightMatch = cachedUserContext.match(/現在の体重: ([\d.]+)kg/);
+      const bfMatch = cachedUserContext.match(/体脂肪率: ([\d.]+)%/);
+      const goalWeightMatch = cachedUserContext.match(/目標体重: ([\d.]+)kg/);
+      if (weightMatch) { weight = parseFloat(weightMatch[1]); weightRecorded = true; }
+      if (bfMatch) currentBF = parseFloat(bfMatch[1]);
+      if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
+    }
+
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
       // 食事回数・何食目を取得
@@ -924,20 +938,6 @@ async function showQuestionStep(questions) {
           : '';
         conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）${sakeText}\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・目的・目標体重・体脂肪率の矛盾指摘・確認・質問は一切禁止。ユーザーの選択をそのまま受け入れて提案すること\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
       }
-    }
-
-    // 体重・体脂肪率・目標体重を取得（nutrition以外でも参照されるためスコープ外で定義）
-    let weightRecorded = false;
-    let weight = 60;
-    let currentBF = null;
-    let goalWeight = null;
-    if (cachedUserContext) {
-      const weightMatch = cachedUserContext.match(/現在の体重: ([\d.]+)kg/);
-      const bfMatch = cachedUserContext.match(/体脂肪率: ([\d.]+)%/);
-      const goalWeightMatch = cachedUserContext.match(/目標体重: ([\d.]+)kg/);
-      if (weightMatch) { weight = parseFloat(weightMatch[1]); weightRecorded = true; }
-      if (bfMatch) currentBF = parseFloat(bfMatch[1]);
-      if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
     }
 
     conversationHistory.push({ role: 'user', content: summary });
