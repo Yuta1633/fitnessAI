@@ -590,16 +590,23 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, timeOfDay, hunger } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, hunger } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
   const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
   const timeDist = goalDist[timeOfDay] || goalDist['昼'];
 
-  const dailyCal = weight * coeff.calPerKg;
+  // 目標体重との差によるカロリー調整（1kgあたり±30kcal、最大±300kcal/日）
+  let gapAdjust = 0;
+  if (goalWeight && goalWeight !== weight) {
+    const gap = goalWeight - weight;  // 負=減量、正=増量
+    gapAdjust = Math.max(-300, Math.min(300, gap * 30));
+  }
+
+  const dailyCal = weight * coeff.calPerKg + gapAdjust;
   const dailyP   = weight * coeff.pPerKg;
   const dailyF   = dailyCal * coeff.fRatio / 9;
-  const dailyC   = (dailyCal - dailyP * 4 - dailyF * 9) / 4;
+  const dailyC   = Math.max(0, (dailyCal - dailyP * 4 - dailyF * 9) / 4);
 
   const mealCal = dailyCal * timeDist.cal;
   const mealP   = dailyP   * timeDist.p;

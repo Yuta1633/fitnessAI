@@ -590,13 +590,14 @@ async function showQuestionStep(questions) {
 
       // 体重・体脂肪率・目標体重を取得
       let weight = 60;
+      let weightRecorded = false;
       let currentBF = null;
       let goalWeight = null;
       if (cachedUserContext) {
         const weightMatch = cachedUserContext.match(/現在の体重: ([\d.]+)kg/);
         const bfMatch = cachedUserContext.match(/体脂肪率: ([\d.]+)%/);
         const goalWeightMatch = cachedUserContext.match(/目標体重: ([\d.]+)kg/);
-        if (weightMatch) weight = parseFloat(weightMatch[1]);
+        if (weightMatch) { weight = parseFloat(weightMatch[1]); weightRecorded = true; }
         if (bfMatch) currentBF = parseFloat(bfMatch[1]);
         if (goalWeightMatch) goalWeight = parseFloat(goalWeightMatch[1]);
       }
@@ -612,6 +613,7 @@ async function showQuestionStep(questions) {
         goalNum: selectedGoal,
         currentBF,
         targetBF: null,
+        goalWeight,
         timeOfDay,
         hunger
       });
@@ -941,6 +943,15 @@ async function showQuestionStep(questions) {
             return `${i+1}回目:\n回答:${userMsg?.content.slice(0, 100)}\n提案:${aiMsg?.content.slice(0, 200)}`;
           }).join('\n\n');
         conversationHistory[0].content += `\n\n${pastInfo}\n\n上記を踏まえて今回は違うアプローチで提案してください。`;
+      }
+
+      // 体重未入力＋体脂肪率あり → 注意文を表示
+      if (!weightRecorded && currentBF !== null) {
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'chat-message assistant';
+        noteDiv.innerHTML = '<p style="color:#f5a623;font-size:13px;margin:0;padding:8px 12px;background:rgba(245,166,35,0.1);border-radius:8px;border-left:3px solid #f5a623;">※現在の体重が記録されていないため、60kgを想定して提案しています。体重を入力すると、より正確な提案になります。</p>';
+        chatHistory.appendChild(noteDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
       }
 
       // ストリーミング対応
