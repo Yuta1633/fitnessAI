@@ -661,6 +661,14 @@ async function showQuestionStep(questions) {
         target.c = Math.max(5, Math.round(target.c * (target.cal / (target.cal + sakeCal))));
       }
 
+      // ── 2食時の科学的補正（消化能力・血糖安定・現実的食事量） ──
+      if (totalMeals === 2) {
+        // 脂質最低ライン: ホルモン維持・停滞防止のため1食18g以上を確保
+        if (target.f < 18) target.f = 18;
+        // 炭水化物上限: 1食で血糖スパイクを起こさない範囲に制限
+        if (target.c > 110) target.c = 110;
+      }
+
       // ── 被り防止: LocalStorageから表示済みIDを取得 ──
       const _comboKey = userKey(`shown_meals_${selectedGoal}_${encodeURIComponent(location)}_${encodeURIComponent(mood)}`);
       let _shownIds = JSON.parse(localStorage.getItem(_comboKey) || '[]');

@@ -332,6 +332,12 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
     filtered = [...filtered, ...fallback];
   }
 
+  // ── 2食時: ベースmealが軽すぎるとscaleしても不足するため500kcal以上を優先 ──
+  if (targetCal >= 700) {
+    const substantial = filtered.filter(m => m.cal >= 500);
+    if (substantial.length >= 3) filtered = substantial;
+  }
+
   // ── ③ それでも候補なし → 空を返す ──
   if (filtered.length === 0) return [];
 
