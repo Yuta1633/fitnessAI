@@ -649,14 +649,8 @@ function calculateMealTarget(params) {
   let timeDist;
   if (totalMeals && mealIndex !== null && mealIndex !== undefined) {
     const mealGroup = MEAL_DISTRIBUTION[totalMeals] || MEAL_DISTRIBUTION[3];
-    if (mealIndex === '間食') {
-      // 間食はそのまま返す
-      timeDist = mealGroup['間食'] || MEAL_DISTRIBUTION[3]['間食'];
-    } else {
-      // 通常食: 通常食の比率はそのまま使用（合計1.0）
-      // 間食の縮小は間食が選ばれたときのみ適用（上のif分岐）
-      timeDist = mealGroup[mealIndex] || mealGroup[1];
-    }
+    // mealIndex は必ず数値（parseInt済み）
+    timeDist = mealGroup[mealIndex] || mealGroup[1];
   } else {
     const goalDist = TIME_DISTRIBUTION[goalNum] || TIME_DISTRIBUTION['1'];
     timeDist = goalDist[timeOfDay] || goalDist['昼'];

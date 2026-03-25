@@ -402,7 +402,6 @@ const QUESTIONS = {
         const n = parseInt(answers[0]);  // '3食' → 3
         const opts = [];
         for (let i = 1; i <= n; i++) opts.push(`${i}食目`);
-        opts.push('間食');
         return opts;
       }
     },
@@ -568,9 +567,8 @@ async function showQuestionStep(questions) {
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
       // 食事回数・何食目を取得
       totalMeals = questionAnswers[0] ? parseInt(questionAnswers[0]) : null;  // '3食' → 3
-      const mealIndexRaw = questionAnswers[1];  // '2食目' or '間食' or undefined
-      mealIndex = mealIndexRaw === '間食' ? '間食'
-        : mealIndexRaw ? parseInt(mealIndexRaw) : null;  // 2 or '間食' or null
+      const mealIndexRaw = questionAnswers[1];  // '2食目' or undefined
+      mealIndex = mealIndexRaw ? parseInt(mealIndexRaw) : null;  // 2 or null
 
       // moodがDBのtimeSlotと合わない場合に強制変換
       const _rawTime = questionAnswers[2];
@@ -694,53 +692,37 @@ async function showQuestionStep(questions) {
         // 目的①減量
         '朝ごはんを食べていない':          { pBonus: 8, cPenalty: 5 },
         '夜食べすぎてしまう':              { calPenalty: 10, pBonus: 8 },
-        '脂肪がなかなか落ちない・停滞している': { fPenalty: 4, pBonus: 8 },
         '食欲がコントロールできない':       { pBonus: 10 },
-        '外食・コンビニが多い':            { fPenalty: 4, calPenalty: 8 },
-        'お酒をよく飲む':                 { calPenalty: 10, fPenalty: 4 },
-        '運動しているのに痩せない':         { pBonus: 12, fPenalty: 5 },
-        '糖質・脂質が多い食事になりがち':   { fPenalty: 6, cPenalty: 8 },
+        '脂肪がなかなか落ちない・停滞している': { fPenalty: 4, pBonus: 8 },
         // 目的②増量
         '脂肪をつけずに大きくなりたい':     { pBonus: 10, fPenalty: 8 },
-        '最短で大きくなりたい':            { calBonus: 10, cBonus: 8, pBonus: 6 },
         '消化が追いつかない':              { calPenalty: 8, fPenalty: 8 },
         '体重が増えない':                  { calBonus: 12, cBonus: 8 },
         '食事量を増やすのが苦手':           { calBonus: 8 },
-        'タンパク質が足りているか不安':     { pBonus: 15 },
-        '増量期の食事がわからない':         { calBonus: 8, pBonus: 8, cBonus: 6 },
-        '減量しながら筋肉を維持したい':     { pBonus: 12, fPenalty: 8, calPenalty: 6 },
+        '脂肪を減らしながら筋肉を維持したい': { pBonus: 12, fPenalty: 8, calPenalty: 6 },
         // 目的③体力
         'すぐ疲れる':                     { cBonus: 10 },
         '午後にエネルギーが切れる':         { cBonus: 10 },
         '集中力が続かない':                { pBonus: 8, cBonus: 5 },
-        'スタミナをつけたい':              { cBonus: 15 },
         '朝が起きられない・だるい':         { pBonus: 8, cBonus: 5 },
-        '仕事・勉強のパフォーマンスを上げたい': { pBonus: 8, cBonus: 6 },
         '運動しているのに体力がつかない':    { cBonus: 10, pBonus: 6 },
-        '試合・本番に向けて調整したい':     { cBonus: 12, fPenalty: 6 },
         // 目的④不調
         '胃腸が弱い・消化が悪い':          { fPenalty: 10, calPenalty: 6 },
         'むくみやすい':                    { calPenalty: 6 },
         '便秘しやすい':                    { cBonus: 6 },
         '肌荒れが気になる':                { pBonus: 8 },
         '食後に眠くなる・だるい':           { cPenalty: 10, pBonus: 8 },
-        '冷え・血行が気になる':             { pBonus: 6 },
+        '冷えや血行の悪さが気になる':       { pBonus: 6 },
         '甘いものが止まらない':             { pBonus: 10, cPenalty: 8 },
         '貧血気味・鉄不足が心配':           { pBonus: 8 },
         '睡眠の質を上げたい':              { pBonus: 6, calPenalty: 6 },
-        '免疫を高めたい・風邪をひきやすい': { pBonus: 6 },
         // 目的⑤体型
         'お腹を引き締めたい':              { fPenalty: 5, pBonus: 8 },
         '下半身が気になる':                { fPenalty: 4, calPenalty: 8 },
-        '全体的に引き締めたい':            { pBonus: 8, fPenalty: 4 },
+        '特定の部位ではなく、全体を引き締めたい': { pBonus: 8, fPenalty: 4 },
         '顔・体のむくみをとりたい':         { calPenalty: 6 },
-        '食事制限なしで整えたい':           { pBonus: 6 },
-        'リバウンドが怖い':                { pBonus: 10, calPenalty: 6 },
         '体重より見た目を変えたい':         { pBonus: 10, fPenalty: 4 },
         '筋肉をつけながら脂肪を落としたい': { pBonus: 12, fPenalty: 4 },
-        // 共通: トレ前後
-        'トレーニング前の食事がわからない': { cBonus: 10, fPenalty: 8 },
-        'トレーニング後の食事がわからない': { pBonus: 12, cBonus: 6 },
         // 特になし
         '特になし': null,
       };
@@ -806,42 +788,20 @@ async function showQuestionStep(questions) {
             scienceAdvice = `停滞期は代謝適応が原因。カロリー収支-${dailyDeficit}kcalを維持しつつタンパク質を体重×1.6〜2.2gに増やすと筋肉を守りながら脂肪を落とせる（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else if (selectedSub === '食欲がコントロールできない') {
             scienceAdvice = `食欲抑制には食物繊維とタンパク質を優先。満腹感を高めることで自然とカロリー収支-${dailyDeficit}kcalを実現（Slavin 2005）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}週${weeklyLoss}kgペースが筋肉量を保つ最適速度（ACSM推奨）。`;
-          } else if (selectedSub === '外食・コンビニが多い') {
-            scienceAdvice = `外食・コンビニでも高タンパク・低脂質の選択は可能。サラダチキン・ゆで卵・納豆などを活用し、揚げ物・丼ものを避けるだけでカロリー収支-${dailyDeficit}kcalが実現しやすくなる。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === 'お酒をよく飲む') {
-            scienceAdvice = `アルコールは7kcal/gと高カロリーで脂肪燃焼を一時的に停止させる（Suter et al. 1992）。飲む日は食事の脂質・炭水化物を抑え、おつまみはタンパク質中心にすることで影響を最小化できる。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '運動しているのに痩せない') {
-            scienceAdvice = `運動で消費したカロリーを食事で補填してしまう「補償効果」が原因の可能性が高い（Church et al. 2009）。タンパク質を体重×1.6g以上確保しながら脂質を抑えることで筋肉を守りつつ脂肪を落とせる。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '糖質・脂質が多い食事になりがち') {
-            scienceAdvice = `糖質・脂質の過剰摂取は血糖値スパイクを引き起こし脂肪蓄積を促進する。食物繊維を先に食べる「ベジファースト」と高タンパク食材の組み合わせで血糖値上昇を約30%抑制できる（Imai et al. 2014）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === 'トレーニング前の食事がわからない') {
-            scienceAdvice = `運動1〜2時間前は消化しやすい炭水化物中心の食事が推奨（Burke et al. 2011）。脂質・食物繊維を抑えることで運動中の消化器不快感を防ぎパフォーマンスが向上する。`;
-          } else if (selectedSub === 'トレーニング後の食事がわからない') {
-            scienceAdvice = `運動後30〜60分以内にタンパク質20〜40g＋炭水化物を摂ることで筋タンパク合成が最大化される（Ivy et al. 2002）。減量中でもこのタイミングは筋肉維持のために食事を摂るべき。`;
           } else {
             scienceAdvice = `脂肪減少の最適ペースは週${weeklyLoss}kg（体重の0.7%）。カロリー収支-${dailyDeficit}kcalを維持（ACSM推奨）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
         } else if (selectedGoal === '2') {
           if (selectedSub === '脂肪をつけずに大きくなりたい') {
             scienceAdvice = `リーンバルクにはカロリー+200〜300kcal/日、週0.2〜0.3kg増量ペースが推奨（Barakat et al. 2020）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}急がず脂肪増加を抑えながら進めること。`;
-          } else if (selectedSub === '最短で大きくなりたい') {
-            scienceAdvice = `最短筋肥大にはカロリー+400〜500kcal/日、週0.5〜0.8kg増量ペースが有効（Helms et al. 2014）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}ただし体脂肪率15%超えたら減量フェーズへの切り替えを推奨。`;
           } else if (selectedSub === '消化が追いつかない') {
             scienceAdvice = `消化不良時は食事回数を4〜5回に分けて1食あたりのボリュームを下げることで吸収率が上がる（Burke et al. 2011）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           } else if (selectedSub === '体重が増えない') {
             scienceAdvice = `体重が増えない場合はカロリーが足りていない可能性が高い。+500kcal/日から始め、2週間で0.3kg以上増えなければ+200kcalずつ追加（NSCA推奨）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           } else if (selectedSub === '食事量を増やすのが苦手') {
             scienceAdvice = `食事量が増やせない場合は液体カロリー（牛乳・豆乳・スムージー）の活用が有効。固形食より消化が早く胃への負担が少ない（Burke et al. 2011）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
-          } else if (selectedSub === 'タンパク質が足りているか不安') {
-            scienceAdvice = `筋肥大に必要なタンパク質は体重×1.6〜2.2g/日（Morton et al. 2018）。${weight}kgなら1日${Math.round(weight * 1.8)}〜${Math.round(weight * 2.2)}gが目安。このメニューのタンパク質量を確認して毎食意識すること。`;
-          } else if (selectedSub === '増量期の食事がわからない') {
-            scienceAdvice = `増量期はカロリー+300〜500kcal/日を維持しながら、タンパク質を体重×1.8g確保することで脂肪を最小限に抑えて筋肉をつけられる（Helms et al. 2014）。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
-          } else if (selectedSub === '減量しながら筋肉を維持したい') {
+          } else if (selectedSub === '脂肪を減らしながら筋肉を維持したい') {
             scienceAdvice = `同時に脂肪を落として筋肉をつける「リコンポジション」はタンパク質を体重×2.2g以上確保することで実現可能（Barakat et al. 2020）。カロリーは維持カロリー付近が最適。`;
-          } else if (selectedSub === 'トレーニング前の食事がわからない') {
-            scienceAdvice = `運動1〜2時間前は炭水化物中心で脂質を抑えた食事が推奨（Burke et al. 2011）。筋グリコーゲンを補充することでトレーニングの質と筋タンパク合成が向上する。`;
-          } else if (selectedSub === 'トレーニング後の食事がわからない') {
-            scienceAdvice = `運動後30〜60分以内にタンパク質20〜40g＋炭水化物を摂ることで筋タンパク合成が最大化（Ivy et al. 2002）。このゴールデンタイムを逃さないことが筋肥大の鍵。`;
           } else {
             scienceAdvice = `筋肥大の最適ペースは週0.25〜0.5kg増量（Helms et al. 2014）。カロリー+300〜500kcal/日を維持。${gap !== 0 ? '目標まで+' + gap + 'kg、' : ''}`;
           }
@@ -852,20 +812,10 @@ async function showQuestionStep(questions) {
             scienceAdvice = `午後のエネルギー切れは昼食後の血糖値急降下が原因。食物繊維・タンパク質を昼食に組み合わせることで血糖値の安定化が科学的に示されている（Jenkins et al. 2002）。`;
           } else if (selectedSub === '集中力が続かない') {
             scienceAdvice = `脳のエネルギー源はブドウ糖のみ。血糖値を安定させる低GI炭水化物＋タンパク質の組み合わせが集中力持続に有効（Benton & Parker 1998）。`;
-          } else if (selectedSub === 'スタミナをつけたい') {
-            scienceAdvice = `持久力向上には1日の炭水化物摂取量を体重×5〜7gに増やすことが推奨（ACSM 2016）。グリコーゲン貯蔵量を最大化することでスタミナが向上する。`;
           } else if (selectedSub === '朝が起きられない・だるい') {
             scienceAdvice = `朝のだるさはコルチゾール不足や血糖値の低下が原因のことが多い。朝食にタンパク質と炭水化物を組み合わせることで交感神経が活性化し覚醒度が上がる（Jakubowicz et al. 2013）。`;
-          } else if (selectedSub === '仕事・勉強のパフォーマンスを上げたい') {
-            scienceAdvice = `認知機能向上にはオメガ3脂肪酸（青魚）、タンパク質、低GI炭水化物の組み合わせが有効（Gómez-Pinilla 2008）。血糖値の安定が集中力と記憶力を直接支える。`;
           } else if (selectedSub === '運動しているのに体力がつかない') {
             scienceAdvice = `運動しても体力がつかない場合は回復のための栄養が不足している可能性が高い。運動後のタンパク質＋炭水化物補給で筋グリコーゲンの回復速度が2倍になる（Ivy et al. 2002）。`;
-          } else if (selectedSub === '試合・本番に向けて調整したい') {
-            scienceAdvice = `試合3日前からの炭水化物ローディング（体重×8〜10g/日）でグリコーゲン貯蔵量を最大化できる（Burke et al. 2011）。今日は炭水化物を多めに確保することが重要。`;
-          } else if (selectedSub === 'トレーニング前の食事がわからない') {
-            scienceAdvice = `運動1〜2時間前は消化しやすい炭水化物中心の食事が推奨（Burke et al. 2011）。脂質・食物繊維を控えることで運動中のパフォーマンスが向上する。`;
-          } else if (selectedSub === 'トレーニング後の食事がわからない') {
-            scienceAdvice = `運動後はタンパク質20〜40g＋炭水化物を30〜60分以内に摂ることで筋グリコーゲンの回復と筋タンパク合成が同時に促進される（Ivy et al. 2002）。`;
           } else {
             scienceAdvice = `体力向上には炭水化物60%以上の食事構成が科学的に推奨されている（Burke et al. 2011）。このメニューでエネルギー基盤を整えること。`;
           }
@@ -880,7 +830,7 @@ async function showQuestionStep(questions) {
             scienceAdvice = `肌の再生にはタンパク質（コラーゲン合成）、ビタミンC（抗酸化）、亜鉛（細胞修復）が必要。魚・豆腐・野菜の組み合わせが肌改善に科学的根拠がある（Cosgrove et al. 2007）。`;
           } else if (selectedSub === '食後に眠くなる・だるい') {
             scienceAdvice = `食後の眠気は血糖値スパイクと急降下が原因。炭水化物を抑えてタンパク質・食物繊維を先に食べることで血糖値上昇を約30%抑制できる（Imai et al. 2014）。`;
-          } else if (selectedSub === '冷え・血行が気になる') {
+          } else if (selectedSub === '冷えや血行の悪さが気になる') {
             scienceAdvice = `冷えの改善には鉄分（赤身肉・魚）、ビタミンE（ナッツ・アボカド）、生姜の摂取が有効。体を温める食材と血行促進効果のある食材を組み合わせることが推奨される（Briguglio et al. 2020）。`;
           } else if (selectedSub === '甘いものが止まらない') {
             scienceAdvice = `甘いものへの欲求は血糖値の乱高下やセロトニン不足が原因のことが多い。タンパク質多めの食事で血糖値を安定させ、自然な甘みのある食材で欲求を満たすことが科学的に推奨される（Lustig 2013）。`;
@@ -888,8 +838,6 @@ async function showQuestionStep(questions) {
             scienceAdvice = `鉄欠乏性貧血の改善にはヘム鉄（赤身肉・レバー・魚）と非ヘム鉄（豆腐・ほうれん草）の両方を摂取し、ビタミンCと組み合わせることで吸収率が2〜3倍に向上する（Hallberg et al. 1989）。`;
           } else if (selectedSub === '睡眠の質を上げたい') {
             scienceAdvice = `睡眠の質向上にはトリプトファン（乳製品・バナナ・ナッツ）の摂取が有効。セロトニン→メラトニンの合成を促進し自然な眠気を誘発する（Peuhkuri et al. 2012）。夜の過食と高脂質食は睡眠の質を低下させる。`;
-          } else if (selectedSub === '免疫を高めたい・風邪をひきやすい') {
-            scienceAdvice = `免疫機能の維持にはタンパク質、ビタミンC（野菜・果物）、亜鉛（肉・魚介）、プロバイオティクス（発酵食品）の摂取が科学的に示されている（Calder 2020）。`;
           } else {
             scienceAdvice = `不調改善には抗炎症作用のある食材（青魚・緑黄色野菜・発酵食品）を中心に、消化に負担をかけない食事構成が推奨される（Calder 2017）。`;
           }
@@ -899,22 +847,14 @@ async function showQuestionStep(questions) {
             scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else if (selectedSub === '下半身が気になる') {
             scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。むくみ対策として塩分・高脂質食を控えカリウム豊富な食材を摂ることも有効。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '全体的に引き締めたい') {
+          } else if (selectedSub === '特定の部位ではなく、全体を引き締めたい') {
             scienceAdvice = `全身の引き締めにはタンパク質を体重×1.6g確保しながらカロリーをわずかに抑えることで脂肪を落としながら筋肉を維持できる（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           } else if (selectedSub === '顔・体のむくみをとりたい') {
             scienceAdvice = `むくみ解消にはカリウム（海藻・豆類・魚）の摂取とナトリウムの制限が有効。水分をしっかり摂ることで逆説的にむくみが改善される（He & MacGregor 2010）。`;
-          } else if (selectedSub === '食事制限なしで整えたい') {
-            scienceAdvice = `食事制限なしで体型を整えるには食事の質（PFCバランス）を改善することが鍵。タンパク質を増やすだけで自然に余分なカロリーが減り体組成が改善する（Leidy et al. 2015）。`;
-          } else if (selectedSub === 'リバウンドが怖い') {
-            scienceAdvice = `リバウンドの主因は急激な食事制限による筋肉量低下と代謝低下。タンパク質を体重×1.6g以上確保し週${weeklyLoss}kg以内の緩やかなペースで減量することが科学的に推奨される（Helms et al. 2014）。`;
           } else if (selectedSub === '体重より見た目を変えたい') {
             scienceAdvice = `体重が変わらなくても筋肉量を増やして脂肪を減らす「リコンポジション」は可能。タンパク質を体重×2g以上確保し、筋トレと組み合わせることで見た目が大きく変わる（Barakat et al. 2020）。`;
           } else if (selectedSub === '筋肉をつけながら脂肪を落としたい') {
             scienceAdvice = `筋肉をつけながら脂肪を落とすにはタンパク質を体重×2.2g以上確保することが重要。初心者・再開者・肥満体型ほど効果が出やすい（Barakat et al. 2020）。`;
-          } else if (selectedSub === 'トレーニング前の食事がわからない') {
-            scienceAdvice = `運動1〜2時間前は消化しやすい炭水化物中心の食事が推奨（Burke et al. 2011）。脂質・食物繊維を控えることでトレーニング中の不快感を防ぎパフォーマンスが向上する。`;
-          } else if (selectedSub === 'トレーニング後の食事がわからない') {
-            scienceAdvice = `運動後30〜60分以内にタンパク質20〜40g＋炭水化物を摂ることで筋タンパク合成が最大化（Ivy et al. 2002）。体型改善には筋肉を増やしながら脂肪を落とすことが最も効果的。`;
           } else {
             scienceAdvice = `体型改善の最適ペースは週${weeklyLoss}kg体脂肪減少（体重の0.5%）。タンパク質を体重×1.6〜2.2g確保することで筋肉を守りながら引き締まった体型に近づける（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
           }
@@ -1485,27 +1425,27 @@ let conversationHistory = [];
 
 const subOptions = {
   "1": {
-    "nutrition": ['特になし','朝ごはんを食べていない','夜食べすぎてしまう','脂肪がなかなか落ちない・停滞している','食欲がコントロールできない','外食・コンビニが多い','お酒をよく飲む','運動しているのに痩せない','糖質・脂質が多い食事になりがち','トレーニング前の食事がわからない','トレーニング後の食事がわからない'],
+    "nutrition": ['特になし','朝ごはんを食べていない','夜食べすぎてしまう','食欲がコントロールできない','脂肪がなかなか落ちない・停滞している'],
     "training":  ['家でやりたい','ジムに通っている','短時間で終わらせたい','きつすぎるのは無理','汗かきたい','続かない・モチベが上がらない','怪我・痛みがある'],
     "recovery":  ['睡眠の質を上げたい','運動後の回復を早めたい','ストレスで食欲が乱れる','疲れて運動できない日が続いている','むくみ・炎症が気になる','睡眠時間が足りない']
   },
   "2": {
-    "nutrition": ['特になし','脂肪をつけずに大きくなりたい','最短で大きくなりたい','消化が追いつかない','体重が増えない','食事量を増やすのが苦手','タンパク質が足りているか不安','増量期の食事がわからない','減量しながら筋肉を維持したい','トレーニング前の食事がわからない','トレーニング後の食事がわからない'],
+    "nutrition": ['特になし','脂肪をつけずに大きくなりたい','消化が追いつかない','体重が増えない','食事量を増やすのが苦手','脂肪を減らしながら筋肉を維持したい'],
     "training":  ['ジムで本気でやる','家トレ中心','毎日少しずつやりたい','週3回しっかりやりたい','種目がわからない','怪我・痛みがある'],
     "recovery":  ['筋肉痛がひどい','関節が少し不安','睡眠時間が短い','トレ後の回復を早めたい','オーバートレーニング気味','ストレスが多い']
   },
   "3": {
-    "nutrition": ['特になし','すぐ疲れる','午後にエネルギーが切れる','集中力が続かない','スタミナをつけたい','朝が起きられない・だるい','仕事・勉強のパフォーマンスを上げたい','運動しているのに体力がつかない','試合・本番に向けて調整したい','トレーニング前の食事がわからない','トレーニング後の食事がわからない'],
+    "nutrition": ['特になし','すぐ疲れる','午後にエネルギーが切れる','集中力が続かない','朝が起きられない・だるい','運動しているのに体力がつかない'],
     "training":  ['走れるようになりたい','階段で息切れしたくない','スポーツうまくなりたい','筋力をつけたい','短時間で体力をつけたい'],
     "recovery":  ['呼吸が浅い気がする','寝てもスッキリしない','パフォーマンスが落ちてきた','疲労が蓄積している','集中力が続かない','日中に眠くなる']
   },
   "4": {
-    "nutrition": ['特になし','胃腸が弱い・消化が悪い','むくみやすい','便秘しやすい','肌荒れが気になる','食後に眠くなる・だるい','冷え・血行が気になる','甘いものが止まらない','貧血気味・鉄不足が心配','睡眠の質を上げたい','免疫を高めたい・風邪をひきやすい'],
+    "nutrition": ['特になし','胃腸が弱い・消化が悪い','むくみやすい','便秘しやすい','肌荒れが気になる','食後に眠くなる・だるい','冷えや血行の悪さが気になる','甘いものが止まらない','貧血気味・鉄不足が心配','睡眠の質を上げたい'],
     "training":  ['腰が不安','肩こりがある','体が硬い','膝が不安','足がつりやすい'],
     "recovery":  ['眠りが浅い','ストレスが強い','リラックスできない','体がだるい','頭痛がある','気力が湧かない']
   },
   "5": {
-    "nutrition": ['特になし','お腹を引き締めたい','下半身が気になる','全体的に引き締めたい','顔・体のむくみをとりたい','食事制限なしで整えたい','リバウンドが怖い','体重より見た目を変えたい','筋肉をつけながら脂肪を落としたい','トレーニング前の食事がわからない','トレーニング後の食事がわからない'],
+    "nutrition": ['特になし','お腹を引き締めたい','下半身が気になる','特定の部位ではなく、全体を引き締めたい','顔・体のむくみをとりたい','体重より見た目を変えたい','筋肉をつけながら脂肪を落としたい'],
     "training":  ['お腹引き締めたい','お尻を上げたい','姿勢を良くしたい','二の腕を細くしたい','太ももを引き締めたい','背中を鍛えたい'],
     "recovery":  ['猫背を改善したい','肩の位置を整えたい','脚のむくみをとりたい','腰回りをすっきりさせたい','見た目に影響する体のこりをとりたい']
   }
