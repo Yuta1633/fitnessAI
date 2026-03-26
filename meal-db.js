@@ -297,7 +297,7 @@ const MEAL_DB = [
 //   4. 夜に200kcal未満のメニューが出ないよう強いペナルティ
 // ============================================================
 
-function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null, hunger = null) {
+function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood, excludeIds = [], timeOfDay = null, proteinWeight = 1.0, subWeight = null, hunger = null, mealVolume = null) {
 
   // ── ① プライマリフィルタ（mood一致 + location一致） ──
   const primaryFilter = (meal) => {
@@ -401,6 +401,22 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
       if (meal.cal < 250) score += 30; // 夜に軽食レベルを弾く
     } else if (timeOfDay === '間食') {
       if (meal.cal > 400) score += 20;
+    }
+
+    // ── 修正⑥: 間食・補食モードのスコア調整 ──
+    // 除外はせず「スコアを動かす」方式。通常食（mealVolume が null/'通常の食事'/'軽めの食事'）には影響しない。
+    if (mealVolume === '間食・補食') {
+      const ingredientCount = meal.ingredients ? meal.ingredients.length : 99;
+
+      // カロリー帯による優劣
+      if (meal.cal <= 400)      score -= 15;  // 補食サイズ → 優先
+      else if (meal.cal <= 500) score -= 5;   // やや大きいが許容範囲
+      else                      score += 15;  // 定食サイズ → 抑制
+
+      // 品数による優劣（少ない = 補食らしい）
+      if (ingredientCount <= 2)      score -= 10;  // 1〜2品 → 優先
+      else if (ingredientCount === 3) score -= 5;   // 3品 → 軽い優先
+      else                            score += 10;  // 4品以上（定食系）→ 抑制
     }
 
     // ── 空腹感スコア調整 ──
