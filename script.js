@@ -446,6 +446,18 @@ const QUESTIONS = {
       options: [
         'かなり空腹', '少し空腹', 'そこまで空腹じゃない', 'なんとなく食べたい'
       ]
+    },
+    // ── 修正③追加: [8] mealVolume ──
+    // 今後このフラグでPFCや候補選定に「間食・補食モード」を反映予定
+    {
+      label: '⑧ 今回の食事のボリュームは？',
+      options: ['通常の食事', '軽めの食事', '間食・補食']
+    },
+    // ── 修正③追加: [9] trainingTiming ──
+    // 今後このフラグでPFCや候補選定に「トレ前・トレ後モード」を反映予定
+    {
+      label: '⑨ トレーニングとの関係は？',
+      options: ['特になし', 'トレーニング前', 'トレーニング後']
     }
   ],
   training_base: [
@@ -562,6 +574,9 @@ async function showQuestionStep(questions) {
     let mood = null;
     let proteinSupp = null;
     let hunger = null;
+    // 修正③追加: [8] mealVolume / [9] trainingTiming（現時点は値取得のみ・ロジック反映は次フェーズ）
+    let mealVolume = null;
+    let trainingTiming = null;
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
@@ -610,6 +625,9 @@ async function showQuestionStep(questions) {
       const sakeChoice = questionAnswers[5] !== null ? questionAnswers[5] : null;
       proteinSupp = questionAnswers[6];
       hunger = questionAnswers[7];
+      // 修正③: [8][9] を取得（今後PFC・候補選定へのロジック反映予定）
+      mealVolume = questionAnswers[8] ?? null;      // '通常の食事' | '軽めの食事' | '間食・補食'
+      trainingTiming = questionAnswers[9] ?? null;  // '特になし' | 'トレーニング前' | 'トレーニング後'
 
       // お酒のカロリーと種類別調整
       const SAKE_INFO = {
@@ -646,14 +664,16 @@ async function showQuestionStep(questions) {
         totalMeals,
         mealIndex,
         timeOfDay,
-        hunger
+        hunger,
+        mealVolume  // 修正④: '間食・補食'の場合にPFCを補食サイズへ縮小
       });
 
       // ── タンパク質最低ライン（全食数共通・体重ベース）──
       // 科学的最低ライン: 1.8g/kg/day をその日の食数で按分
+      // 間食・補食モードは補食サイズに縮小済みのためフロアをスキップ
       const proteinMinDaily = weight * 1.8;
       const proteinMinMeal = Math.round(proteinMinDaily / (totalMeals || 3));
-      if (target.p < proteinMinMeal) target.p = proteinMinMeal;
+      if (mealVolume !== '間食・補食' && target.p < proteinMinMeal) target.p = proteinMinMeal;
 
       // プロテイン分を1食あたりに按分して差し引く（最低ライン補正後に計算）
       const proteinPerMeal = Math.round(proteinFromSupp / (totalMeals || 3));
@@ -667,9 +687,10 @@ async function showQuestionStep(questions) {
 
       // ── 脂質最低ライン（全食数共通・体重ベース）──
       // 科学的最低ライン: 0.6g/kg/day をその日の食数で按分
+      // 間食・補食モードは補食サイズに縮小済みのためフロアをスキップ
       const fatMinDaily = weight * 0.6;
       const fatMinMeal = Math.round(fatMinDaily / (totalMeals || 3));
-      if (target.f < fatMinMeal) target.f = fatMinMeal;
+      if (mealVolume !== '間食・補食' && target.f < fatMinMeal) target.f = fatMinMeal;
 
       // ── 2食時の追加補正（消化能力・血糖安定・現実的食事量） ──
       if (totalMeals === 2) {

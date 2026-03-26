@@ -642,7 +642,7 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger, mealVolume } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
   // 食事回数+何食目 → MEAL_DISTRIBUTION、なければ従来の TIME_DISTRIBUTION
@@ -685,10 +685,20 @@ function calculateMealTarget(params) {
   // 脂質補正後の残りカロリーから炭水化物を算出（cal・Pは維持）
   const dailyC   = Math.max(0, (dailyCal - dailyP * 4 - dailyF * 9) / 4);
 
-  const mealCal = dailyCal * timeDist.cal;
-  const mealP   = dailyP   * timeDist.p;
-  const mealF   = dailyF   * timeDist.f;
-  const mealC   = dailyC   * timeDist.c;
+  let mealCal = dailyCal * timeDist.cal;
+  let mealP   = dailyP   * timeDist.p;
+  let mealF   = dailyF   * timeDist.f;
+  let mealC   = dailyC   * timeDist.c;
+
+  // 修正④: 間食・補食モードは1食分を補食サイズ（約45%）に縮小
+  // 軽めの食事・通常の食事は変更なし（次フェーズで対応予定）
+  if (mealVolume === '間食・補食') {
+    const snackScale = 0.45;
+    mealCal = mealCal * snackScale;
+    mealP   = mealP   * snackScale;
+    mealF   = mealF   * snackScale;
+    mealC   = mealC   * snackScale;
+  }
 
   return {
     cal: Math.round(mealCal),
