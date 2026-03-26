@@ -303,13 +303,14 @@ function selectMeals(targetCal, targetP, targetF, targetC, goal, location, mood,
   const primaryFilter = (meal) => {
     if (!meal.goals.includes(goal)) return false;
     if (excludeIds.includes(meal.id)) return false;
+    // 間食・補食モードのとき snack items（mood:'間食したい'）はtimeSlot制限をスキップして候補入り
+    if (meal.mood === '間食したい') return mealVolume === '間食・補食' && meal.locations.includes(location);
     if (timeOfDay && meal.timeSlot && !meal.timeSlot.includes(timeOfDay)) return false;
     if (mood && mood !== '特になし') {
       return meal.mood === mood && meal.locations.includes(location);
     }
     if (meal.mood === 'お酒を飲みたい') return false;
     if (meal.mood === '揚げ物を食べたい') return false;
-    if (meal.mood === '間食したい') return false;
     return meal.locations.includes(location);
   };
 

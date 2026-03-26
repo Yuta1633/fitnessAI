@@ -420,7 +420,7 @@ const QUESTIONS = {
       label: '⑤ 食べ方・気分は？',
       options: [
         '特になし', '揚げ物を食べたい', 'お酒を飲みたい',
-        '間食したい', '食べる時間があまりない', '節約したい'
+        '食べる時間があまりない', '節約したい'
       ]
     },
     {
@@ -588,10 +588,8 @@ async function showQuestionStep(questions) {
       // moodがDBのtimeSlotと合わない場合に強制変換
       const _rawTime = questionAnswers[2];
       const _mood2 = questionAnswers[4];
-      timeOfDay = _mood2 === '間食したい' ? '間食'
-        : _mood2 === 'お酒を飲みたい' ? '夜'
-        : _rawTime === '間食' && _mood2 !== '間食したい' ? '昼'
-        : _rawTime === '夕方' && _mood2 === 'お酒を飲みたい' ? '夜'
+      timeOfDay = _mood2 === 'お酒を飲みたい' ? '夜'
+        : _rawTime === '間食' ? '昼'   // 時間帯'間食'は通常食メニューでは昼扱い（間食・補食モード時はmealVolumeで制御）
         : _rawTime;
       mood = questionAnswers[4];
       location = questionAnswers[3];
@@ -601,25 +599,17 @@ async function showQuestionStep(questions) {
       if (_rawTime === '間食' && mood === '食べる時間があまりない' && location === 'お弁当を作る') {
         location = 'コンビニ';
       }
-      // 2. 外食×間食したい → コンビニ
-      else if (location === '外食にしたい' && mood === '間食したい') {
-        location = 'コンビニ';
-      }
-      // 3. お弁当×お酒 → 家（お弁当でお酒は現実的でない）
+      // 2. お弁当×お酒 → 家（お弁当でお酒は現実的でない）
       else if (location === 'お弁当を作る' && mood === 'お酒を飲みたい') {
         location = '家で食べる';
       }
-      // 4. お弁当×揚げ物 → 家（お弁当用の揚げ物メニューがないため）
+      // 3. お弁当×揚げ物 → 家（お弁当用の揚げ物メニューがないため）
       else if (location === 'お弁当を作る' && mood === '揚げ物を食べたい') {
         location = '家で食べる';
       }
-      // 5. お弁当×時短 → 家（朝以外は家の時短メニューで対応）
+      // 4. お弁当×時短 → 家（朝以外は家の時短メニューで対応）
       else if (location === 'お弁当を作る' && mood === '食べる時間があまりない') {
         location = '家で食べる';
-      }
-      // 6. デリバリー×間食したい → コンビニ（デリバリーで間食は現実的でない）
-      else if (location === 'デリバリー' && mood === '間食したい') {
-        location = 'コンビニ';
       }
       // お酒設問はconditional（インデックス5）: nullの場合はスキップされた
       const sakeChoice = questionAnswers[5] !== null ? questionAnswers[5] : null;
