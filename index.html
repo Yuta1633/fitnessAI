@@ -208,7 +208,27 @@
             <input type="number" id="goal-bodyfat-input" placeholder="目標体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
           </div>
           <div style="margin-bottom:12px;">
-            <input type="date" id="goal-date-input" class="checkin-input" style="width:100%;">
+            <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">いつまでに目標を達成したいですか？</p>
+            <div id="goal-period-selector" style="display:flex;flex-direction:column;gap:6px;">
+              <button class="goal-period-btn" data-period="short" data-weeks="4" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">短期（約1か月）</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">早く結果を出したい人向け</div>
+              </button>
+              <button class="goal-period-btn" data-period="standard" data-weeks="12" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">中期（約3か月）<span style="font-size:11px;color:#c8f135;margin-left:6px;">おすすめ</span></span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">無理なくしっかり変えたい人向け</div>
+              </button>
+              <button class="goal-period-btn" data-period="long" data-weeks="24" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">長期（約6か月）</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">大きく体を変えたい人向け</div>
+              </button>
+            </div>
           </div>
           <button id="goal-save-btn" class="checkin-submit">目標を保存</button>
           <p id="goal-current" style="font-size:12px; color:var(--muted); margin-top:8px;"></p>

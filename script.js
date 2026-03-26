@@ -33,6 +33,7 @@ function userKey(key) {
 // ユーザーコンテキストシステム
 // ============================================================
 let cachedUserContext = null;
+let _goalPeriodType = null; // 目標期間選択: 'short' | 'standard' | 'long'
 
 async function buildUserContext() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -101,7 +102,13 @@ async function buildUserContext() {
     if (goal.target_date) {
       const target = new Date(goal.target_date);
       const daysLeft = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
-      ctx += ` / 期限: ${goal.target_date}（残り${daysLeft}日）`;
+      const _pt = localStorage.getItem(userKey('goal_period_type'));
+      const _ptLabel = { short: '短期（4週間）', standard: '中期（12週間）', long: '長期（24週間）' };
+      if (_pt && _ptLabel[_pt]) {
+        ctx += ` / 期間: ${_ptLabel[_pt]}（残り${daysLeft}日）`;
+      } else {
+        ctx += ` / 期限: ${goal.target_date}（残り${daysLeft}日）`;
+      }
     }
     ctx += '\n';
     // 目標との差分
@@ -574,9 +581,16 @@ async function showQuestionStep(questions) {
     let mood = null;
     let proteinSupp = null;
     let hunger = null;
-    // 修正③追加: [8] mealVolume / [9] trainingTiming（現時点は値取得のみ・ロジック反映は次フェーズ）
+    // 修正③追加: [8] mealVolume / [9] trainingTiming
     let mealVolume = null;
     let trainingTiming = null;
+
+    // 期間補正係数 (short:0.95 / standard:1.00 / long:1.05)
+    const _storedPeriod = localStorage.getItem(userKey('goal_period_type'));
+    const _periodFactorMap = { short: 0.95, standard: 1.00, long: 1.05 };
+    const goalPeriodType  = _storedPeriod || 'standard';
+    const goalPeriodWeeks = { short: 4, standard: 12, long: 24 }[goalPeriodType] || 12;
+    const periodFactor    = _periodFactorMap[goalPeriodType] || 1.00;
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
@@ -656,7 +670,8 @@ async function showQuestionStep(questions) {
         timeOfDay,
         hunger,
         mealVolume,      // 修正④: '間食・補食'の場合にPFCを補食サイズへ縮小
-        trainingTiming   // 修正⑤: トレ前→C増F減 / トレ後→P増F減
+        trainingTiming,  // 修正⑤: トレ前→C増F減 / トレ後→P増F減
+        periodFactor     // 期間補正: short=0.95 / standard=1.00 / long=1.05
       });
 
       // ── タンパク質最低ライン（全食数共通・体重ベース）──
@@ -2424,7 +2439,13 @@ async function loadDashboard() {
       if (goal.goal_body_fat) parts.push(`目標体脂肪率: ${goal.goal_body_fat}%`);
       if (goal.target_date) {
         const daysLeft = Math.ceil((new Date(goal.target_date) - new Date()) / (1000*60*60*24));
-        parts.push(`期限: ${goal.target_date}（残り${daysLeft}日）`);
+        const _pt = localStorage.getItem(userKey('goal_period_type'));
+        const _ptLabel = { short: '短期（約1か月）', standard: '中期（約3か月）', long: '長期（約6か月）' };
+        if (_pt && _ptLabel[_pt]) {
+          parts.push(`期間: ${_ptLabel[_pt]}（残り${daysLeft}日）`);
+        } else {
+          parts.push(`期限: ${goal.target_date}（残り${daysLeft}日）`);
+        }
       }
       goalCurrentEl.innerHTML = parts.length > 0
         ? `現在の目標 → ${parts.join('　／　')}`
@@ -2545,17 +2566,50 @@ async function saveGoal(userId, goalWeight, goalBodyFat, targetDate) {
     .upsert(row, { onConflict: 'user_id' });
 }
 
+// 期間選択ボタン
+document.querySelectorAll('.goal-period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    _goalPeriodType = btn.dataset.period;
+    document.querySelectorAll('.goal-period-btn').forEach(b => {
+      b.style.borderColor = 'var(--border)';
+      b.style.background = 'var(--card)';
+      b.querySelector('.period-label').style.color = 'var(--white)';
+    });
+    btn.style.borderColor = '#c8f135';
+    btn.style.background = 'rgba(200,241,53,0.08)';
+    btn.querySelector('.period-label').style.color = '#c8f135';
+  });
+});
+
 document.getElementById('goal-save-btn')?.addEventListener('click', async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
   const goalWeight = parseFloat(document.getElementById('goal-weight-input').value) || null;
   const goalBodyFat = parseFloat(document.getElementById('goal-bodyfat-input').value) || null;
-  const targetDate = document.getElementById('goal-date-input')?.value || null;
   if (!goalWeight && !goalBodyFat) { alert('目標体重か目標体脂肪率を入力してください'); return; }
+
+  // 期間選択 → target_date を計算
+  const periodWeeksMap = { short: 4, standard: 12, long: 24 };
+  const weeks = periodWeeksMap[_goalPeriodType] || 12;
+  const targetDateObj = new Date();
+  targetDateObj.setDate(targetDateObj.getDate() + weeks * 7);
+  const targetDate = targetDateObj.toISOString().split('T')[0];
+
+  // 期間タイプを localStorage に保存
+  if (_goalPeriodType) {
+    localStorage.setItem(userKey('goal_period_type'), _goalPeriodType);
+  }
+
   await saveGoal(session.user.id, goalWeight, goalBodyFat, targetDate);
   document.getElementById('goal-weight-input').value = '';
   document.getElementById('goal-bodyfat-input').value = '';
-  if (document.getElementById('goal-date-input')) document.getElementById('goal-date-input').value = '';
+  // ボタン状態をリセット
+  _goalPeriodType = null;
+  document.querySelectorAll('.goal-period-btn').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--card)';
+    b.querySelector('.period-label').style.color = 'var(--white)';
+  });
   cachedUserContext = null;
   loadDashboard();
 });

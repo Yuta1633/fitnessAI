@@ -642,7 +642,7 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger, mealVolume, trainingTiming } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger, mealVolume, trainingTiming, periodFactor = 1.0 } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
   // 食事回数+何食目 → MEAL_DISTRIBUTION、なければ従来の TIME_DISTRIBUTION
@@ -663,7 +663,7 @@ function calculateMealTarget(params) {
     gapAdjust = Math.max(-300, Math.min(300, gap * 30));
   }
 
-  const dailyCal = weight * coeff.calPerKg + gapAdjust;
+  const dailyCal = (weight * coeff.calPerKg + gapAdjust) * periodFactor;
   const dailyP   = weight * coeff.pPerKg;
 
   // 体脂肪率による脂質割合の微調整
