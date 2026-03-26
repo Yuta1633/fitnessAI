@@ -729,10 +729,7 @@ async function showQuestionStep(questions) {
         '貧血気味・鉄不足が心配':           { pBonus: 8 },
         '睡眠の質を上げたい':              { pBonus: 6, calPenalty: 6 },
         // 目的⑤体型
-        'お腹を引き締めたい':              { fPenalty: 5, pBonus: 8 },
-        '下半身が気になる':                { fPenalty: 4, calPenalty: 8 },
         '特定の部位ではなく、全体を引き締めたい': { pBonus: 8, fPenalty: 4 },
-        '顔・体のむくみをとりたい':         { calPenalty: 6 },
         '体重より見た目を変えたい':         { pBonus: 10, fPenalty: 4 },
         '筋肉をつけながら脂肪を落としたい': { pBonus: 12, fPenalty: 4 },
         // 特になし
@@ -855,14 +852,8 @@ async function showQuestionStep(questions) {
           }
         } else if (selectedGoal === '5') {
           const weeklyLoss = weight ? (weight * 0.005).toFixed(1) : '0.4';
-          if (selectedSub === 'お腹を引き締めたい') {
-            scienceAdvice = `腹部の引き締めには全身の体脂肪率を下げることが科学的に唯一有効（部分痩せは不可能：Ramírez-Campillo et al. 2013）。週${weeklyLoss}kgペースで体脂肪を落としながら体幹筋を維持すること。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '下半身が気になる') {
-            scienceAdvice = `下半身の引き締めには全身の脂肪減少と下半身の筋維持が必要（Ramírez-Campillo et al. 2013）。むくみ対策として塩分・高脂質食を控えカリウム豊富な食材を摂ることも有効。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '特定の部位ではなく、全体を引き締めたい') {
+          if (selectedSub === '特定の部位ではなく、全体を引き締めたい') {
             scienceAdvice = `全身の引き締めにはタンパク質を体重×1.6g確保しながらカロリーをわずかに抑えることで脂肪を落としながら筋肉を維持できる（Morton et al. 2018）。${gap !== 0 ? '目標まで' + Math.abs(gap) + 'kg、' : ''}`;
-          } else if (selectedSub === '顔・体のむくみをとりたい') {
-            scienceAdvice = `むくみ解消にはカリウム（海藻・豆類・魚）の摂取とナトリウムの制限が有効。水分をしっかり摂ることで逆説的にむくみが改善される（He & MacGregor 2010）。`;
           } else if (selectedSub === '体重より見た目を変えたい') {
             scienceAdvice = `体重が変わらなくても筋肉量を増やして脂肪を減らす「リコンポジション」は可能。タンパク質を体重×2g以上確保し、筋トレと組み合わせることで見た目が大きく変わる（Barakat et al. 2020）。`;
           } else if (selectedSub === '筋肉をつけながら脂肪を落としたい') {
@@ -1457,7 +1448,7 @@ const subOptions = {
     "recovery":  ['眠りが浅い','ストレスが強い','リラックスできない','体がだるい','頭痛がある','気力が湧かない']
   },
   "5": {
-    "nutrition": ['特になし','お腹を引き締めたい','下半身が気になる','特定の部位ではなく、全体を引き締めたい','顔・体のむくみをとりたい','体重より見た目を変えたい','筋肉をつけながら脂肪を落としたい'],
+    "nutrition": ['特になし','特定の部位ではなく、全体を引き締めたい','体重より見た目を変えたい','筋肉をつけながら脂肪を落としたい'],
     "training":  ['お腹引き締めたい','お尻を上げたい','姿勢を良くしたい','二の腕を細くしたい','太ももを引き締めたい','背中を鍛えたい'],
     "recovery":  ['猫背を改善したい','肩の位置を整えたい','脚のむくみをとりたい','腰回りをすっきりさせたい','見た目に影響する体のこりをとりたい']
   }
