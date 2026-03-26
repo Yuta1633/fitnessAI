@@ -642,7 +642,7 @@ function getGoalCoefficients(goalNum, currentBF, targetBF) {
 }
 
 function calculateMealTarget(params) {
-  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger, mealVolume } = params;
+  const { weight, goalNum, currentBF, targetBF, goalWeight, timeOfDay, totalMeals, mealIndex, hunger, mealVolume, trainingTiming } = params;
   const coeff = getGoalCoefficients(goalNum, currentBF, targetBF);
 
   // 食事回数+何食目 → MEAL_DISTRIBUTION、なければ従来の TIME_DISTRIBUTION
@@ -698,6 +698,16 @@ function calculateMealTarget(params) {
     mealP   = mealP   * snackScale;
     mealF   = mealF   * snackScale;
     mealC   = mealC   * snackScale;
+  }
+
+  // 修正⑤: trainingTiming によるPFCバランス微調整（mealVolume縮小の後に適用）
+  // カロリー合計は再計算しない（比率のみ調整）
+  if (trainingTiming === 'トレーニング前') {
+    mealC = mealC * 1.15;  // 炭水化物を増やす（エネルギー確保）
+    mealF = mealF * 0.85;  // 脂質を減らす（消化負担を下げる）
+  } else if (trainingTiming === 'トレーニング後') {
+    mealP = mealP * 1.15;  // タンパク質を増やす（筋合成促進）
+    mealF = mealF * 0.85;  // 脂質を減らす（タンパク質吸収を妨げない）
   }
 
   return {
