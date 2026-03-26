@@ -782,6 +782,14 @@ async function showQuestionStep(questions) {
         }
       }
 
+      // 矛盾チェック: 目的と目標体重の方向性が逆の場合
+      let hasContradiction = false;
+      if (weight && goalWeight) {
+        const gapDir = goalWeight - weight;
+        if (selectedGoal === '1' && gapDir > 0) hasContradiction = true; // 脂肪減少なのに増量目標
+        if (selectedGoal === '2' && gapDir < 0) hasContradiction = true; // 筋肥大なのに減量目標
+      }
+
       // 目的×サブ×目標差分から科学的アドバイスを生成
       let scienceAdvice = '';
       const gap = goalWeight && weight ? parseFloat((goalWeight - weight).toFixed(1)) : 0;
@@ -907,7 +915,10 @@ async function showQuestionStep(questions) {
         const sakeText = sakeInfo
           ? `\nお酒:「${sakeChoice}」（${sakeInfo.cal}kcal）→ 食事カロリーから差し引き済み。${sakeInfo.note}\n【重要】AIは必ずお酒の推奨量「${sakeChoice}」を提案の中で明示すること。それ以上飲むと健康リスクがある旨も添えること。`
           : '';
-        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）${sakeText}\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・目的・目標体重・体脂肪率の矛盾指摘・確認・質問は一切禁止。ユーザーの選択をそのまま受け入れて提案すること\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
+        const contradictionNote = hasContradiction
+          ? `\n【目的と目標の矛盾について】目標体重と選択した目的の方向性が異なります。AIはこの矛盾を指摘・確認・質問することは絶対禁止。選択した目的を最優先として即座に提案を出すこと。`
+          : '';
+        conversationHistory[0].content += `\n\n【今回提案する料理（確定済み）】\n${mealInfo}\n\n【ユーザーの現状と目標】\n${goalGapText || '体重記録なし'}${contradictionNote}\n今日選んだ悩み・状況:「${selectedSub}」\nプロテイン補給:「${proteinSupp}」（1食あたり食事で補うべきタンパク質を${proteinPerMeal}g減らせる）${sakeText}\n\n【科学的アドバイス（必ず踏まえること）】\n${scienceAdvice}\n\n【絶対厳守】\n・目的と目標体重に矛盾があっても提案を停止しない・質問しない・確認しない。選択した目的を最優先として必ず提案を出すこと\n・提案する料理名・食材・量・PFCは上記の確定済みデータから一切変更禁止\n・AIが独自に食材・飲み物・お酒を追加することは禁止\n・料理名の言い換えも禁止\n・お酒の提案はユーザーが「お酒を飲みたい」を選んだ場合のみ、科学的根拠の説明の中で種類を1種類だけ言及してよい\n・各候補の出力形式は必ず以下を守ること：\n\n▼ 第一候補: [料理名]\n食材: [食材1]、[食材2]...（上記の食材リストをそのままコピー）\n栄養: [上記の栄養データをそのままコピー。例: 約300kcal｜P28g(35%) F8g(24%) C14g(41%)]\n[科学的根拠を1〜2行]\n\n上記フォーマット以外での出力は禁止。特に「栄養:」行は上記の確定済みデータを一字一句変えずにコピーすること。`;
       }
     }
 
@@ -946,6 +957,15 @@ async function showQuestionStep(questions) {
         noteDiv.className = 'chat-message assistant';
         noteDiv.innerHTML = '<p style="color:#f5a623;font-size:13px;margin:0;padding:8px 12px;background:rgba(245,166,35,0.1);border-radius:8px;border-left:3px solid #f5a623;">※現在の体重が記録されていないため、60kgを想定して提案しています。体重を入力すると、より正確な提案になります。</p>';
         chatHistory.appendChild(noteDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      // 矛盾あり → 注意文を表示（提案は通常どおり継続）
+      if (hasContradiction) {
+        const contradictionDiv = document.createElement('div');
+        contradictionDiv.className = 'chat-message assistant';
+        contradictionDiv.innerHTML = '<p style="color:#f5a623;font-size:13px;margin:0;padding:8px 12px;background:rgba(245,166,35,0.1);border-radius:8px;border-left:3px solid #f5a623;">※現在の目標設定に矛盾がありますが、今回は「目的」を優先して提案しています。</p>';
+        chatHistory.appendChild(contradictionDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
       }
 
