@@ -245,7 +245,7 @@ function gen(){
   if(mealCount===2){
     const dn=addM(sleep,-180);
     if(exOn&&exTime==='morning'){
-      items.push({t:addM(bf,90),title:'運動後の食事（兼 昼食）',desc:`タンパク質20〜40g＋炭水化物。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
+      items.push({t:addM(bf,60),title:'運動後の食事（兼 昼食）',desc:`タンパク質20〜40g＋炭水化物。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
     }
     if(exOn&&exTime==='evening'){
       items.push({t:addM(dn,-30),title:'夕食（運動後）',desc:'運動後のタンパク質補給。就寝2〜3時間前に終えること。',tags:['POST-WORKOUT'],hl:true});
@@ -258,7 +258,7 @@ function gen(){
     const ln=addM(bf,interval);
     const dn=addM(sleep,-180);
     if(exOn&&exTime==='morning'){
-      items.push({t:addM(bf,90),title:'運動後の食事',desc:`タンパク質20〜40g＋炭水化物。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
+      items.push({t:addM(bf,60),title:'運動後の食事',desc:`タンパク質20〜40g＋炭水化物。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
     } else if(exOn&&exTime==='lunch'){
       items.push({t:addM(ln,-60),title:'運動前の軽食',desc:'消化の良い炭水化物を少量。',tags:['PRE-WORKOUT'],hl:false});
       items.push({t:addM(ln,45),title:'運動後の食事（昼食）',desc:`タンパク質を意識した昼食。${ageIdx>=2?'40代以降：プロテインシェイクを先に飲んでから食事が最効率。':''}`,tags:['POST-WORKOUT'],hl:true});
@@ -278,7 +278,7 @@ function gen(){
     const snk=addM(bf,interval*2);
     const dn=addM(sleep,-180);
     if(exOn&&exTime==='morning'){
-      items.push({t:addM(bf,90),title:'運動後の食事',desc:`タンパク質20〜40g。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
+      items.push({t:addM(bf,60),title:'運動後の食事',desc:`タンパク質20〜40g。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
     } else {
       items.push({t:ln,title:'昼食',desc:`代謝のピーク時間帯。${ageIdx>=2?'少量頻回の一環として適量に。':'しっかり食べてエネルギーを確保。'}`,tags:['代謝ピーク'],hl:false});
     }
@@ -297,7 +297,7 @@ function gen(){
     const snk2=addM(bf,interval*3);
     const dn=addM(sleep,-150);
     if(exOn&&exTime==='morning'){
-      items.push({t:addM(bf,90),title:'運動後の食事',desc:`タンパク質20〜40g。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
+      items.push({t:addM(bf,60),title:'運動後の食事',desc:`タンパク質20〜40g。${ageIdx>=2?'40代以降はこのウィンドウを特に厳守。':''}`,tags:['GOLDEN WINDOW','POST-WORKOUT'],hl:true});
     } else {
       items.push({t:snk1,title:'補食①',desc:'少量のタンパク質＋炭水化物で血糖値を安定。ロイシン閾値を継続的に維持します。',tags:['少量頻回'],hl:false});
     }
