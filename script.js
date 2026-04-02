@@ -585,12 +585,20 @@ async function showQuestionStep(questions) {
     let mealVolume = null;
     let trainingTiming = null;
 
-    // 期間補正係数 (short:0.95 / standard:1.00 / long:1.05)
-    const _storedPeriod = localStorage.getItem(userKey('goal_period_type'));
-    const _periodFactorMap = { short: 0.95, standard: 1.00, long: 1.05 };
+    // 期間補正係数（goal × period の2次元マップ）
+    // goal1（減量）: short=攻める / long=緩め  goal2（筋肥大）: short=攻める / long=緩め
+    const PERIOD_FACTOR_MAP = {
+      '1': { short: 0.95, standard: 1.00, long: 1.02 }, // 脂肪減少: 短期ほどカロリー絞る
+      '2': { short: 1.03, standard: 1.00, long: 0.98 }, // 筋肥大: 短期ほどカロリー増
+      '3': { short: 1.00, standard: 1.00, long: 1.00 }, // 体力向上: 期間補正なし
+      '4': { short: 1.00, standard: 1.00, long: 1.00 }, // 不調改善: 期間補正なし
+      '5': { short: 0.97, standard: 1.00, long: 1.02 }, // 体型改善: 短期ほどカロリー絞る
+    };
+    const _storedPeriod   = localStorage.getItem(userKey('goal_period_type'));
     const goalPeriodType  = _storedPeriod || 'standard';
     const goalPeriodWeeks = { short: 4, standard: 12, long: 24 }[goalPeriodType] || 12;
-    const periodFactor    = _periodFactorMap[goalPeriodType] || 1.00;
+    const _goalFactors    = PERIOD_FACTOR_MAP[selectedGoal] || { short: 1.00, standard: 1.00, long: 1.00 };
+    const periodFactor    = _goalFactors[goalPeriodType] ?? 1.00;
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
