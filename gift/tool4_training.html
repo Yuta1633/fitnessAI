@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>トレーニング頻度 計算ツール｜Fit Project AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F7FC;--card:#FFFFFF;--card2:#F0F0F8;--border:#E2E0F0;
+  --accent:#F97316;--text:#18182E;--text2:#4A4A6A;--muted:#9896B4;
+  --mono:'Space Mono',monospace;--sans:'Noto Sans JP',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;padding-bottom:48px}
+.hdr{background:linear-gradient(150deg,#12080200,#1C0C04);padding:40px 20px 28px;position:relative;overflow:hidden;background-color:#12080A}
+.hdr::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.brand{font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:4px;margin-bottom:12px;text-transform:uppercase}
+.hdr h1{font-size:26px;font-weight:900;line-height:1.25;margin-bottom:8px;color:#fff}
+.hdr h1 span{color:var(--accent)}
+.hdr p{font-size:12px;color:#9090B0;line-height:1.8}
+.badge{display:inline-flex;align-items:center;gap:5px;margin-top:14px;padding:4px 12px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);border-radius:20px;font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:2px}
+.main{padding:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+.card-title{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px}
+.goal-list{display:flex;flex-direction:column;gap:6px}
+.goal-item{display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--card2);border:2px solid transparent;border-radius:12px;cursor:pointer;transition:all .2s}
+.goal-item.on{border-color:var(--accent);background:rgba(249,115,22,0.05)}
+.goal-em{font-size:20px;flex-shrink:0}
+.goal-bd{flex:1}
+.goal-nm{font-size:13px;font-weight:600}
+.goal-ds{font-size:10px;color:var(--muted);margin-top:2px}
+.goal-arr{color:var(--muted);transition:color .2s}
+.goal-item.on .goal-arr{color:var(--accent)}
+.lv-list{display:flex;flex-direction:column;gap:6px}
+.lv-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border:2px solid transparent;border-radius:10px;cursor:pointer;transition:all .2s}
+.lv-item.on{border-color:var(--accent);background:rgba(249,115,22,0.05)}
+.lv-pip{width:8px;height:8px;border-radius:50%;border:2px solid var(--muted);flex-shrink:0;transition:all .2s}
+.lv-item.on .lv-pip{border-color:var(--accent);background:var(--accent);box-shadow:0 0 8px rgba(249,115,22,.4)}
+.lv-nm{font-size:13px;font-weight:500;flex:1}
+.lv-badge{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--border);padding:2px 8px;border-radius:8px}
+.lv-item.on .lv-badge{color:var(--accent);background:rgba(249,115,22,0.1)}
+.days-row{display:flex;gap:6px}
+.day-btn{flex:1;background:var(--card2);border:2px solid var(--border);border-radius:8px;padding:11px 4px;text-align:center;cursor:pointer;transition:all .2s}
+.day-btn.on{border-color:var(--accent);background:rgba(249,115,22,0.08)}
+.day-num{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--muted);transition:color .2s}
+.day-btn.on .day-num{color:var(--accent)}
+.day-lbl{font-size:9px;color:var(--muted);margin-top:2px;display:block}
+.cta{width:100%;background:var(--accent);border:none;border-radius:12px;padding:18px;color:#fff;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-top:4px;transition:all .2s;box-shadow:0 6px 20px rgba(249,115,22,0.3)}
+.cta:active{transform:scale(.98)}
+.res{display:none}
+.res.on{display:block;animation:rise .4s ease}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.res-hero{background:linear-gradient(150deg,#12080A,#1C0C04);border:1px solid rgba(249,115,22,0.2);border-radius:16px;padding:24px 20px;margin:16px 0}
+.res-freq{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase}
+.res-nm{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px}
+.res-sub{font-size:12px;color:#9090B0;line-height:1.7}
+.sched-row{display:flex;gap:4px;margin-top:16px}
+.sched-day{flex:1;text-align:center}
+.sched-dot{width:28px;height:28px;border-radius:50%;margin:0 auto 4px;transition:all .2s}
+.sched-dot.train{background:rgba(249,115,22,0.8);box-shadow:0 0 8px rgba(249,115,22,0.3)}
+.sched-dot.cardio{background:rgba(59,130,246,0.7)}
+.sched-dot.rest{background:var(--border)}
+.sched-lbl{font-family:var(--mono);font-size:8px;color:var(--muted)}
+.split-list{display:flex;flex-direction:column;gap:6px}
+.split-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.split-day{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:4px}
+.split-nm{font-size:13px;font-weight:600;margin-bottom:4px}
+.split-ms{display:flex;flex-wrap:wrap;gap:4px}
+.split-m{padding:2px 8px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:10px;color:var(--text2)}
+.vol-table{width:100%;border-collapse:collapse}
+.vol-table th{font-family:var(--mono);font-size:9px;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.vol-table td{font-size:12px;padding:8px;border-bottom:1px solid var(--border)}
+.vol-table tr:last-child td{border-bottom:none}
+.vol-num{font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+.sci{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px}
+.sci-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase}
+.sci p{font-size:11px;color:var(--muted);line-height:1.9}
+.ftr{text-align:center;padding:36px 20px 0;font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="brand">Fit Project AI</div>
+  <h1>目的別<br><span>トレーニング頻度計算</span></h1>
+  <p>目標・経験・時間から<br>最適なトレーニングプランが出る</p>
+  <div class="badge">⚗ NSCA / ACSM ガイドラインベース</div>
+</div>
+
+<div class="main">
+  <div class="card">
+    <div class="card-title">STEP 01 — 目標</div>
+    <div class="goal-list">
+      <div class="goal-item on" id="g0" onclick="setGoal('fat',this)"><div class="goal-em">🔥</div><div class="goal-bd"><div class="goal-nm">脂肪を落としたい</div><div class="goal-ds">有酸素と筋トレで体脂肪を効率的に落とす</div></div><div class="goal-arr">→</div></div>
+      <div class="goal-item" id="g1" onclick="setGoal('muscle',this)"><div class="goal-em">💪</div><div class="goal-bd"><div class="goal-nm">筋肉をつけたい</div><div class="goal-ds">サイズと筋力の増加を優先</div></div><div class="goal-arr">→</div></div>
+      <div class="goal-item" id="g2" onclick="setGoal('energy',this)"><div class="goal-em">⚡</div><div class="goal-bd"><div class="goal-nm">体力を上げたい</div><div class="goal-ds">持久力・スタミナ・日常体力の向上</div></div><div class="goal-arr">→</div></div>
+      <div class="goal-item" id="g3" onclick="setGoal('recovery',this)"><div class="goal-em">🌿</div><div class="goal-bd"><div class="goal-nm">不調を改善したい</div><div class="goal-ds">腰痛・疲れやすさ・睡眠改善を目指す</div></div><div class="goal-arr">→</div></div>
+      <div class="goal-item" id="g4" onclick="setGoal('aesthetics',this)"><div class="goal-em">✨</div><div class="goal-bd"><div class="goal-nm">体型を整えたい（見た目特化）</div><div class="goal-ds">引き締め・バランスの良い体型づくり</div></div><div class="goal-arr">→</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">STEP 02 — 経験レベル</div>
+    <div class="lv-list">
+      <div class="lv-item on" id="lv0" onclick="setLv('beginner',this)"><div class="lv-pip"></div><div class="lv-nm">🌱 初心者 — 経験0〜6ヶ月</div><div class="lv-badge">週2〜3</div></div>
+      <div class="lv-item" id="lv1" onclick="setLv('intermediate',this)"><div class="lv-pip"></div><div class="lv-nm">⚡ 中級者 — 6ヶ月〜2年</div><div class="lv-badge">週3〜4</div></div>
+      <div class="lv-item" id="lv2" onclick="setLv('advanced',this)"><div class="lv-pip"></div><div class="lv-nm">🔥 上級者 — 2年以上</div><div class="lv-badge">週4〜6</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">STEP 03 — 週に動ける日数</div>
+    <div class="days-row">
+      <div class="day-btn" onclick="setDays(2,this)"><div class="day-num">2</div><span class="day-lbl">日</span></div>
+      <div class="day-btn on" onclick="setDays(3,this)"><div class="day-num">3</div><span class="day-lbl">日</span></div>
+      <div class="day-btn" onclick="setDays(4,this)"><div class="day-num">4</div><span class="day-lbl">日</span></div>
+      <div class="day-btn" onclick="setDays(5,this)"><div class="day-num">5</div><span class="day-lbl">日</span></div>
+      <div class="day-btn" onclick="setDays(6,this)"><div class="day-num">6</div><span class="day-lbl">日</span></div>
+    </div>
+  </div>
+
+  <button class="cta" onclick="calc()">プランを生成する →</button>
+
+  <div class="res" id="res">
+    <div class="res-hero">
+      <div class="res-freq">推奨頻度 / <span id="rFreq">—</span> 日 per week</div>
+      <div class="res-nm" id="rNm">—</div>
+      <div class="res-sub" id="rSub"></div>
+      <div class="sched-row" id="sched"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">週間スケジュール</div>
+      <div class="split-list" id="split"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-title">推奨ボリューム（部位別/週）</div>
+      <table class="vol-table">
+        <tr><th>部位・種目</th><th>セット数/週</th><th>レップ数</th></tr>
+        <tbody id="volTbl"></tbody>
+      </table>
+    </div>
+
+    <div class="sci">
+      <div class="sci-lbl">科学的根拠</div>
+      <p id="sci"></p>
+    </div>
+  </div>
+</div>
+<div class="ftr">Fit Project AI｜AI × プロコーチで、続く体づくりを。</div>
+
+<script>
+let goal='fat', lv='beginner', days=3;
+
+const plans={
+  beginner:{
+    fat:{2:{nm:'全身法＋有酸素 週2回',sub:'筋トレで筋肉を守りながら有酸素で脂肪を燃やす基本構成。',sets:'10〜14',reps:'12〜15',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身＋有酸素20分',ms:['全主要筋群','脂肪燃焼有酸素']}]},3:{nm:'全身法 週3回',sub:'',sets:'10〜14',reps:'12〜15',sched:['train','rest','train','rest','train','rest','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']}]},4:{nm:'全身＋有酸素 週4回',sub:'',sets:'10〜14',reps:'12〜15',sched:['train','cardio','train','rest','train','cardio','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']},{day:'火・土',nm:'有酸素30分',ms:['ジョギング・水泳']}]},5:{nm:'上下分割＋有酸素',sub:'',sets:'10〜14',reps:'12〜15',sched:['train','cardio','train','rest','train','cardio','rest'],split:[{day:'月・水・金',nm:'筋トレ交互',ms:['上半身/下半身']},{day:'火・土',nm:'有酸素20〜30分',ms:['LISS有酸素']}]},6:{nm:'上下分割＋有酸素毎日',sub:'',sets:'10〜14',reps:'12〜15',sched:['train','cardio','train','cardio','train','train','rest'],split:[{day:'月・水・土',nm:'筋トレ',ms:['上半身・下半身']},{day:'火・木',nm:'有酸素',ms:['20〜30分']}]}},
+    muscle:{2:{nm:'全身法 週2回',sub:'初心者の筋肥大には全身を鍛える全身法が最適。',sets:'10〜15',reps:'8〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身法',ms:['スクワット','ベンチプレス','デッドリフト','肩・腕']}]},3:{nm:'全身法 週3回',sub:'週3回が初心者に最も効果的。',sets:'12〜16',reps:'8〜12',sched:['train','rest','train','rest','train','rest','rest'],split:[{day:'月・水・金',nm:'全身法',ms:['主要コンパウンド種目']}]},4:{nm:'上下分割 週4回',sub:'',sets:'12〜16',reps:'8〜12',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['胸・背中・肩・腕']},{day:'火・金',nm:'下半身',ms:['全脚部']}]},5:{nm:'全身法＋補助 週5回',sub:'',sets:'12〜16',reps:'8〜12',sched:['train','train','train','rest','train','train','rest'],split:[{day:'月・水・金',nm:'全身',ms:['主要コンパウンド']},{day:'火・木',nm:'補助種目',ms:['腕・体幹']}]},6:{nm:'PPL 週6回',sub:'',sets:'12〜18',reps:'8〜12',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['背中・二頭']},{day:'水・土',nm:'脚',ms:['全脚部']}]}},
+    energy:{2:{nm:'有酸素＋全身法 週2回',sub:'体力向上の基礎。有酸素と筋トレを組み合わせる。',sets:'8〜12',reps:'15〜20',sched:['cardio','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'有酸素（30〜40分）',ms:['ジョギング・自転車・水泳']},{day:'木',nm:'全身筋トレ',ms:['大筋群中心・高回数']}]},3:{nm:'有酸素×2＋筋トレ×1',sub:'持久力の基盤構築に最適な頻度。',sets:'8〜12',reps:'15〜20',sched:['cardio','rest','train','rest','cardio','rest','rest'],split:[{day:'月・金',nm:'有酸素（30〜45分）',ms:['ジョギング・サイクリング']},{day:'水',nm:'全身筋トレ',ms:['補助筋群の強化']}]},4:{nm:'有酸素×3＋筋トレ×1',sub:'',sets:'8〜12',reps:'15〜20',sched:['cardio','train','cardio','rest','cardio','rest','rest'],split:[{day:'月・水・金',nm:'有酸素（40〜50分）',ms:['距離・強度を変化させる']},{day:'火',nm:'全身筋トレ',ms:['体幹・下半身強化']}]},5:{nm:'有酸素×3＋筋トレ×2',sub:'',sets:'10〜14',reps:'15〜20',sched:['cardio','train','cardio','train','cardio','rest','rest'],split:[{day:'月・水・金',nm:'有酸素（40〜60分）',ms:['ペース走・距離走']},{day:'火・木',nm:'筋トレ（上下交互）',ms:['上半身/下半身']}]},6:{nm:'専門的持久力トレーニング',sub:'',sets:'10〜14',reps:'15〜20',sched:['cardio','train','cardio','cardio','train','cardio','rest'],split:[{day:'月・水・木・土',nm:'有酸素（強度変化）',ms:['易・中・高の3強度']},{day:'火・金',nm:'筋トレ',ms:['全身法・コアトレ']}]}},
+    recovery:{2:{nm:'全身法 週2回（低強度）',sub:'不調改善には無理なく続けることが最優先。',sets:'8〜12',reps:'10〜15',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身（軽負荷）＋体幹',ms:['主要筋群・軽め','プランク・ブリッジ']}]},3:{nm:'全身法＋ストレッチ 週3回',sub:'運動後のストレッチを必ず行う。',sets:'8〜12',reps:'10〜15',sched:['train','rest','train','rest','train','rest','rest'],split:[{day:'月・水・金',nm:'全身＋ストレッチ',ms:['全主要筋群','10分ストレッチ']}]},4:{nm:'全身＋軽い有酸素 週4回',sub:'',sets:'8〜12',reps:'10〜15',sched:['train','cardio','train','cardio','rest','rest','rest'],split:[{day:'月・水',nm:'全身（体幹強化）',ms:['主要筋群','コアトレーニング']},{day:'火・木',nm:'軽い有酸素',ms:['ウォーキング・水泳30分']}]},5:{nm:'全身＋有酸素 週5回',sub:'',sets:'8〜12',reps:'10〜15',sched:['train','cardio','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'全身（低強度）',ms:['全主要筋群']},{day:'火・木',nm:'有酸素＋ストレッチ',ms:['30分＋ストレッチ']}]},6:{nm:'週6回アクティブリカバリー',sub:'',sets:'8〜12',reps:'10〜15',sched:['train','cardio','train','cardio','train','cardio','rest'],split:[{day:'月・水・金',nm:'全身（軽負荷）',ms:['全主要筋群']},{day:'火・木・土',nm:'有酸素＋ストレッチ',ms:['20〜30分']}]}},
+    aesthetics:{2:{nm:'全身法＋有酸素 週2回',sub:'体型改善は脂肪燃焼＋筋肉維持の両立が目標。',sets:'10〜14',reps:'12〜15',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身＋有酸素20分',ms:['全主要筋群','脂肪燃焼有酸素']}]},3:{nm:'全身法＋有酸素 週3回',sub:'',sets:'10〜14',reps:'12〜15',sched:['train','rest','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']},{day:'木',nm:'有酸素30分',ms:['LISS or HIIT']}]},4:{nm:'全身法＋有酸素 週4回',sub:'最も効果的な体型改善構成。',sets:'10〜14',reps:'12〜15',sched:['train','cardio','train','rest','train','cardio','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']},{day:'火・土',nm:'有酸素30分',ms:['LISS or HIIT']}]},5:{nm:'上下分割＋有酸素',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','cardio','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'筋トレ（交互）',ms:['上半身/下半身']},{day:'火・木',nm:'有酸素20〜30分',ms:['LISS or HIIT']}]},6:{nm:'上下分割＋有酸素毎日',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','cardio','train','cardio','train','train','rest'],split:[{day:'月・水・土',nm:'筋トレ',ms:['上半身・下半身']},{day:'火・木',nm:'有酸素',ms:['HIIT 20〜25分']}]}},
+  },
+  intermediate:{
+    fat:{2:{nm:'上下分割 週2回',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'上半身＋有酸素',ms:['胸・背中・肩・腕']},{day:'木',nm:'下半身＋有酸素',ms:['全脚部','有酸素20分']}]},3:{nm:'全身法 週3回＋有酸素',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','rest','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']},{day:'木',nm:'有酸素30分',ms:['HIIT or LISS']}]},4:{nm:'上下分割＋有酸素 週4回',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['胸・背中・肩・腕']},{day:'火・金',nm:'下半身＋有酸素',ms:['全脚部','有酸素25分']}]},5:{nm:'PPL週4回＋有酸素',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','train','train','cardio','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['Push/Pull交互']},{day:'火',nm:'脚',ms:['全脚部']},{day:'水',nm:'有酸素30分',ms:['HIIT']}]},6:{nm:'PPL 週6回',sub:'',sets:'12〜16',reps:'12〜15',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['背中・二頭']},{day:'水・土',nm:'脚＋有酸素',ms:['全脚部','有酸素20分']}]}},
+    muscle:{2:{nm:'全身法 週2回（高ボリューム）',sub:'',sets:'15〜20',reps:'8〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身（高ボリューム）',ms:['全部位各4〜5セット']}]},3:{nm:'PPL 週3回',sub:'各部位に十分な刺激を与えられます。',sets:'15〜20',reps:'8〜12',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'Push',ms:['胸・三角筋・三頭筋']},{day:'火',nm:'Pull',ms:['広背筋・菱形筋・二頭筋']},{day:'水',nm:'脚',ms:['大腿四頭筋・ハムストリングス・臀筋']}]},4:{nm:'上下分割 週4回',sub:'各部位を週2回刺激できる最も効率的な分割法。',sets:'15〜20',reps:'8〜12',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['胸・背中・肩・腕']},{day:'火・金',nm:'下半身',ms:['大腿四頭筋・ハムストリングス・臀筋']}]},5:{nm:'PPL 週5回',sub:'各部位を週2回刺激。',sets:'15〜22',reps:'8〜12',sched:['train','train','train','rest','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['背中・二頭']},{day:'水',nm:'脚',ms:['全脚部']}]},6:{nm:'PPL 週6回',sub:'各部位週2回刺激の最大頻度。',sets:'16〜22',reps:'8〜12',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸（厚み/形）・肩・三頭']},{day:'火・金',nm:'Pull',ms:['広背筋（幅/厚み）・二頭']},{day:'水・土',nm:'脚',ms:['大腿四頭筋・ハムストリングス・臀筋']}]}},
+    energy:{2:{nm:'有酸素＋筋トレ 週2回',sub:'体力向上の王道パターン。',sets:'8〜12',reps:'12〜15',sched:['cardio','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'有酸素（40〜50分）',ms:['ジョギング・水泳']},{day:'木',nm:'全身筋トレ',ms:['主要筋群']}]},3:{nm:'有酸素×2＋筋トレ×1',sub:'',sets:'10〜14',reps:'12〜15',sched:['cardio','train','rest','cardio','rest','train','rest'],split:[{day:'月・木',nm:'有酸素（45〜60分）',ms:['ランニング・水泳']},{day:'火',nm:'全身筋トレ',ms:['補助筋群']}]},4:{nm:'有酸素×2＋筋トレ×2',sub:'',sets:'10〜14',reps:'12〜15',sched:['cardio','train','cardio','train','rest','rest','rest'],split:[{day:'月・水',nm:'有酸素（50〜60分）',ms:['ペース走・インターバル走']},{day:'火・木',nm:'筋トレ（上下交互）',ms:['上半身/下半身']}]},5:{nm:'有酸素×3＋筋トレ×2',sub:'',sets:'12〜16',reps:'12〜15',sched:['cardio','train','cardio','train','cardio','rest','rest'],split:[{day:'月・水・金',nm:'有酸素（50〜70分）',ms:['長距離・ペース走・HIIT']},{day:'火・木',nm:'筋トレ',ms:['全身法']}]},6:{nm:'本格持久力プログラム',sub:'',sets:'12〜16',reps:'12〜15',sched:['cardio','train','cardio','cardio','train','cardio','rest'],split:[{day:'月・水・木・土',nm:'有酸素（強度変化）',ms:['易・中・高の3強度']},{day:'火・金',nm:'筋トレ',ms:['全身法']}]}},
+    recovery:{2:{nm:'全身法 週2回',sub:'',sets:'8〜12',reps:'10〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身（軽負荷）',ms:['全主要筋群']}]},3:{nm:'全身法 週3回',sub:'',sets:'8〜12',reps:'10〜12',sched:['train','rest','train','rest','train','rest','rest'],split:[{day:'月・水・金',nm:'全身',ms:['全主要筋群']}]},4:{nm:'上下分割 週4回',sub:'',sets:'8〜12',reps:'10〜12',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['全上半身']},{day:'火・金',nm:'下半身',ms:['全脚部・腹筋']}]},5:{nm:'5日アクティブ',sub:'',sets:'8〜12',reps:'10〜12',sched:['train','cardio','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'筋トレ',ms:['全主要筋群']},{day:'火・木',nm:'有酸素',ms:['20〜30分']}]},6:{nm:'6日アクティブリカバリー',sub:'',sets:'8〜12',reps:'10〜12',sched:['train','train','cardio','train','train','cardio','rest'],split:[{day:'月・火・木・金',nm:'上下分割',ms:['全主要筋群']},{day:'水・土',nm:'有酸素',ms:['20〜30分']}]}},
+    aesthetics:{2:{nm:'上下分割 週2回',sub:'',sets:'12〜16',reps:'10〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'上半身',ms:['胸・肩・背中']},{day:'木',nm:'下半身＋有酸素',ms:['全脚部','有酸素25分']}]},3:{nm:'3分割 週3回',sub:'',sets:'12〜16',reps:'10〜12',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'胸・三頭',ms:['BP','フライ']},{day:'火',nm:'背中・二頭',ms:['DL','ロウ','カール']},{day:'水',nm:'脚・肩',ms:['SQ','OHP']}]},4:{nm:'上下分割＋有酸素 週4回',sub:'体型改善の最適バランス。',sets:'12〜16',reps:'10〜12',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['胸・背中・肩・腕']},{day:'火・金',nm:'下半身＋有酸素',ms:['全脚部','有酸素25分']}]},5:{nm:'PPL 週5回（体型特化）',sub:'',sets:'14〜18',reps:'10〜12',sched:['train','train','train','rest','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['背中・二頭']},{day:'水',nm:'脚＋有酸素',ms:['全脚部','HIIT20分']}]},6:{nm:'PPL 週6回（体型特化）',sub:'',sets:'14〜18',reps:'10〜12',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['背中・二頭']},{day:'水・土',nm:'脚＋有酸素',ms:['全脚部','HIIT20分']}]}},
+  },
+  advanced:{
+    fat:{2:{nm:'上下分割 週2回',sub:'',sets:'14〜18',reps:'12〜15',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'上半身',ms:['胸・背中・肩・腕']},{day:'木',nm:'下半身＋有酸素',ms:['全脚部','HIIT30分']}]},3:{nm:'3分割 週3回',sub:'',sets:'14〜18',reps:'12〜15',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'押す系',ms:['胸・肩・三頭']},{day:'火',nm:'下半身',ms:['全脚部']},{day:'水',nm:'引く系',ms:['背中・二頭']}]},4:{nm:'3分割＋有酸素',sub:'',sets:'14〜18',reps:'12〜15',sched:['train','train','train','cardio','rest','rest','rest'],split:[{day:'月',nm:'押す系',ms:['胸・肩・三頭']},{day:'火',nm:'下半身',ms:['全脚部']},{day:'水',nm:'引く系',ms:['背中・二頭']},{day:'木',nm:'有酸素',ms:['HIIT30〜40分']}]},5:{nm:'4分割＋有酸素',sub:'',sets:'14〜18',reps:'12〜15',sched:['train','train','train','train','cardio','rest','rest'],split:[{day:'月',nm:'胸',ms:['BP・フライ']},{day:'火',nm:'背中',ms:['DL・ロウイング']},{day:'水',nm:'脚',ms:['SQ・RDL']},{day:'木',nm:'肩・腕',ms:['OHP・カール']},{day:'金',nm:'有酸素',ms:['30分']}]},6:{nm:'5分割＋有酸素',sub:'',sets:'14〜18',reps:'12〜15',sched:['train','train','train','train','train','cardio','rest'],split:[{day:'月〜金',nm:'胸/背/肩/脚/腕',ms:['各部位集中']},{day:'土',nm:'有酸素',ms:['30分']}]}},
+    muscle:{2:{nm:'全身法 週2回（超高強度）',sub:'少ない頻度でも高強度・高ボリュームで対応。',sets:'16〜22',reps:'6〜10',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身（高強度）',ms:['全部位各4〜5セット']}]},3:{nm:'3分割 週3回',sub:'各部位に十分な刺激。',sets:'16〜22',reps:'6〜12',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'胸・背中',ms:['BP','DL','フライ']},{day:'火',nm:'肩・腕',ms:['OHP','サイドレイズ','カール']},{day:'水',nm:'下半身',ms:['SQ','RDL','レッグプレス']}]},4:{nm:'4分割',sub:'各部位を丁寧に追い込む。',sets:'16〜22',reps:'6〜12',sched:['train','train','train','train','rest','rest','rest'],split:[{day:'月',nm:'胸',ms:['BP','インクライン','フライ']},{day:'火',nm:'背中',ms:['DL','プルアップ','ロウ']},{day:'木',nm:'肩・腕',ms:['OHP','サイドレイズ','カール']},{day:'金',nm:'脚',ms:['SQ','RDL','レッグプレス']}]},5:{nm:'PPL 週5回',sub:'最も人気の高頻度構成。',sets:'16〜22',reps:'6〜12',sched:['train','train','train','rest','train','train','rest'],split:[{day:'月・木',nm:'Push',ms:['胸・肩・三頭']},{day:'火・金',nm:'Pull',ms:['広背筋・菱形筋・二頭']},{day:'水',nm:'脚',ms:['全脚部筋群']}]},6:{nm:'PPL 週6回',sub:'各部位週2回の最高頻度。',sets:'16〜24',reps:'6〜12',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push A/B',ms:['胸（厚み/形）・肩・三頭']},{day:'火・金',nm:'Pull A/B',ms:['広背筋（幅/厚み）・二頭']},{day:'水・土',nm:'脚 A/B',ms:['大腿四頭筋・ハムストリングス・臀筋']}]}},
+    energy:{2:{nm:'有酸素集中型 週2回',sub:'',sets:'10〜14',reps:'12〜15',sched:['cardio','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'有酸素（60分）',ms:['長距離走・水泳']},{day:'木',nm:'全身筋トレ',ms:['主要筋群']}]},3:{nm:'有酸素×2＋筋トレ×1',sub:'',sets:'12〜16',reps:'12〜15',sched:['cardio','train','rest','cardio','rest','train','rest'],split:[{day:'月・木',nm:'有酸素（60〜70分）',ms:['ランニング・水泳']},{day:'火',nm:'筋トレ',ms:['補助筋群']}]},4:{nm:'有酸素×2＋筋トレ×2',sub:'',sets:'12〜16',reps:'12〜15',sched:['cardio','train','cardio','train','rest','rest','rest'],split:[{day:'月・水',nm:'有酸素（60〜80分）',ms:['ペース走・インターバル走']},{day:'火・木',nm:'筋トレ（上下交互）',ms:['上半身/下半身']}]},5:{nm:'有酸素×3＋筋トレ×2',sub:'',sets:'12〜16',reps:'12〜15',sched:['cardio','train','cardio','train','cardio','rest','rest'],split:[{day:'月・水・金',nm:'有酸素（60〜90分）',ms:['長距離・HIIT・インターバル']},{day:'火・木',nm:'筋トレ',ms:['全身法']}]},6:{nm:'競技向け持久力プログラム',sub:'',sets:'14〜18',reps:'12〜15',sched:['cardio','train','cardio','cardio','train','cardio','rest'],split:[{day:'月・水・木・土',nm:'有酸素（強度変化）',ms:['易・中・高の3強度']},{day:'火・金',nm:'筋トレ',ms:['全身法']}]}},
+    recovery:{2:{nm:'全身法 週2回（回復特化）',sub:'',sets:'10〜14',reps:'10〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月・木',nm:'全身（軽〜中負荷）',ms:['全主要筋群']}]},3:{nm:'3分割 週3回',sub:'',sets:'10〜14',reps:'10〜12',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'上半身A',ms:['胸・三頭']},{day:'火',nm:'下半身',ms:['全脚部']},{day:'水',nm:'上半身B',ms:['背中・二頭・肩']}]},4:{nm:'4分割',sub:'',sets:'10〜14',reps:'10〜12',sched:['train','train','rest','train','train','rest','rest'],split:[{day:'月・木',nm:'上半身',ms:['全上半身']},{day:'火・金',nm:'下半身',ms:['全脚部・腹筋']}]},5:{nm:'5日アクティブ',sub:'',sets:'10〜14',reps:'10〜12',sched:['train','cardio','train','cardio','train','rest','rest'],split:[{day:'月・水・金',nm:'筋トレ',ms:['全主要筋群']},{day:'火・木',nm:'有酸素',ms:['20〜30分']}]},6:{nm:'6日アクティブ',sub:'',sets:'10〜14',reps:'10〜12',sched:['train','train','cardio','train','train','cardio','rest'],split:[{day:'月・火・木・金',nm:'上下分割',ms:['全主要筋群']},{day:'水・土',nm:'有酸素',ms:['20〜30分']}]}},
+    aesthetics:{2:{nm:'3分割 週2回（体型特化）',sub:'',sets:'14〜18',reps:'10〜12',sched:['train','rest','rest','train','rest','rest','rest'],split:[{day:'月',nm:'上半身A',ms:['胸・三頭']},{day:'木',nm:'背中・脚・肩',ms:['DL・SQ・OHP']}]},3:{nm:'3分割 週3回（体型特化）',sub:'各部位を週1回高強度で追い込む。',sets:'14〜18',reps:'10〜12',sched:['train','train','train','rest','rest','rest','rest'],split:[{day:'月',nm:'胸・三頭',ms:['BP','フライ','プレスダウン']},{day:'火',nm:'背中・二頭',ms:['DL','ロウイング','カール']},{day:'水',nm:'脚・肩',ms:['SQ','レッグプレス','OHP']}]},4:{nm:'4分割 週4回（体型特化）',sub:'各部位を丁寧に追い込む体型特化構成。',sets:'14〜18',reps:'10〜12',sched:['train','train','train','train','rest','rest','rest'],split:[{day:'月',nm:'胸',ms:['BP','インクライン','フライ']},{day:'火',nm:'背中',ms:['DL','プルアップ','ロウ']},{day:'木',nm:'脚',ms:['SQ','RDL','レッグプレス']},{day:'金',nm:'肩・腕',ms:['OHP','サイドレイズ','カール']}]},5:{nm:'PPL 週5回（体型特化）',sub:'',sets:'14〜18',reps:'10〜12',sched:['train','train','train','rest','train','train','rest'],split:[{day:'月・木',nm:'Push（体型重視）',ms:['胸（上/下/外）・肩・三頭']},{day:'火・金',nm:'Pull（体型重視）',ms:['広背筋（幅/厚）・二頭']},{day:'水',nm:'脚＋有酸素',ms:['全脚部・HIIT20分']}]},6:{nm:'PPL 週6回（体型特化）',sub:'',sets:'14〜20',reps:'10〜12',sched:['train','train','train','train','train','train','rest'],split:[{day:'月・木',nm:'Push A/B',ms:['胸（上/中/下）・肩・三頭']},{day:'火・金',nm:'Pull A/B',ms:['広背筋（幅/厚み）・二頭']},{day:'水・土',nm:'脚＋有酸素',ms:['全脚部・HIIT20分']}]}},
+  },
+};
+
+const sciences={
+  fat:'筋トレ＋有酸素の組み合わせが体脂肪減少に最も効果的（Willis et al., 2012）。40代以降は有酸素の比率を上げながら筋トレ頻度をやや下げるアプローチが継続しやすく、インスリン感受性の改善にも効果的です。',
+  muscle:'Schoenfeld（2010）のメタアナリシスでは週あたりの総ボリュームが筋肥大の最大決定因子です。週2回以上の各部位への刺激が最適な筋肥大を促します（Schoenfeld et al., 2016）。',
+  energy:'体力向上には有酸素能力（VO2max）の向上が核心。週3〜4回の有酸素＋週2回の筋トレがスタミナと日常体力を同時に向上させます。高強度インターバル（HIIT）が短時間でVO2maxを効率的に上げる方法として推奨されます（Weston et al., 2014）。',
+  recovery:'ACSMは慢性疾患・不調改善に週2〜3回の低強度〜中強度の運動を推奨。腰痛・疲労感改善には体幹トレーニングと柔軟性運動の組み合わせが特に効果的です。50代以降は関節保護のため軽重量・高回数を基本とします（ACSM, 2018）。',
+  aesthetics:'体型（見た目）改善には筋肉量を維持しながら体脂肪率を下げる「ボディリコンポジション」が目標。週3〜4回の筋トレ＋週2〜3回の有酸素の組み合わせが最も効果的です（Barakat et al., 2020）。',
+};
+
+const dayLabels=['月','火','水','木','金','土','日'];
+
+function setGoal(v,el){
+  goal=v;
+  document.querySelectorAll('.goal-item').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+}
+function setLv(v,el){
+  lv=v;
+  document.querySelectorAll('.lv-item').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+}
+function setDays(n,el){
+  days=n;
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function calc(){
+  const lvPlans=plans[lv];
+  let goalPlans=lvPlans[goal];
+  if(!goalPlans) goalPlans=lvPlans['fat'];
+  
+  // days clamp
+  const availDays=Object.keys(goalPlans).map(Number).sort((a,b)=>a-b);
+  const effDays=availDays.reduce((prev,curr)=>Math.abs(curr-days)<Math.abs(prev-days)?curr:prev);
+  const p=goalPlans[effDays];
+
+  document.getElementById('rFreq').textContent=effDays;
+  document.getElementById('rNm').textContent=p.nm;
+  document.getElementById('rSub').textContent=p.sub||'目標・経験・頻度に合わせた最適なプランです。';
+
+  document.getElementById('sched').innerHTML=p.sched.map((s,i)=>`
+    <div class="sched-day">
+      <div class="sched-dot ${s}"></div>
+      <div class="sched-lbl">${dayLabels[i]}</div>
+    </div>`).join('');
+
+  document.getElementById('split').innerHTML=p.split.map(s=>`
+    <div class="split-item">
+      <div class="split-day">${s.day}</div>
+      <div class="split-nm">${s.nm}</div>
+      <div class="split-ms">${s.ms.map(m=>`<span class="split-m">${m}</span>`).join('')}</div>
+    </div>`).join('');
+
+  const volData={
+    fat:[['全主要筋群',p.sets,p.reps],['有酸素（分/週）','90〜150','—']],
+    muscle:[['胸',p.sets,p.reps],['背中',p.sets,p.reps],['脚',p.sets,p.reps],['肩',p.sets,p.reps],['腕','8〜12',p.reps]],
+    energy:[['有酸素（分/週）','150〜300','—'],['全身筋トレ','8〜14',p.reps]],
+    recovery:[['全主要筋群',p.sets,p.reps],['体幹・コア','6〜10','15〜20'],['ストレッチ（分/週）','30〜60','—']],
+    aesthetics:[['胸',p.sets,p.reps],['背中',p.sets,p.reps],['脚',p.sets,p.reps],['有酸素（分/週）','60〜120','—']],
+  };
+
+  document.getElementById('volTbl').innerHTML=(volData[goal]||volData['fat']).map(([part,sets,reps])=>`
+    <tr><td>${part}</td><td><span class="vol-num">${sets}</span></td><td><span style="font-family:var(--mono);font-size:11px">${reps}</span></td></tr>`).join('');
+
+  document.getElementById('sci').textContent=sciences[goal];
+
+  const r=document.getElementById('res');
+  r.classList.add('on');
+  r.scrollIntoView({behavior:'smooth',block:'start'});
+}
+</script>
+</body>
+</html>
