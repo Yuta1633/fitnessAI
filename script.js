@@ -3698,6 +3698,7 @@ function finalizeStreamingMessage(div, text) {
     const { cleanText: textWithoutOptions, options } = parseOptions(text);
     processedText = renderNutritionWithPFC(textWithoutOptions);
     div.innerHTML = processedText;
+    attachDecideButtons(div);
 
     let finalOptions = options;
     if (finalOptions.length === 0) {
@@ -3914,6 +3915,79 @@ function isNutritionResponse(text) {
     (text.includes('第二候補') || text.includes('**第二候補**')) &&
     (text.includes('これならOK') || text.includes('**これならOK**'))
   );
+}
+
+// ============================================================
+// 提案決定ボタン
+// ============================================================
+function attachDecideButtons(containerDiv) {
+  const cards = containerDiv.querySelectorAll('.nutrition-card');
+  if (cards.length === 0) return;
+
+  cards.forEach((card) => {
+    const rankEl = card.querySelector('.nutrition-rank');
+    const nameEl = card.querySelector('.nutrition-name');
+    const ingredientEl = card.querySelector('.nutrition-ingredient');
+    const pfcEl = card.querySelector('.pfc-line');
+
+    const rankText = rankEl ? rankEl.textContent.trim() : '';
+    const mealName = nameEl ? nameEl.textContent.trim() : '';
+
+    const btn = document.createElement('button');
+    btn.className = 'decide-btn';
+    btn.textContent = 'この提案で決定する';
+    btn.addEventListener('click', async () => {
+      // 全カードの決定ボタンを無効化
+      containerDiv.querySelectorAll('.decide-btn').forEach(b => {
+        b.disabled = true;
+      });
+
+      // 選択カードをハイライト、他をdim
+      cards.forEach(c => {
+        if (c === card) {
+          c.classList.add('nutrition-card--selected');
+        } else {
+          c.classList.add('nutrition-card--dim');
+        }
+      });
+
+      // ボタン表示を確定状態に変更
+      btn.textContent = '✓ この提案を選びました';
+      btn.classList.add('decide-btn--confirmed');
+
+      // Supabaseに保存
+      await saveSelectedPlan({
+        rank: rankText,
+        name: mealName,
+        ingredients: ingredientEl ? ingredientEl.textContent.trim() : '',
+        nutrition: pfcEl ? pfcEl.textContent.trim() : '',
+      });
+    });
+
+    card.appendChild(btn);
+  });
+}
+
+async function saveSelectedPlan(mealContent) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase.from('selected_plans').insert({
+      user_id: session.user.id,
+      selected_plan: mealContent.rank,
+      meal_name: mealContent.name,
+      meal_content: JSON.stringify(mealContent),
+      goal: selectedGoal,
+      method: selectedMethod,
+      sub: selectedSub,
+      confirmed_at: new Date().toISOString(),
+    });
+
+    if (error) console.error('提案の保存に失敗:', error.message);
+  } catch (err) {
+    console.error('提案の保存中にエラー:', err);
+  }
 }
 
 // ============================================================

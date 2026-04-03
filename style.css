@@ -2888,6 +2888,52 @@ body {
   margin-top: 4px;
 }
 
+/* 提案決定ボタン */
+.decide-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(200, 241, 53, 0.4);
+  border-radius: 8px;
+  color: rgba(200, 241, 53, 0.8);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.decide-btn:hover:not(:disabled) {
+  background: rgba(200, 241, 53, 0.08);
+  border-color: #c8f135;
+  color: #c8f135;
+}
+.decide-btn:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+.decide-btn--confirmed {
+  opacity: 1 !important;
+  background: rgba(200, 241, 53, 0.1) !important;
+  border-color: #c8f135 !important;
+  color: #c8f135 !important;
+}
+
+/* 選択済み・非選択カードの状態 */
+.nutrition-card--selected {
+  border-color: #c8f135;
+  box-shadow: 0 0 0 1px rgba(200, 241, 53, 0.3);
+}
+.nutrition-card.second.nutrition-card--selected {
+  border-top-color: #4fc3f7;
+  box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.3);
+}
+.nutrition-card--dim {
+  opacity: 0.35;
+}
+
 .pfc-deficit {
   display: inline-block;
   font-size: 11px;
