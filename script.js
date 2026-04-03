@@ -3772,7 +3772,11 @@ function renderNutritionWithPFC(text, containerDiv) {
   let inCandidate = false;
 
   function flushCandidate() {
-    if (currentItems.length === 0) return;
+    if (currentItems.length === 0) {
+      if (inCandidate) html += `</div>`;
+      inCandidate = false;
+      return;
+    }
     const pfc = NDB.calculateItemsPFC(currentItems);
     let cookingFAdj = 0, cookingCalAdj = 0;
     for (let i = 0; i < currentItems.length; i++) {
