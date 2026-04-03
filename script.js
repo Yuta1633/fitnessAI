@@ -3929,42 +3929,46 @@ function attachDecideButtons(containerDiv) {
   if (cards.length === 0) return;
 
   cards.forEach((card) => {
-    const rankEl = card.querySelector('.nutrition-rank');
-    const nameEl = card.querySelector('.nutrition-name');
+    const rankEl       = card.querySelector('.nutrition-rank');
+    const nameEl       = card.querySelector('.nutrition-name');
     const ingredientEl = card.querySelector('.nutrition-ingredient');
-    const pfcEl = card.querySelector('.pfc-line');
+    const pfcEl        = card.querySelector('.pfc-line');
 
     const rankText = rankEl ? rankEl.textContent.trim() : '';
     const mealName = nameEl ? nameEl.textContent.trim() : '';
+
+    // PFC各spanをスペース区切りで結合（textContent直接では結合部にスペースが入らないため）
+    const nutritionText = pfcEl
+      ? Array.from(pfcEl.querySelectorAll('span'))
+          .map(s => s.textContent.trim()).filter(Boolean).join(' ')
+      : '';
 
     const btn = document.createElement('button');
     btn.className = 'decide-btn';
     btn.textContent = 'この提案で決定する';
     btn.addEventListener('click', async () => {
       // 全カードの決定ボタンを無効化
-      containerDiv.querySelectorAll('.decide-btn').forEach(b => {
-        b.disabled = true;
-      });
+      containerDiv.querySelectorAll('.decide-btn').forEach(b => { b.disabled = true; });
 
       // 選択カードをハイライト、他をdim
       cards.forEach(c => {
-        if (c === card) {
-          c.classList.add('nutrition-card--selected');
-        } else {
-          c.classList.add('nutrition-card--dim');
-        }
+        c.classList.add(c === card ? 'nutrition-card--selected' : 'nutrition-card--dim');
       });
 
       // ボタン表示を確定状態に変更
       btn.textContent = '✓ この提案を選びました';
       btn.classList.add('decide-btn--confirmed');
 
+      // 「レシピを見る」オプションボタンを非表示
+      const optionBtns = containerDiv.querySelector('.option-buttons');
+      if (optionBtns) optionBtns.style.display = 'none';
+
       // Supabaseに保存
       await saveSelectedPlan({
         rank: rankText,
         name: mealName,
         ingredients: ingredientEl ? ingredientEl.textContent.trim() : '',
-        nutrition: pfcEl ? pfcEl.textContent.trim() : '',
+        nutrition: nutritionText,
       });
     });
 
@@ -3981,7 +3985,7 @@ async function saveSelectedPlan(mealContent) {
       user_id: session.user.id,
       selected_plan: mealContent.rank,
       meal_name: mealContent.name,
-      meal_content: JSON.stringify(mealContent),
+      meal_content: mealContent,          // jsonb カラムにはオブジェクトを直接渡す
       goal: selectedGoal,
       method: selectedMethod,
       sub: selectedSub,
