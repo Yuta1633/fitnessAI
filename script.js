@@ -601,6 +601,7 @@ async function showQuestionStep(questions) {
     const periodFactor    = _goalFactors[goalPeriodType] ?? 1.00;
 
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
+    let hasContradiction = false;
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
       // 食事回数・何食目を取得
       totalMeals = questionAnswers[0] ? parseInt(questionAnswers[0]) : null;  // '3食' → 3
@@ -806,7 +807,6 @@ async function showQuestionStep(questions) {
       }
 
       // 矛盾チェック: 目的と目標体重の方向性が逆の場合
-      let hasContradiction = false;
       if (weight && goalWeight) {
         const gapDir = goalWeight - weight;
         if (selectedGoal === '1' && gapDir > 0) hasContradiction = true; // 脂肪減少なのに増量目標
