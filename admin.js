@@ -45,6 +45,7 @@ async function checkAdmin() {
   loadUsers().catch(e => console.error('loadUsersエラー:', e));
   loadReferralStats();
   loadSummary();
+  loadSelectedPlans();
 }
 
 // ============================================================
@@ -841,6 +842,53 @@ async function loadReferralStats() {
   } catch (e) {
     referralList.innerHTML = '<p style="color:var(--red); font-size:13px;">取得に失敗しました</p>';
   }
+}
+
+// ============================================================
+// 選ばれた提案一覧
+// ============================================================
+async function loadSelectedPlans() {
+  const listEl = document.getElementById('selected-plans-list');
+
+  const [
+    { data: plans, error },
+    { data: allUsers }
+  ] = await Promise.all([
+    supabase.from('selected_plans').select('user_id, selected_plan, meal_name, confirmed_at').order('confirmed_at', { ascending: false }).limit(100),
+    supabase.from('all_users').select('id, email')
+  ]);
+
+  if (error) {
+    listEl.innerHTML = `<p style="color:var(--red); font-size:13px;">読み込みエラー: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  if (!plans || plans.length === 0) {
+    listEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">まだデータがありません</p>';
+    return;
+  }
+
+  const uidToEmail = {};
+  (allUsers || []).forEach(u => { uidToEmail[u.id] = u.email; });
+
+  const rankColor = { '第一候補': '#c8f135', '第二候補': '#4fc3f7', 'これならOK': '#888' };
+
+  listEl.innerHTML = plans.map(p => {
+    const email = uidToEmail[p.user_id] || p.user_id;
+    const date  = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP') : '-';
+    const color = rankColor[p.selected_plan] || '#aaa';
+    return `
+      <div style="padding:12px 14px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:1fr auto; gap:8px; align-items:start;">
+        <div>
+          <p style="font-size:13px; color:var(--white); font-weight:600; margin-bottom:3px;">${escapeHtml(p.meal_name || '-')}</p>
+          <p style="font-size:11px; color:var(--muted);">${escapeHtml(email)}</p>
+        </div>
+        <div style="text-align:right;">
+          <p style="font-size:11px; font-weight:700; color:${color}; margin-bottom:3px;">${escapeHtml(p.selected_plan || '-')}</p>
+          <p style="font-size:11px; color:var(--muted);">${escapeHtml(date)}</p>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 checkAdmin();
