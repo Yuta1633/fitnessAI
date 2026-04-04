@@ -218,7 +218,7 @@ async function loadUserDetail(userId) {
     supabase.from('user_consents').select('consented_at, terms_version, privacy_version').eq('user_id', userId).order('consented_at', { ascending: false }).limit(1),
     supabase.from('personal_analysis').select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
     supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20),
-    supabase.from('selected_plans').select('meal_name, selected_plan, meal_content, action_type, custom_note, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
+    supabase.from('selected_plans').select('meal_name, selected_plan, meal_content, action_type, custom_note, goal, method, sub, context_snapshot, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
     supabase.from('coach_feedback').select('id, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(10)
   ]);
 
@@ -482,19 +482,44 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
   let selectedPlansHtml = '';
   const actionLabel = { selected: 'そのまま実行', arranged: 'アレンジして実行', original: '別の内容で実行' };
   const actionColor = { selected: 'var(--accent)', arranged: '#f59e0b', original: '#818cf8' };
+  const goalLabelMap = { '1': '脂肪減少', '2': '筋肥大', '3': '持久力向上', '4': '健康維持', '5': '体型維持' };
+  const methodLabelMap = { nutrition: '🥗 栄養', training: '🏋️ トレーニング', recovery: '😴 回復' };
   if (selectedPlans && selectedPlans.length > 0) {
     const rows = selectedPlans.map(p => {
       const date = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-      const rankCol = rankColor[p.selected_plan] || '#aaa';
       const aType = p.action_type || 'selected';
       const aLabel = actionLabel[aType] || aType;
       const aColor = actionColor[aType] || '#aaa';
       const detailId = 'sp-' + Math.random().toString(36).slice(2, 8);
       const mc = p.meal_content || {};
-      const ingredientsText = mc.ingredients || '-';
-      const nutritionText = mc.nutrition || '-';
       const isOriginal = aType === 'original';
       const headerName = isOriginal ? '（オリジナル）' : (p.meal_name || '-');
+
+      // 提案条件スナップショット
+      const cs = p.context_snapshot || {};
+      const contextRows = [
+        ['目的',         goalLabelMap[p.goal] || p.goal],
+        ['手段',         methodLabelMap[p.method] || p.method],
+        ['詳細',         p.sub],
+        ['時間帯',       cs.timeOfDay],
+        ['食事場所',     cs.location],
+        ['気分・食べ方', cs.mood],
+        ['お酒',         cs.sake],
+        ['プロテイン',   cs.proteinSupp],
+        ['空腹感',       cs.hunger],
+        ['ボリューム',   cs.mealVolume],
+        ['トレーニング', cs.trainingTiming],
+        ['1日の食数',    cs.totalMeals != null ? `${cs.totalMeals}食` : null],
+        ['何食目',       cs.mealIndex  != null ? `${cs.mealIndex}食目` : null],
+      ].filter(([, v]) => v != null && v !== '');
+      const contextHtml = contextRows.length > 0
+        ? `<div style="display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin-bottom:8px;">
+            ${contextRows.map(([k, v]) => `
+              <p style="font-size:10px; color:var(--muted); white-space:nowrap;">${escapeHtml(k)}</p>
+              <p style="font-size:11px; color:var(--white);">${escapeHtml(String(v))}</p>`).join('')}
+           </div>`
+        : '';
+
       return `
         <div style="border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}');d.style.display=d.style.display==='none'?'block':'none';">
@@ -508,11 +533,16 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
             </div>
           </div>
           <div id="${detailId}" style="display:none; padding:10px 12px; border-top:1px solid var(--border); background:#0d0d0d;">
+            ${contextRows.length > 0 ? `
+            <p style="font-size:10px; color:#4fc3f7; font-weight:700; letter-spacing:0.08em; margin-bottom:6px;">INPUT CONDITIONS</p>
+            ${contextHtml}
+            <div style="height:1px; background:var(--border); margin:8px 0;"></div>
+            ` : ''}
             ${!isOriginal ? `
             <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">食材</p>
-            <p style="font-size:12px; color:var(--white); margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(ingredientsText)}</p>
+            <p style="font-size:12px; color:var(--white); margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(mc.ingredients || '-')}</p>
             <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">栄養</p>
-            <p style="font-size:12px; color:var(--white); margin-bottom:8px;">${escapeHtml(nutritionText)}</p>
+            <p style="font-size:12px; color:var(--white); margin-bottom:8px;">${escapeHtml(mc.nutrition || '-')}</p>
             ` : ''}
             ${p.custom_note ? `
             <p style="font-size:11px; color:${aColor}; margin-bottom:3px;">${aType === 'arranged' ? 'アレンジ内容' : '実行内容'}</p>

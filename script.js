@@ -518,6 +518,7 @@ const QUESTIONS = {
 
 let questionAnswers = [];
 let currentQuestionIndex = 0;
+let _nutritionContext = null; // 直近の栄養提案条件スナップショット
 
 
 function addOtherInput(btnGroup, div, onSubmit) {
@@ -641,6 +642,20 @@ async function showQuestionStep(questions) {
       // 修正③: [8][9] を取得（今後PFC・候補選定へのロジック反映予定）
       mealVolume = questionAnswers[8] ?? null;      // '通常の食事' | '軽めの食事' | '間食・補食'
       trainingTiming = questionAnswers[9] ?? null;  // '特になし' | 'トレーニング前' | 'トレーニング後'
+
+      // 提案条件スナップショット（ユーザーの生入力を保存）
+      _nutritionContext = {
+        totalMeals,
+        mealIndex,
+        timeOfDay:     questionAnswers[2] ?? null,  // 時間帯（生入力）
+        location:      questionAnswers[3] ?? null,  // 食事場所（生入力）
+        mood:          questionAnswers[4] ?? null,  // 気分・食べ方
+        sake:          questionAnswers[5] ?? null,  // お酒の種類
+        proteinSupp,
+        hunger,
+        mealVolume,
+        trainingTiming,
+      };
 
       // お酒のカロリーと種類別調整
       const SAKE_INFO = {
@@ -4046,6 +4061,7 @@ async function saveSelectedPlan(mealContent) {
       goal: selectedGoal,
       method: selectedMethod,
       sub: selectedSub,
+      context_snapshot: _nutritionContext || null,
       confirmed_at: new Date().toISOString(),
     });
 
