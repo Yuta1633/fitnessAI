@@ -218,7 +218,7 @@ async function loadUserDetail(userId) {
     supabase.from('user_consents').select('consented_at, terms_version, privacy_version').eq('user_id', userId).order('consented_at', { ascending: false }).limit(1),
     supabase.from('personal_analysis').select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
     supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20),
-    supabase.from('selected_plans').select('meal_name, selected_plan, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
+    supabase.from('selected_plans').select('meal_name, selected_plan, meal_content, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
     supabase.from('coach_feedback').select('id, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(10)
   ]);
 
@@ -392,6 +392,16 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
         gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体重: 現在 <strong style="color:var(--white);">${currentWeight}kg</strong> → 目標 <strong style="color:var(--accent);">${goalData.goal_weight}kg</strong>　あと ${remaining}kg</p>`;
       }
     }
+    if (goalData.goal_body_fat != null) {
+      const currentBF = bodyData.find(r => r.body_fat != null)?.body_fat ?? null;
+      const startBF = [...bodyData].reverse().find(r => r.body_fat != null)?.body_fat ?? null;
+      if (currentBF != null && startBF != null && startBF !== currentBF) {
+        gaugeHtml += renderAdminGauge('体脂肪率', '%', startBF, currentBF, goalData.goal_body_fat, '#f59e0b');
+      } else if (currentBF != null) {
+        const remaining = Math.abs(currentBF - goalData.goal_body_fat).toFixed(1);
+        gaugeHtml += `<p style="font-size:12px; color:var(--muted); margin-bottom:10px;">体脂肪率: 現在 <strong style="color:var(--white);">${currentBF}%</strong> → 目標 <strong style="color:#f59e0b;">${goalData.goal_body_fat}%</strong>　あと ${remaining}%</p>`;
+      }
+    }
     goalHtml = `
       <div style="margin-bottom:14px;">
         <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">GOAL & PROGRESS</p>
@@ -474,12 +484,27 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
     const rows = selectedPlans.map(p => {
       const date = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
       const color = rankColor[p.selected_plan] || '#aaa';
+      const detailId = 'sp-' + Math.random().toString(36).slice(2, 8);
+      const mc = p.meal_content || {};
+      const ingredientsText = mc.ingredients || '-';
+      const nutritionText = mc.nutrition || '-';
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border);">
-          <p style="font-size:13px; color:var(--white);">${escapeHtml(p.meal_name || '-')}</p>
-          <div style="text-align:right; flex-shrink:0; margin-left:8px;">
-            <p style="font-size:11px; font-weight:700; color:${color};">${escapeHtml(p.selected_plan || '-')}</p>
-            <p style="font-size:10px; color:var(--muted);">${escapeHtml(date)}</p>
+        <div style="border-bottom:1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}');d.style.display=d.style.display==='none'?'block':'none';">
+            <p style="font-size:13px; color:var(--white);">${escapeHtml(p.meal_name || '-')}</p>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; margin-left:8px;">
+              <div style="text-align:right;">
+                <p style="font-size:11px; font-weight:700; color:${color};">${escapeHtml(p.selected_plan || '-')}</p>
+                <p style="font-size:10px; color:var(--muted);">${escapeHtml(date)}</p>
+              </div>
+              <span style="font-size:11px; color:var(--muted);">▼</span>
+            </div>
+          </div>
+          <div id="${detailId}" style="display:none; padding:10px 12px; border-top:1px solid var(--border); background:#0d0d0d;">
+            <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">食材</p>
+            <p style="font-size:12px; color:var(--white); margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(ingredientsText)}</p>
+            <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">栄養</p>
+            <p style="font-size:12px; color:var(--white);">${escapeHtml(nutritionText)}</p>
           </div>
         </div>`;
     }).join('');
