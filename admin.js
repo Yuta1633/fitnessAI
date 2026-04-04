@@ -922,9 +922,9 @@ function renderAdminThreadPanel(panel, userId, safeId, threads, latestMsgMap = {
   newDiv.style.cssText = 'background:#111; border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:10px;';
   newDiv.innerHTML = `
     <p style="font-size:12px; color:var(--accent); font-weight:700; margin-bottom:8px;">新規スレッド作成</p>
-    <input type="text" id="nt-title-${safeId}" placeholder="タイトル"
+    <input type="text" id="nt-title-${safeId}" placeholder="例：食事内容の確認"
       style="width:100%; box-sizing:border-box; padding:8px 10px; background:#1e1e1e; border:1px solid var(--border); border-radius:6px; color:var(--white); font-size:13px; outline:none; margin-bottom:6px; font-family:'Noto Sans JP',sans-serif;">
-    <textarea id="nt-msg-${safeId}" placeholder="最初のメッセージ"
+    <textarea id="nt-msg-${safeId}" placeholder="最初の内容を入力（例：今日の食事内容を確認したいです）"
       style="width:100%; box-sizing:border-box; padding:8px 10px; background:#1e1e1e; border:1px solid var(--border); border-radius:6px; color:var(--white); font-size:13px; outline:none; resize:vertical; min-height:60px; font-family:'Noto Sans JP',sans-serif;"></textarea>
     <button id="nt-btn-${safeId}"
       style="margin-top:6px; padding:7px 16px; background:var(--accent); color:#000; border:none; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">作成して送信</button>`;
@@ -962,7 +962,7 @@ function renderAdminThreadPanel(panel, userId, safeId, threads, latestMsgMap = {
   if (threads.length === 0) {
     const empty = document.createElement('p');
     empty.style.cssText = 'font-size:12px; color:var(--muted);';
-    empty.textContent = 'スレッドなし';
+    empty.textContent = 'まだスレッドはありません';
     panel.appendChild(empty);
     return;
   }
@@ -1012,6 +1012,9 @@ function buildAdminThreadItem(thread, userId, latestMsg) {
 }
 
 async function renderThreadMessages(threadId, userId, container, isUserSide) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const viewerId = session?.user?.id || '';
+
   const { data: msgs } = await supabase
     .from('messages')
     .select('id, sender_id, message, created_at')
@@ -1021,11 +1024,11 @@ async function renderThreadMessages(threadId, userId, container, isUserSide) {
   container.innerHTML = '';
 
   (msgs || []).forEach(msg => {
-    const isCoach = msg.sender_id !== userId;
+    const isSelf = msg.sender_id === viewerId;
     const date = new Date(msg.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const label = isUserSide ? (isCoach ? 'コーチ' : 'あなた') : (isCoach ? 'コーチ' : 'ユーザー');
-    const color = isCoach ? 'var(--accent)' : '#4fc3f7';
-    const bg    = isCoach ? 'background:rgba(200,241,53,0.04);' : '';
+    const label = isSelf ? 'あなた' : (isUserSide ? 'コーチ' : 'ユーザー');
+    const color = isSelf ? '#4fc3f7' : 'var(--accent)';
+    const bg    = isSelf ? '' : 'background:rgba(200,241,53,0.04);';
     const d = document.createElement('div');
     d.style.cssText = `padding:${isUserSide ? '10px 14px' : '8px 12px'}; border-bottom:1px solid var(--border); ${bg}`;
     d.innerHTML = `

@@ -4060,7 +4060,11 @@ async function loadUserThreads() {
   const list = document.getElementById('coach-threads-list');
   if (!card || !list) return;
 
-  if (!threads || threads.length === 0) { card.style.display = 'none'; return; }
+  if (!threads || threads.length === 0) {
+    card.style.display = 'block';
+    list.innerHTML = '<p style="color:var(--muted); font-size:13px; text-align:center; padding:12px 0;">まだコーチからの連絡はありません</p>';
+    return;
+  }
 
   let latestMsgMap = {};
   const { data: allMsgs } = await supabase
@@ -4122,6 +4126,9 @@ function buildUserThreadItem(thread, latestMsg) {
 }
 
 async function renderUserThreadMessages(threadId, userId, container) {
+  const { data: { session } } = await supabase.auth.getSession();
+  const viewerId = session?.user?.id || '';
+
   const { data: msgs } = await supabase
     .from('messages')
     .select('id, sender_id, message, created_at')
@@ -4131,13 +4138,13 @@ async function renderUserThreadMessages(threadId, userId, container) {
   container.innerHTML = '';
 
   (msgs || []).forEach(msg => {
-    const isCoach = msg.sender_id !== userId;
+    const isSelf = msg.sender_id === viewerId;
     const date = new Date(msg.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const d = document.createElement('div');
-    d.style.cssText = `padding:10px 14px; border-bottom:1px solid var(--border); ${isCoach ? 'background:rgba(200,241,53,0.04);' : ''}`;
+    d.style.cssText = `padding:10px 14px; border-bottom:1px solid var(--border); ${isSelf ? '' : 'background:rgba(200,241,53,0.04);'}`;
     d.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:11px; font-weight:700; color:${isCoach ? 'var(--accent)' : '#4fc3f7'};">${isCoach ? 'コーチ' : 'あなた'}</span>
+        <span style="font-size:11px; font-weight:700; color:${isSelf ? '#4fc3f7' : 'var(--accent)'};">${isSelf ? 'あなた' : 'コーチ'}</span>
         <span style="font-size:10px; color:var(--muted);">${date}</span>
       </div>
       <p style="font-size:13px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(msg.message)}</p>`;
