@@ -4040,7 +4040,38 @@ loadDashboard = async function() {
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
   buildUserContext().catch(console.error);
+  loadCoachFeedback().catch(console.error);
 };
+
+async function loadCoachFeedback() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: feedbacks } = await supabase
+    .from('coach_feedback')
+    .select('message, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  const card = document.getElementById('coach-feedback-card');
+  const list = document.getElementById('coach-feedback-list');
+  if (!card || !list) return;
+
+  if (!feedbacks || feedbacks.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  list.innerHTML = feedbacks.map(f => {
+    const date = new Date(f.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `<div style="padding:12px 14px; border-bottom:1px solid var(--border);">
+      <p style="font-size:13px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(f.message)}</p>
+      <p style="font-size:11px; color:var(--muted); margin-top:6px;">${date}</p>
+    </div>`;
+  }).join('');
+}
 
 // ============================================================
 // チェックインゲート

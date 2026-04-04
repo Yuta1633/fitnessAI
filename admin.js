@@ -45,7 +45,6 @@ async function checkAdmin() {
   loadUsers().catch(e => console.error('loadUsersエラー:', e));
   loadReferralStats();
   loadSummary();
-  loadSelectedPlans();
 }
 
 // ============================================================
@@ -193,6 +192,10 @@ async function loadUserDetail(userId) {
   const mondayStr = monday.toISOString().split('T')[0];
   const mondayStart = mondayStr + 'T00:00:00';
 
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString();
+
   const [
     { data: usageData },
     { data: bodyDatesData },
@@ -202,7 +205,9 @@ async function loadUserDetail(userId) {
     { data: goalData },
     { data: consentData },
     { data: analysisData },
-    { data: workoutData }
+    { data: workoutData },
+    { data: selectedPlansData },
+    { data: feedbackData }
   ] = await Promise.all([
     supabase.from('usage_limits').select('date, count').eq('user_id', userId).order('date', { ascending: false }),
     supabase.from('body_records').select('recorded_at').eq('user_id', userId),
@@ -212,7 +217,9 @@ async function loadUserDetail(userId) {
     supabase.from('user_goals').select('goal_weight, goal_body_fat').eq('user_id', userId).maybeSingle(),
     supabase.from('user_consents').select('consented_at, terms_version, privacy_version').eq('user_id', userId).order('consented_at', { ascending: false }).limit(1),
     supabase.from('personal_analysis').select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-    supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20)
+    supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20),
+    supabase.from('selected_plans').select('meal_name, selected_plan, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
+    supabase.from('coach_feedback').select('id, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(10)
   ]);
 
   const activeDates = new Set();
@@ -251,10 +258,13 @@ async function loadUserDetail(userId) {
   const startRecord = (startData && startData.length > 0) ? startData[0] : null;
 
   return {
+    userId,
     streak, weeklyTotal, totalDays, firstUsage, methodCount,
     bodyData: bodyData || [], startRecord, goalData: goalData || null,
     consent, analysisData: analysisData || [],
-    workoutData: workoutData || []
+    workoutData: workoutData || [],
+    selectedPlans: selectedPlansData || [],
+    feedbackHistory: feedbackData || []
   };
 }
 
@@ -292,7 +302,7 @@ function renderAdminGauge(label, unit, startVal, currentVal, goalVal, color) {
   `;
 }
 
-function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData, startRecord, goalData, consent, analysisData, workoutData }) {
+function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, methodCount, bodyData, startRecord, goalData, consent, analysisData, workoutData, selectedPlans, feedbackHistory }) {
   const methodLabel = { nutrition: '🥗 栄養', training: '🏋️ トレーニング', recovery: '😴 回復' };
 
   // 同意状態
@@ -457,7 +467,52 @@ function buildDetailHTML({ streak, weeklyTotal, totalDays, firstUsage, methodCou
     analysisHtml += '</div></div>';
   }
 
-  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + workoutHtml + analysisHtml;
+  // 直近7日の選択提案
+  const rankColor = { '第一候補': '#c8f135', '第二候補': '#4fc3f7', 'これならOK': '#888' };
+  let selectedPlansHtml = '';
+  if (selectedPlans && selectedPlans.length > 0) {
+    const rows = selectedPlans.map(p => {
+      const date = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      const color = rankColor[p.selected_plan] || '#aaa';
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border);">
+          <p style="font-size:13px; color:var(--white);">${escapeHtml(p.meal_name || '-')}</p>
+          <div style="text-align:right; flex-shrink:0; margin-left:8px;">
+            <p style="font-size:11px; font-weight:700; color:${color};">${escapeHtml(p.selected_plan || '-')}</p>
+            <p style="font-size:10px; color:var(--muted);">${escapeHtml(date)}</p>
+          </div>
+        </div>`;
+    }).join('');
+    selectedPlansHtml = `
+      <div style="margin-bottom:14px;">
+        <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">SELECTED PLANS (直近7日)</p>
+        <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden;">${rows}</div>
+      </div>`;
+  }
+
+  // コーチフィードバック送信
+  const safeId = (userId || '').replace(/-/g, '');
+  const prevFbHtml = feedbackHistory && feedbackHistory.length > 0
+    ? feedbackHistory.map(f => {
+        const date = new Date(f.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return `<div style="padding:8px 12px; border-bottom:1px solid var(--border);">
+          <p style="font-size:12px; color:var(--white); line-height:1.6; white-space:pre-wrap;">${escapeHtml(f.message)}</p>
+          <p style="font-size:10px; color:var(--muted); margin-top:4px;">${escapeHtml(date)}</p>
+        </div>`;
+      }).join('')
+    : '<p style="font-size:12px; color:var(--muted); padding:8px 12px;">まだ送信なし</p>';
+
+  const feedbackHtml = `
+    <div style="margin-bottom:14px;">
+      <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">COACH FEEDBACK</p>
+      <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px;">${prevFbHtml}</div>
+      <textarea id="feedback-ta-${safeId}" placeholder="フィードバックを入力..."
+        style="width:100%; box-sizing:border-box; padding:10px 12px; background:#1e1e1e; border:1px solid var(--border); border-radius:8px; color:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; resize:vertical; min-height:72px; outline:none;"></textarea>
+      <button id="feedback-btn-${safeId}" onclick="sendFeedback('${userId}','${safeId}')"
+        style="margin-top:6px; padding:8px 18px; background:var(--accent); color:#000; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">送信</button>
+    </div>`;
+
+  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + workoutHtml + analysisHtml + selectedPlansHtml + feedbackHtml;
 }
 
 // ============================================================
@@ -845,50 +900,36 @@ async function loadReferralStats() {
 }
 
 // ============================================================
-// 選ばれた提案一覧
+// コーチフィードバック送信
 // ============================================================
-async function loadSelectedPlans() {
-  const listEl = document.getElementById('selected-plans-list');
+window.sendFeedback = async function(userId, safeId) {
+  const textarea = document.getElementById('feedback-ta-' + safeId);
+  const btn      = document.getElementById('feedback-btn-' + safeId);
+  if (!textarea || !btn) return;
+  const message = textarea.value.trim();
+  if (!message) return;
 
-  const [
-    { data: plans, error },
-    { data: allUsers }
-  ] = await Promise.all([
-    supabase.from('selected_plans').select('user_id, selected_plan, meal_name, confirmed_at').order('confirmed_at', { ascending: false }).limit(100),
-    supabase.from('all_users').select('id, email')
-  ]);
+  btn.disabled = true;
+  btn.textContent = '送信中...';
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { btn.disabled = false; btn.textContent = '送信'; return; }
+
+  const { error } = await supabase.from('coach_feedback').insert({
+    user_id: userId,
+    admin_id: session.user.id,
+    message,
+  });
 
   if (error) {
-    listEl.innerHTML = `<p style="color:var(--red); font-size:13px;">読み込みエラー: ${escapeHtml(error.message)}</p>`;
-    return;
+    alert('送信に失敗しました: ' + error.message);
+    btn.disabled = false;
+    btn.textContent = '送信';
+  } else {
+    textarea.value = '';
+    btn.textContent = '✓ 送信済';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '送信'; }, 2000);
   }
-
-  if (!plans || plans.length === 0) {
-    listEl.innerHTML = '<p style="color:var(--muted); font-size:13px;">まだデータがありません</p>';
-    return;
-  }
-
-  const uidToEmail = {};
-  (allUsers || []).forEach(u => { uidToEmail[u.id] = u.email; });
-
-  const rankColor = { '第一候補': '#c8f135', '第二候補': '#4fc3f7', 'これならOK': '#888' };
-
-  listEl.innerHTML = plans.map(p => {
-    const email = uidToEmail[p.user_id] || p.user_id;
-    const date  = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP') : '-';
-    const color = rankColor[p.selected_plan] || '#aaa';
-    return `
-      <div style="padding:12px 14px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:1fr auto; gap:8px; align-items:start;">
-        <div>
-          <p style="font-size:13px; color:var(--white); font-weight:600; margin-bottom:3px;">${escapeHtml(p.meal_name || '-')}</p>
-          <p style="font-size:11px; color:var(--muted);">${escapeHtml(email)}</p>
-        </div>
-        <div style="text-align:right;">
-          <p style="font-size:11px; font-weight:700; color:${color}; margin-bottom:3px;">${escapeHtml(p.selected_plan || '-')}</p>
-          <p style="font-size:11px; color:var(--muted);">${escapeHtml(date)}</p>
-        </div>
-      </div>`;
-  }).join('');
-}
+};
 
 checkAdmin();
