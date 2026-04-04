@@ -490,35 +490,14 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
       </div>`;
   }
 
-  // コーチフィードバック送信
   const safeId = (userId || '').replace(/-/g, '');
-  const prevFbHtml = feedbackHistory && feedbackHistory.length > 0
-    ? feedbackHistory.map(f => {
-        const date = new Date(f.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        return `<div style="padding:8px 12px; border-bottom:1px solid var(--border);">
-          <p style="font-size:12px; color:var(--white); line-height:1.6; white-space:pre-wrap;">${escapeHtml(f.message)}</p>
-          <p style="font-size:10px; color:var(--muted); margin-top:4px;">${escapeHtml(date)}</p>
-        </div>`;
-      }).join('')
-    : '<p style="font-size:12px; color:var(--muted); padding:8px 12px;">まだ送信なし</p>';
-
-  const feedbackHtml = `
-    <div style="margin-bottom:14px;">
-      <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">COACH FEEDBACK</p>
-      <div style="background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px;">${prevFbHtml}</div>
-      <textarea id="feedback-ta-${safeId}" placeholder="フィードバックを入力..."
-        style="width:100%; box-sizing:border-box; padding:10px 12px; background:#1e1e1e; border:1px solid var(--border); border-radius:8px; color:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; resize:vertical; min-height:72px; outline:none;"></textarea>
-      <button id="feedback-btn-${safeId}" onclick="sendFeedback('${userId}','${safeId}')"
-        style="margin-top:6px; padding:8px 18px; background:var(--accent); color:#000; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">送信</button>
-    </div>`;
-
   const threadsHtml = `
     <div style="margin-bottom:14px;">
       <p style="font-size:11px; color:var(--accent); margin-bottom:8px; letter-spacing:0.1em;">THREADS</p>
       <div id="threads-panel-${safeId}"><p style="font-size:12px; color:var(--muted);">読み込み中...</p></div>
     </div>`;
 
-  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + workoutHtml + analysisHtml + selectedPlansHtml + feedbackHtml + threadsHtml;
+  return consentHtml + statsHtml + weeklyHtml + goalHtml + bodyHtml + workoutHtml + analysisHtml + selectedPlansHtml + threadsHtml;
 }
 
 // ============================================================
@@ -916,14 +895,26 @@ async function loadAndRenderAdminThreads(userId, safeId) {
 
   const { data: threads } = await supabase
     .from('threads')
-    .select('id, title, created_at')
+    .select('id, title, user_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  renderAdminThreadPanel(panel, userId, safeId, threads || []);
+  let latestMsgMap = {};
+  if (threads && threads.length > 0) {
+    const { data: allMsgs } = await supabase
+      .from('messages')
+      .select('thread_id, sender_id, message, created_at')
+      .in('thread_id', threads.map(t => t.id))
+      .order('created_at', { ascending: false });
+    (allMsgs || []).forEach(msg => {
+      if (!latestMsgMap[msg.thread_id]) latestMsgMap[msg.thread_id] = msg;
+    });
+  }
+
+  renderAdminThreadPanel(panel, userId, safeId, threads || [], latestMsgMap);
 }
 
-function renderAdminThreadPanel(panel, userId, safeId, threads) {
+function renderAdminThreadPanel(panel, userId, safeId, threads, latestMsgMap = {}) {
   panel.innerHTML = '';
 
   // 新規スレッド作成フォーム
@@ -975,22 +966,27 @@ function renderAdminThreadPanel(panel, userId, safeId, threads) {
     panel.appendChild(empty);
     return;
   }
-  threads.forEach(thread => panel.appendChild(buildAdminThreadItem(thread, userId)));
+  threads.forEach(thread => panel.appendChild(buildAdminThreadItem(thread, userId, latestMsgMap[thread.id])));
 }
 
-function buildAdminThreadItem(thread, userId) {
+function buildAdminThreadItem(thread, userId, latestMsg) {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'background:#111; border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px;';
 
-  const date = new Date(thread.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const dispDate = latestMsg
+    ? new Date(latestMsg.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : new Date(thread.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const preview = latestMsg ? latestMsg.message.replace(/\n/g, ' ').slice(0, 28) + (latestMsg.message.length > 28 ? '…' : '') : '';
+
   const hdr = document.createElement('div');
   hdr.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:10px 12px; cursor:pointer;';
   hdr.innerHTML = `
-    <div>
+    <div style="flex:1; min-width:0;">
       <p style="font-size:13px; color:var(--white); font-weight:600;">${escapeHtml(thread.title)}</p>
-      <p style="font-size:11px; color:var(--muted); margin-top:2px;">${date}</p>
+      ${preview ? `<p style="font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(preview)}</p>` : ''}
+      <p style="font-size:10px; color:var(--muted); margin-top:2px;">${dispDate}</p>
     </div>
-    <span style="font-size:11px; color:var(--muted);">▼</span>`;
+    <span style="font-size:11px; color:var(--muted); flex-shrink:0; margin-left:8px;">▼</span>`;
 
   const body = document.createElement('div');
   body.style.cssText = 'display:none; border-top:1px solid var(--border);';
@@ -1073,38 +1069,5 @@ async function renderThreadMessages(threadId, userId, container, isUserSide) {
   replyWrap.appendChild(sendBtn);
   container.appendChild(replyWrap);
 }
-
-// ============================================================
-// コーチフィードバック送信
-// ============================================================
-window.sendFeedback = async function(userId, safeId) {
-  const textarea = document.getElementById('feedback-ta-' + safeId);
-  const btn      = document.getElementById('feedback-btn-' + safeId);
-  if (!textarea || !btn) return;
-  const message = textarea.value.trim();
-  if (!message) return;
-
-  btn.disabled = true;
-  btn.textContent = '送信中...';
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) { btn.disabled = false; btn.textContent = '送信'; return; }
-
-  const { error } = await supabase.from('coach_feedback').insert({
-    user_id: userId,
-    admin_id: session.user.id,
-    message,
-  });
-
-  if (error) {
-    alert('送信に失敗しました: ' + error.message);
-    btn.disabled = false;
-    btn.textContent = '送信';
-  } else {
-    textarea.value = '';
-    btn.textContent = '✓ 送信済';
-    setTimeout(() => { btn.disabled = false; btn.textContent = '送信'; }, 2000);
-  }
-};
 
 checkAdmin();

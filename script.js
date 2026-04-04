@@ -4040,7 +4040,6 @@ loadDashboard = async function() {
   loadChatHistoryList().catch(console.error);
   loadProgressChart().catch(console.error);
   buildUserContext().catch(console.error);
-  loadCoachFeedback().catch(console.error);
   loadUserThreads().catch(console.error);
 };
 
@@ -4053,7 +4052,7 @@ async function loadUserThreads() {
 
   const { data: threads } = await supabase
     .from('threads')
-    .select('id, title, created_at')
+    .select('id, title, user_id, created_at')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false });
 
@@ -4063,26 +4062,41 @@ async function loadUserThreads() {
 
   if (!threads || threads.length === 0) { card.style.display = 'none'; return; }
 
+  let latestMsgMap = {};
+  const { data: allMsgs } = await supabase
+    .from('messages')
+    .select('thread_id, sender_id, message, created_at')
+    .in('thread_id', threads.map(t => t.id))
+    .order('created_at', { ascending: false });
+  (allMsgs || []).forEach(msg => {
+    if (!latestMsgMap[msg.thread_id]) latestMsgMap[msg.thread_id] = msg;
+  });
+
   card.style.display = 'block';
   list.innerHTML = '';
   threads.forEach(thread => {
-    list.appendChild(buildUserThreadItem(thread, session.user.id));
+    list.appendChild(buildUserThreadItem(thread, latestMsgMap[thread.id]));
   });
 }
 
-function buildUserThreadItem(thread, userId) {
+function buildUserThreadItem(thread, latestMsg) {
   const wrap = document.createElement('div');
   wrap.style.cssText = 'border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px;';
 
-  const date = new Date(thread.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const dispDate = latestMsg
+    ? new Date(latestMsg.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : new Date(thread.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const preview = latestMsg ? latestMsg.message.replace(/\n/g, ' ').slice(0, 28) + (latestMsg.message.length > 28 ? '…' : '') : '';
+
   const hdr = document.createElement('div');
   hdr.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;';
   hdr.innerHTML = `
-    <div>
+    <div style="flex:1; min-width:0;">
       <p style="font-size:13px; color:var(--white); font-weight:600;">${escapeHtml(thread.title)}</p>
-      <p style="font-size:11px; color:var(--muted); margin-top:2px;">${date}</p>
+      ${preview ? `<p style="font-size:11px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(preview)}</p>` : ''}
+      <p style="font-size:10px; color:var(--muted); margin-top:2px;">${dispDate}</p>
     </div>
-    <span style="font-size:11px; color:var(--muted);">▼</span>`;
+    <span style="font-size:11px; color:var(--muted); flex-shrink:0; margin-left:8px;">▼</span>`;
 
   const body = document.createElement('div');
   body.style.cssText = 'display:none; border-top:1px solid var(--border);';
@@ -4095,7 +4109,7 @@ function buildUserThreadItem(thread, userId) {
       if (!loaded) {
         loaded = true;
         body.innerHTML = '<p style="font-size:12px; color:var(--muted); padding:10px 14px;">読み込み中...</p>';
-        await renderUserThreadMessages(thread.id, userId, body);
+        await renderUserThreadMessages(thread.id, thread.user_id, body);
       }
     } else {
       body.style.display = 'none'; icon.textContent = '▼';
@@ -4162,35 +4176,6 @@ async function renderUserThreadMessages(threadId, userId, container) {
   container.appendChild(replyWrap);
 }
 
-async function loadCoachFeedback() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const { data: feedbacks } = await supabase
-    .from('coach_feedback')
-    .select('message, created_at')
-    .eq('user_id', session.user.id)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const card = document.getElementById('coach-feedback-card');
-  const list = document.getElementById('coach-feedback-list');
-  if (!card || !list) return;
-
-  if (!feedbacks || feedbacks.length === 0) {
-    card.style.display = 'none';
-    return;
-  }
-
-  card.style.display = 'block';
-  list.innerHTML = feedbacks.map(f => {
-    const date = new Date(f.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    return `<div style="padding:12px 14px; border-bottom:1px solid var(--border);">
-      <p style="font-size:13px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(f.message)}</p>
-      <p style="font-size:11px; color:var(--muted); margin-top:6px;">${date}</p>
-    </div>`;
-  }).join('');
-}
 
 // ============================================================
 // チェックインゲート
