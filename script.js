@@ -4041,7 +4041,126 @@ loadDashboard = async function() {
   loadProgressChart().catch(console.error);
   buildUserContext().catch(console.error);
   loadCoachFeedback().catch(console.error);
+  loadUserThreads().catch(console.error);
 };
+
+// ============================================================
+// スレッド（ユーザー側）
+// ============================================================
+async function loadUserThreads() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: threads } = await supabase
+    .from('threads')
+    .select('id, title, created_at')
+    .eq('user_id', session.user.id)
+    .order('created_at', { ascending: false });
+
+  const card = document.getElementById('coach-threads-card');
+  const list = document.getElementById('coach-threads-list');
+  if (!card || !list) return;
+
+  if (!threads || threads.length === 0) { card.style.display = 'none'; return; }
+
+  card.style.display = 'block';
+  list.innerHTML = '';
+  threads.forEach(thread => {
+    list.appendChild(buildUserThreadItem(thread, session.user.id));
+  });
+}
+
+function buildUserThreadItem(thread, userId) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:8px;';
+
+  const date = new Date(thread.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:12px 14px; cursor:pointer;';
+  hdr.innerHTML = `
+    <div>
+      <p style="font-size:13px; color:var(--white); font-weight:600;">${escapeHtml(thread.title)}</p>
+      <p style="font-size:11px; color:var(--muted); margin-top:2px;">${date}</p>
+    </div>
+    <span style="font-size:11px; color:var(--muted);">▼</span>`;
+
+  const body = document.createElement('div');
+  body.style.cssText = 'display:none; border-top:1px solid var(--border);';
+
+  let loaded = false;
+  hdr.addEventListener('click', async () => {
+    const icon = hdr.querySelector('span');
+    if (body.style.display === 'none') {
+      body.style.display = 'block'; icon.textContent = '▲';
+      if (!loaded) {
+        loaded = true;
+        body.innerHTML = '<p style="font-size:12px; color:var(--muted); padding:10px 14px;">読み込み中...</p>';
+        await renderUserThreadMessages(thread.id, userId, body);
+      }
+    } else {
+      body.style.display = 'none'; icon.textContent = '▼';
+    }
+  });
+
+  wrap.appendChild(hdr);
+  wrap.appendChild(body);
+  return wrap;
+}
+
+async function renderUserThreadMessages(threadId, userId, container) {
+  const { data: msgs } = await supabase
+    .from('messages')
+    .select('id, sender_id, message, created_at')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true });
+
+  container.innerHTML = '';
+
+  (msgs || []).forEach(msg => {
+    const isCoach = msg.sender_id !== userId;
+    const date = new Date(msg.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const d = document.createElement('div');
+    d.style.cssText = `padding:10px 14px; border-bottom:1px solid var(--border); ${isCoach ? 'background:rgba(200,241,53,0.04);' : ''}`;
+    d.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:11px; font-weight:700; color:${isCoach ? 'var(--accent)' : '#4fc3f7'};">${isCoach ? 'コーチ' : 'あなた'}</span>
+        <span style="font-size:10px; color:var(--muted);">${date}</span>
+      </div>
+      <p style="font-size:13px; color:var(--white); line-height:1.7; white-space:pre-wrap;">${escapeHtml(msg.message)}</p>`;
+    container.appendChild(d);
+  });
+
+  const replyWrap = document.createElement('div');
+  replyWrap.style.cssText = 'padding:12px 14px;';
+  const ta = document.createElement('textarea');
+  ta.placeholder = '返信を入力...';
+  ta.style.cssText = 'width:100%; box-sizing:border-box; padding:10px 12px; background:var(--card-bg,#1e1e1e); border:1px solid var(--border); border-radius:8px; color:var(--white); font-size:13px; outline:none; resize:vertical; min-height:64px; font-family:"Noto Sans JP",sans-serif;';
+  const sendBtn = document.createElement('button');
+  sendBtn.textContent = '返信する';
+  sendBtn.style.cssText = 'margin-top:8px; padding:9px 20px; background:var(--accent); color:#000; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;';
+
+  sendBtn.addEventListener('click', async () => {
+    const message = ta.value.trim();
+    if (!message) return;
+    sendBtn.disabled = true; sendBtn.textContent = '送信中...';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { sendBtn.disabled = false; sendBtn.textContent = '返信する'; return; }
+    const { error } = await supabase.from('messages').insert({
+      thread_id: threadId, sender_id: session.user.id, message
+    });
+    if (error) {
+      alert('送信に失敗しました');
+      sendBtn.disabled = false; sendBtn.textContent = '返信する';
+    } else {
+      ta.value = '';
+      await renderUserThreadMessages(threadId, userId, container);
+    }
+  });
+
+  replyWrap.appendChild(ta);
+  replyWrap.appendChild(sendBtn);
+  container.appendChild(replyWrap);
+}
 
 async function loadCoachFeedback() {
   const { data: { session } } = await supabase.auth.getSession();
