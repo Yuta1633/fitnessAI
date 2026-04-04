@@ -3938,7 +3938,7 @@ function attachDecideButtons(containerDiv) {
   }
 
   // アレンジ・オリジナル用の入力フォームを生成
-  function buildNoteForm(placeholder, onSubmit) {
+  function buildNoteForm(placeholder, onSubmit, submitLabel = '記録する') {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'padding:10px 0 4px;';
     const label = document.createElement('p');
@@ -3948,7 +3948,7 @@ function attachDecideButtons(containerDiv) {
     ta.placeholder = placeholder;
     ta.style.cssText = 'width:100%; box-sizing:border-box; padding:8px 10px; background:#1e1e1e; border:1px solid var(--border); border-radius:6px; color:var(--white); font-size:12px; outline:none; resize:vertical; min-height:56px; font-family:"Noto Sans JP",sans-serif;';
     const submitBtn = document.createElement('button');
-    submitBtn.textContent = '記録する';
+    submitBtn.textContent = submitLabel;
     submitBtn.style.cssText = 'margin-top:8px; padding:8px 18px; background:var(--accent); color:#000; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;';
     submitBtn.addEventListener('click', async () => {
       submitBtn.disabled = true; submitBtn.textContent = '保存中...';
@@ -4015,12 +4015,13 @@ function attachDecideButtons(containerDiv) {
   origBtn.textContent = '今回は別の内容で実行した';
   origBtn.addEventListener('click', () => {
     lockAll();
+    origSection.style.display = 'block'; // lockAll が非表示にするので再表示
     cards.forEach(c => c.classList.add('nutrition-card--dim'));
     origSection.innerHTML = '';
     const form = buildNoteForm('例：コンビニのおにぎり2個とサラダを食べた', async (note) => {
       await saveSelectedPlan({ rank: 'original', name: '', ingredients: '', nutrition: '', action_type: 'original', custom_note: note });
       origSection.innerHTML = '<p style="font-size:12px; color:var(--accent); margin-top:8px;">✓ 実行内容を記録しました</p>';
-    });
+    }, '送信して完了');
     origSection.appendChild(form);
   });
   origSection.appendChild(origBtn);
