@@ -3928,52 +3928,103 @@ function attachDecideButtons(containerDiv) {
   const cards = containerDiv.querySelectorAll('.nutrition-card');
   if (cards.length === 0) return;
 
+  // 全ボタン無効化 + オプション非表示（いずれかのアクション後に呼ぶ）
+  function lockAll() {
+    containerDiv.querySelectorAll('.decide-btn, .arrange-btn').forEach(b => { b.disabled = true; });
+    const origSection = containerDiv.querySelector('.original-section');
+    if (origSection) origSection.style.display = 'none';
+    const optionBtns = containerDiv.querySelector('.option-buttons');
+    if (optionBtns) optionBtns.style.display = 'none';
+  }
+
+  // アレンジ・オリジナル用の入力フォームを生成
+  function buildNoteForm(placeholder, onSubmit) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:10px 0 4px;';
+    const label = document.createElement('p');
+    label.style.cssText = 'font-size:11px; color:var(--muted); margin-bottom:6px;';
+    label.textContent = 'どこをどう変えたか・実際に何をしたか（任意）';
+    const ta = document.createElement('textarea');
+    ta.placeholder = placeholder;
+    ta.style.cssText = 'width:100%; box-sizing:border-box; padding:8px 10px; background:#1e1e1e; border:1px solid var(--border); border-radius:6px; color:var(--white); font-size:12px; outline:none; resize:vertical; min-height:56px; font-family:"Noto Sans JP",sans-serif;';
+    const submitBtn = document.createElement('button');
+    submitBtn.textContent = '記録する';
+    submitBtn.style.cssText = 'margin-top:8px; padding:8px 18px; background:var(--accent); color:#000; border:none; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;';
+    submitBtn.addEventListener('click', async () => {
+      submitBtn.disabled = true; submitBtn.textContent = '保存中...';
+      await onSubmit(ta.value.trim());
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(ta);
+    wrap.appendChild(submitBtn);
+    return wrap;
+  }
+
   cards.forEach((card) => {
     const rankEl       = card.querySelector('.nutrition-rank');
     const nameEl       = card.querySelector('.nutrition-name');
     const ingredientEl = card.querySelector('.nutrition-ingredient');
     const pfcEl        = card.querySelector('.pfc-line');
 
-    const rankText = rankEl ? rankEl.textContent.trim() : '';
-    const mealName = nameEl ? nameEl.textContent.trim() : '';
-
-    // PFC各spanをスペース区切りで結合（textContent直接では結合部にスペースが入らないため）
+    const rankText      = rankEl ? rankEl.textContent.trim() : '';
+    const mealName      = nameEl ? nameEl.textContent.trim() : '';
     const nutritionText = pfcEl
       ? Array.from(pfcEl.querySelectorAll('span'))
           .map(s => s.textContent.trim()).filter(Boolean).join(' ')
       : '';
+    const ingredients   = ingredientEl ? ingredientEl.textContent.trim() : '';
 
+    // ── 決定ボタン ──
     const btn = document.createElement('button');
     btn.className = 'decide-btn';
     btn.textContent = 'この提案で決定する';
     btn.addEventListener('click', async () => {
-      // 全カードの決定ボタンを無効化
-      containerDiv.querySelectorAll('.decide-btn').forEach(b => { b.disabled = true; });
-
-      // 選択カードをハイライト、他をdim
-      cards.forEach(c => {
-        c.classList.add(c === card ? 'nutrition-card--selected' : 'nutrition-card--dim');
-      });
-
-      // ボタン表示を確定状態に変更
+      lockAll();
+      cards.forEach(c => c.classList.add(c === card ? 'nutrition-card--selected' : 'nutrition-card--dim'));
       btn.textContent = '✓ この提案を選びました';
       btn.classList.add('decide-btn--confirmed');
-
-      // 「レシピを見る」オプションボタンを非表示
-      const optionBtns = containerDiv.querySelector('.option-buttons');
-      if (optionBtns) optionBtns.style.display = 'none';
-
-      // Supabaseに保存
-      await saveSelectedPlan({
-        rank: rankText,
-        name: mealName,
-        ingredients: ingredientEl ? ingredientEl.textContent.trim() : '',
-        nutrition: nutritionText,
-      });
+      await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'selected' });
     });
-
     card.appendChild(btn);
+
+    // ── アレンジボタン ──
+    const arrangeBtn = document.createElement('button');
+    arrangeBtn.className = 'arrange-btn';
+    arrangeBtn.textContent = 'この提案をアレンジして実行した';
+    arrangeBtn.addEventListener('click', () => {
+      lockAll();
+      cards.forEach(c => c.classList.add(c === card ? 'nutrition-card--selected' : 'nutrition-card--dim'));
+      btn.style.display = 'none';
+      arrangeBtn.style.display = 'none';
+      const form = buildNoteForm('例：ご飯を玄米に変えた、量を半分にした…', async (note) => {
+        await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'arranged', custom_note: note });
+        form.innerHTML = '<p style="font-size:12px; color:var(--accent); padding:4px 0;">✓ アレンジ内容を記録しました</p>';
+      });
+      card.appendChild(form);
+    });
+    card.appendChild(arrangeBtn);
   });
+
+  // ── 今回は別の内容で実行したセクション ──
+  const origSection = document.createElement('div');
+  origSection.className = 'original-section';
+  origSection.style.cssText = 'margin-top:10px;';
+  const origBtn = document.createElement('button');
+  origBtn.className = 'decide-btn';
+  origBtn.style.cssText = 'border-color:rgba(255,255,255,0.12); color:rgba(255,255,255,0.35); font-size:12px; margin-top:0;';
+  origBtn.textContent = '今回は別の内容で実行した';
+  origBtn.addEventListener('click', () => {
+    lockAll();
+    cards.forEach(c => c.classList.add('nutrition-card--dim'));
+    origSection.innerHTML = '';
+    const form = buildNoteForm('例：コンビニのおにぎり2個とサラダを食べた', async (note) => {
+      await saveSelectedPlan({ rank: 'original', name: '', ingredients: '', nutrition: '', action_type: 'original', custom_note: note });
+      origSection.innerHTML = '<p style="font-size:12px; color:var(--accent); margin-top:8px;">✓ 実行内容を記録しました</p>';
+    });
+    origSection.appendChild(form);
+  });
+  origSection.appendChild(origBtn);
+  containerDiv.appendChild(origSection);
 }
 
 async function saveSelectedPlan(mealContent) {
@@ -3981,11 +4032,16 @@ async function saveSelectedPlan(mealContent) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
+    const actionType = mealContent.action_type || 'selected';
+
     const { error } = await supabase.from('selected_plans').insert({
       user_id: session.user.id,
       selected_plan: mealContent.rank,
       meal_name: mealContent.name,
-      meal_content: mealContent,          // jsonb カラムにはオブジェクトを直接渡す
+      meal_content: mealContent,
+      action_type: actionType,
+      base_meal_name: actionType === 'arranged' ? mealContent.name : null,
+      custom_note: mealContent.custom_note || null,
       goal: selectedGoal,
       method: selectedMethod,
       sub: selectedSub,

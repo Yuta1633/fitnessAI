@@ -218,7 +218,7 @@ async function loadUserDetail(userId) {
     supabase.from('user_consents').select('consented_at, terms_version, privacy_version').eq('user_id', userId).order('consented_at', { ascending: false }).limit(1),
     supabase.from('personal_analysis').select('type_name, full_result, nutrition_count, training_count, recovery_count, streak, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
     supabase.from('workout_logs').select('exercise, sets, reps, weight, date').eq('user_id', userId).order('date', { ascending: false }).limit(20),
-    supabase.from('selected_plans').select('meal_name, selected_plan, meal_content, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
+    supabase.from('selected_plans').select('meal_name, selected_plan, meal_content, action_type, custom_note, confirmed_at').eq('user_id', userId).gte('confirmed_at', sevenDaysAgoStr).order('confirmed_at', { ascending: false }).limit(5),
     supabase.from('coach_feedback').select('id, message, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(10)
   ]);
 
@@ -480,31 +480,44 @@ function buildDetailHTML({ userId, streak, weeklyTotal, totalDays, firstUsage, m
   // 直近7日の選択提案
   const rankColor = { '第一候補': '#c8f135', '第二候補': '#4fc3f7', 'これならOK': '#888' };
   let selectedPlansHtml = '';
+  const actionLabel = { selected: 'そのまま実行', arranged: 'アレンジして実行', original: '別の内容で実行' };
+  const actionColor = { selected: 'var(--accent)', arranged: '#f59e0b', original: '#818cf8' };
   if (selectedPlans && selectedPlans.length > 0) {
     const rows = selectedPlans.map(p => {
       const date = p.confirmed_at ? new Date(p.confirmed_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-      const color = rankColor[p.selected_plan] || '#aaa';
+      const rankCol = rankColor[p.selected_plan] || '#aaa';
+      const aType = p.action_type || 'selected';
+      const aLabel = actionLabel[aType] || aType;
+      const aColor = actionColor[aType] || '#aaa';
       const detailId = 'sp-' + Math.random().toString(36).slice(2, 8);
       const mc = p.meal_content || {};
       const ingredientsText = mc.ingredients || '-';
       const nutritionText = mc.nutrition || '-';
+      const isOriginal = aType === 'original';
+      const headerName = isOriginal ? '（オリジナル）' : (p.meal_name || '-');
       return `
         <div style="border-bottom:1px solid var(--border);">
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; cursor:pointer;" onclick="var d=document.getElementById('${detailId}');d.style.display=d.style.display==='none'?'block':'none';">
-            <p style="font-size:13px; color:var(--white);">${escapeHtml(p.meal_name || '-')}</p>
+            <div style="min-width:0;">
+              <p style="font-size:13px; color:var(--white);">${escapeHtml(headerName)}</p>
+              <p style="font-size:10px; margin-top:2px;"><span style="color:${aColor}; font-weight:700;">${escapeHtml(aLabel)}</span>${!isOriginal ? `<span style="color:var(--muted); margin-left:6px;">${escapeHtml(p.selected_plan || '-')}</span>` : ''}</p>
+            </div>
             <div style="display:flex; align-items:center; gap:8px; flex-shrink:0; margin-left:8px;">
-              <div style="text-align:right;">
-                <p style="font-size:11px; font-weight:700; color:${color};">${escapeHtml(p.selected_plan || '-')}</p>
-                <p style="font-size:10px; color:var(--muted);">${escapeHtml(date)}</p>
-              </div>
+              <p style="font-size:10px; color:var(--muted);">${escapeHtml(date)}</p>
               <span style="font-size:11px; color:var(--muted);">▼</span>
             </div>
           </div>
           <div id="${detailId}" style="display:none; padding:10px 12px; border-top:1px solid var(--border); background:#0d0d0d;">
+            ${!isOriginal ? `
             <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">食材</p>
             <p style="font-size:12px; color:var(--white); margin-bottom:8px; white-space:pre-wrap;">${escapeHtml(ingredientsText)}</p>
             <p style="font-size:11px; color:var(--muted); margin-bottom:3px;">栄養</p>
-            <p style="font-size:12px; color:var(--white);">${escapeHtml(nutritionText)}</p>
+            <p style="font-size:12px; color:var(--white); margin-bottom:8px;">${escapeHtml(nutritionText)}</p>
+            ` : ''}
+            ${p.custom_note ? `
+            <p style="font-size:11px; color:${aColor}; margin-bottom:3px;">${aType === 'arranged' ? 'アレンジ内容' : '実行内容'}</p>
+            <p style="font-size:12px; color:var(--white); white-space:pre-wrap;">${escapeHtml(p.custom_note)}</p>
+            ` : (aType !== 'selected' ? `<p style="font-size:11px; color:var(--muted);">メモなし</p>` : '')}
           </div>
         </div>`;
     }).join('');
