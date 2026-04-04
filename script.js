@@ -601,6 +601,22 @@ async function showQuestionStep(questions) {
     const _goalFactors    = PERIOD_FACTOR_MAP[selectedGoal] || { short: 1.00, standard: 1.00, long: 1.00 };
     const periodFactor    = _goalFactors[goalPeriodType] ?? 1.00;
 
+    // 栄養フローの条件スナップショット（NutritionDB 有無に関わらず保存）
+    if (selectedMethod === 'nutrition') {
+      _nutritionContext = {
+        totalMeals:     questionAnswers[0] ? parseInt(questionAnswers[0]) : null,
+        mealIndex:      questionAnswers[1] ? parseInt(questionAnswers[1]) : null,
+        timeOfDay:      questionAnswers[2] ?? null,
+        location:       questionAnswers[3] ?? null,
+        mood:           questionAnswers[4] ?? null,
+        sake:           questionAnswers[5] ?? null,
+        proteinSupp:    questionAnswers[6] ?? null,
+        hunger:         questionAnswers[7] ?? null,
+        mealVolume:     questionAnswers[8] ?? null,
+        trainingTiming: questionAnswers[9] ?? null,
+      };
+    }
+
     // MEAL_DBから3品選んで会話履歴の先頭プロンプトに追加
     let hasContradiction = false;
     if (selectedMethod === 'nutrition' && window.NutritionDB) {
@@ -642,20 +658,6 @@ async function showQuestionStep(questions) {
       // 修正③: [8][9] を取得（今後PFC・候補選定へのロジック反映予定）
       mealVolume = questionAnswers[8] ?? null;      // '通常の食事' | '軽めの食事' | '間食・補食'
       trainingTiming = questionAnswers[9] ?? null;  // '特になし' | 'トレーニング前' | 'トレーニング後'
-
-      // 提案条件スナップショット（ユーザーの生入力を保存）
-      _nutritionContext = {
-        totalMeals,
-        mealIndex,
-        timeOfDay:     questionAnswers[2] ?? null,  // 時間帯（生入力）
-        location:      questionAnswers[3] ?? null,  // 食事場所（生入力）
-        mood:          questionAnswers[4] ?? null,  // 気分・食べ方
-        sake:          questionAnswers[5] ?? null,  // お酒の種類
-        proteinSupp,
-        hunger,
-        mealVolume,
-        trainingTiming,
-      };
 
       // お酒のカロリーと種類別調整
       const SAKE_INFO = {
@@ -3943,6 +3945,9 @@ function attachDecideButtons(containerDiv) {
   const cards = containerDiv.querySelectorAll('.nutrition-card');
   if (cards.length === 0) return;
 
+  // 呼び出し時点のスナップショットをクロージャに取り込む（グローバルの後変化を防ぐ）
+  const capturedContext = _nutritionContext;
+
   // 全ボタン無効化 + オプション非表示（いずれかのアクション後に呼ぶ）
   function lockAll() {
     containerDiv.querySelectorAll('.decide-btn, .arrange-btn').forEach(b => { b.disabled = true; });
@@ -3998,7 +4003,7 @@ function attachDecideButtons(containerDiv) {
       cards.forEach(c => c.classList.add(c === card ? 'nutrition-card--selected' : 'nutrition-card--dim'));
       btn.textContent = '✓ この提案を選びました';
       btn.classList.add('decide-btn--confirmed');
-      await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'selected' });
+      await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'selected', contextSnapshot: capturedContext });
     });
     card.appendChild(btn);
 
@@ -4012,7 +4017,7 @@ function attachDecideButtons(containerDiv) {
       btn.style.display = 'none';
       arrangeBtn.style.display = 'none';
       const form = buildNoteForm('例：ご飯を玄米に変えた、量を半分にした…', async (note) => {
-        await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'arranged', custom_note: note });
+        await saveSelectedPlan({ rank: rankText, name: mealName, ingredients, nutrition: nutritionText, action_type: 'arranged', custom_note: note, contextSnapshot: capturedContext });
         form.innerHTML = '<p style="font-size:12px; color:var(--accent); padding:4px 0;">✓ アレンジ内容を記録しました</p>';
       });
       card.appendChild(form);
@@ -4034,7 +4039,7 @@ function attachDecideButtons(containerDiv) {
     cards.forEach(c => c.classList.add('nutrition-card--dim'));
     origSection.innerHTML = '';
     const form = buildNoteForm('例：コンビニのおにぎり2個とサラダを食べた', async (note) => {
-      await saveSelectedPlan({ rank: 'original', name: '', ingredients: '', nutrition: '', action_type: 'original', custom_note: note });
+      await saveSelectedPlan({ rank: 'original', name: '', ingredients: '', nutrition: '', action_type: 'original', custom_note: note, contextSnapshot: capturedContext });
       origSection.innerHTML = '<p style="font-size:12px; color:var(--accent); margin-top:8px;">✓ 実行内容を記録しました</p>';
     }, '送信して完了');
     origSection.appendChild(form);
@@ -4061,7 +4066,7 @@ async function saveSelectedPlan(mealContent) {
       goal: selectedGoal,
       method: selectedMethod,
       sub: selectedSub,
-      context_snapshot: _nutritionContext || null,
+      context_snapshot: mealContent.contextSnapshot || null,
       confirmed_at: new Date().toISOString(),
     });
 
