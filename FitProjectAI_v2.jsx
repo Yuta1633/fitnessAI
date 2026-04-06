@@ -15,18 +15,13 @@ const LEVELS = [
   { id:"competitor",   name:"競技者",  desc:"大会出場経験あり",          emoji:"🏆" },
 ];
 
-const PROPOSAL_BY_LEVEL = {
-  beginner:     { kcal:2200, p:140, f:60,  c:260, note:"まずは基本的な食事習慣の確立を優先します。" },
-  intermediate: { kcal:2800, p:180, f:70,  c:350, note:"筋肉合成を最大化する栄養バランスにしています。" },
-  advanced:     { kcal:3200, p:220, f:80,  c:400, note:"高強度トレーニングに対応した栄養設計です。" },
-  competitor:   { kcal:3600, p:260, f:90,  c:450, note:"競技パフォーマンスに特化したプロトコルです。" },
+const KCAL = { beginner:2200, intermediate:2800, advanced:3200, competitor:3600 };
+const MACRO = {
+  beginner:     { p:140, f:60,  c:260 },
+  intermediate: { p:180, f:70,  c:350 },
+  advanced:     { p:220, f:80,  c:400 },
+  competitor:   { p:260, f:90,  c:450 },
 };
-
-const TRAINING_PLACES = [
-  { id:"gym",        name:"ジム",     emoji:"🏛️", desc:"マシン・フリーウェイト" },
-  { id:"home",       name:"自宅",     emoji:"🏠", desc:"自重＋ダンベル等" },
-  { id:"bodyweight", name:"自重のみ", emoji:"🧍", desc:"器具なし" },
-];
 
 const SAMPLE_WEIGHTS = [
   { date:"3/1",  w:72.4 }, { date:"3/5",  w:72.0 },
@@ -96,37 +91,6 @@ const SelectRow = ({ emoji, name, desc, selected, onClick, color="#6366f1" }) =>
       display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:14 }}>›</div>
   </div>
 );
-
-const DonutChart = ({ p, f, c }) => {
-  const total = p + f + c;
-  const segs = [
-    { pct: p/total, color:"#6366f1" },
-    { pct: f/total, color:"#f59e0b" },
-    { pct: c/total, color:"#10b981" },
-  ];
-  let cumDeg = -90;
-  const polar = (cx, cy, r, deg) => ({
-    x: cx + r * Math.cos(deg * Math.PI / 180),
-    y: cy + r * Math.sin(deg * Math.PI / 180),
-  });
-  const arc = (cx, cy, r, s, e) => {
-    const S = polar(cx,cy,r,s), E = polar(cx,cy,r,e);
-    return `M ${S.x} ${S.y} A ${r} ${r} 0 ${e-s>180?1:0} 1 ${E.x} ${E.y}`;
-  };
-  return (
-    <svg width={80} height={80} viewBox="0 0 80 80">
-      {segs.map((seg, i) => {
-        const start = cumDeg;
-        const end = cumDeg + seg.pct * 360 - 1;
-        cumDeg += seg.pct * 360;
-        return (
-          <path key={i} d={arc(40,40,28,start,end)} fill="none"
-            stroke={seg.color} strokeWidth={12} strokeLinecap="round" />
-        );
-      })}
-    </svg>
-  );
-};
 
 // ─── ONBOARDING ───────────────────────────────────────────────────────────────
 
@@ -234,6 +198,7 @@ const AccordionFlow = ({ questions, onComplete, accentColor="#6366f1" }) => {
             borderRadius:16, overflow:"hidden", transition:"all 0.2s",
             background: done ? `${accentColor}06` : "#fff",
           }}>
+            {/* Header */}
             <div style={{ padding:"14px 16px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 <div style={{ width:26, height:26, borderRadius:"50%",
@@ -246,6 +211,7 @@ const AccordionFlow = ({ questions, onComplete, accentColor="#6366f1" }) => {
               </div>
               {done && <span style={{ fontSize:12, color: accentColor, fontWeight:600, background:`${accentColor}15`, padding:"3px 10px", borderRadius:99 }}>{q.options.find(o=>o.id===answers[i])?.label}</span>}
             </div>
+            {/* Options */}
             {open && !done && (
               <div style={{ padding:"0 14px 14px", display:"flex", flexDirection:"column", gap:8 }}>
                 {q.options.map(opt => (
@@ -272,128 +238,79 @@ const AccordionFlow = ({ questions, onComplete, accentColor="#6366f1" }) => {
 // ─── PROPOSAL CARDS ───────────────────────────────────────────────────────────
 
 const DietProposal = ({ answers, level }) => {
-  const proposal = PROPOSAL_BY_LEVEL[level?.id] || PROPOSAL_BY_LEVEL.beginner;
+  const m = MACRO[level?.id] || MACRO.beginner;
+  const k = KCAL[level?.id] || 2200;
   const purpose = answers[0];
-  const kcalAdj = purpose==="bulk" ? proposal.kcal+200 : purpose==="cut" ? proposal.kcal-300 : proposal.kcal;
-  const macros = [
-    { label:"P", full:"たんぱく質", g:proposal.p, color:"#6366f1" },
-    { label:"F", full:"脂質",       g:proposal.f, color:"#f59e0b" },
-    { label:"C", full:"炭水化物",   g:proposal.c, color:"#10b981" },
-  ];
+  const kcalAdj = purpose==="bulk" ? k+200 : purpose==="cut" ? k-300 : k;
   return (
     <Card style={{ marginTop:16, border:"2px solid #6366f115" }}>
       <div style={{ fontWeight:800, fontSize:15, marginBottom:12, color:"#111" }}>🥗 今日の食事提案</div>
-      <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:12 }}>
-        <DonutChart p={proposal.p} f={proposal.f} c={proposal.c} />
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:28, fontWeight:900, color:"#6366f1" }}>{kcalAdj}<span style={{ fontSize:13, fontWeight:400, color:"#9ca3af" }}>kcal</span></div>
-          <div style={{ fontSize:11, color:"#9ca3af", marginTop:2 }}>{proposal.note}</div>
-        </div>
-      </div>
-      <div style={{ display:"flex", gap:8, marginBottom:12 }}>
-        {macros.map(m=>(
-          <div key={m.label} style={{ flex:1, background:m.color+"15", borderRadius:10, padding:"8px", textAlign:"center" }}>
-            <div style={{ fontSize:11, color:m.color, fontWeight:700 }}>{m.label}</div>
-            <div style={{ fontSize:14, fontWeight:800, color:"#111" }}>{m.g}g</div>
-            <div style={{ fontSize:10, color:"#9ca3af" }}>{m.full}</div>
+      <div style={{ fontSize:28, fontWeight:900, color:"#6366f1" }}>{kcalAdj}<span style={{ fontSize:13, fontWeight:400, color:"#9ca3af" }}>kcal</span></div>
+      <div style={{ display:"flex", gap:12, marginTop:10 }}>
+        {[["P", m.p+"g","#6366f1"],["F",m.f+"g","#f59e0b"],["C",m.c+"g","#10b981"]].map(([l,v,c])=>(
+          <div key={l} style={{ flex:1, background:c+"15", borderRadius:10, padding:"10px 8px", textAlign:"center" }}>
+            <div style={{ fontSize:11, color:c, fontWeight:700 }}>{l}</div>
+            <div style={{ fontSize:15, fontWeight:800, color:"#111" }}>{v}</div>
           </div>
         ))}
       </div>
-      <div style={{ fontSize:12, color:"#6b7280", lineHeight:1.7, marginBottom:12 }}>
+      <div style={{ marginTop:12, fontSize:12, color:"#6b7280", lineHeight:1.7 }}>
         {purpose==="bulk" ? "筋肥大目的のため少しカロリーを上乗せしています。" : purpose==="cut" ? "脂肪燃焼のため少しカロリーを抑えています。" : "維持カロリーでバランスよく栄養を摂りましょう。"}
-      </div>
-      <div style={{ borderTop:"1px solid #f0f0f0", paddingTop:10 }}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:8, color:"#374151" }}>食事タイミング</div>
-        {[
-          "起床後30分以内：プロテイン＋炭水化物",
-          "トレ前1時間：軽い炭水化物",
-          "トレ後30分以内：タンパク質優先",
-          "就寝前：カゼインプロテイン",
-        ].map(t=>(
-          <div key={t} style={{ fontSize:12, color:"#374151", padding:"5px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
-        ))}
       </div>
     </Card>
   );
 };
 
-const TrainingProposal = ({ answers, level }) => {
+const TrainingProposal = ({ answers }) => {
   const part = answers[0]; const place = answers[1]; const time = answers[2];
-  const proposal = PROPOSAL_BY_LEVEL[level?.id] || PROPOSAL_BY_LEVEL.beginner;
   const menuMap = {
-    chest:    ["ベンチプレス 4×8", "インクラインDB 3×10", "ケーブルフライ 3×12"],
-    back:     ["デッドリフト 4×5", "ラットプル 4×10", "シーテッドロウ 3×12"],
-    legs:     ["スクワット 4×8", "レッグプレス 3×12", "レッグカール 3×15"],
-    shoulder: ["ショルダープレス 4×10", "サイドレイズ 4×15", "フロントレイズ 3×12"],
-    full:     ["スクワット 3×10", "ベンチプレス 3×10", "デッドリフト 3×8", "ショルダープレス 3×10"],
-  };
-  const weeklyMap = {
-    beginner:     ["月：胸・三頭筋（基本3種目）", "水：背中・二頭筋（基本3種目）", "金：脚・肩（基本3種目）"],
-    intermediate: ["月：胸（5種目）", "火：背中（5種目）", "木：肩（4種目）", "土：脚（5種目）"],
-    advanced:     ["月：胸・三頭筋", "火：背中・二頭筋", "水：肩", "木：脚", "土：腕・腹筋"],
-    competitor:   ["月：胸", "火：背中", "水：肩", "木：脚前面", "金：脚後面", "土：腕・腹筋"],
+    chest:  ["ベンチプレス 4×8", "インクラインDB 3×10", "ケーブルフライ 3×12"],
+    back:   ["デッドリフト 4×5", "ラットプル 4×10", "シーテッドロウ 3×12"],
+    legs:   ["スクワット 4×8", "レッグプレス 3×12", "レッグカール 3×15"],
+    shoulder:["ショルダープレス 4×10", "サイドレイズ 4×15", "フロントレイズ 3×12"],
+    full:   ["スクワット 3×10", "ベンチプレス 3×10", "デッドリフト 3×8", "ショルダープレス 3×10"],
   };
   const menu = menuMap[part] || menuMap.full;
-  const weekly = weeklyMap[level?.id] || weeklyMap.beginner;
-  const placeLabel = TRAINING_PLACES.find(p=>p.id===place)?.name || "";
+  const placeLabel = {gym:"ジム", home:"自宅（ダンベル）", bodyweight:"自重"}[place] || "";
   return (
     <Card style={{ marginTop:16, border:"2px solid #6366f115" }}>
       <div style={{ fontWeight:800, fontSize:15, marginBottom:4, color:"#111" }}>🏋️ 今日のトレーニング</div>
-      <div style={{ fontSize:12, color:"#9ca3af", marginBottom:4 }}>{placeLabel} ／ {time==="short"?"30分以内":time==="mid"?"45〜60分":"60分以上"}</div>
-      <div style={{ fontSize:12, color:"#9ca3af", marginBottom:12 }}>{proposal.note}</div>
+      <div style={{ fontSize:12, color:"#9ca3af", marginBottom:12 }}>{placeLabel} ／ {time==="short"?"30分以内":time==="mid"?"45〜60分":"60分以上"}</div>
       {menu.map((m,i) => (
         <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 0", borderBottom:"1px solid #f0f0f0" }}>
           <div style={{ width:22, height:22, borderRadius:"50%", background:"#ede9fe", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#6366f1" }}>{i+1}</div>
           <span style={{ fontSize:13, color:"#374151", fontWeight:500 }}>{m}</span>
         </div>
       ))}
-      <div style={{ borderTop:"1px solid #f0f0f0", paddingTop:10, marginTop:4 }}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:8, color:"#374151" }}>週間スケジュール</div>
-        {weekly.map(d=>(
-          <div key={d} style={{ fontSize:12, color:"#374151", padding:"5px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {d}</div>
-        ))}
-      </div>
     </Card>
   );
 };
 
-const RecoveryProposal = ({ answers, level }) => {
+const RecoveryProposal = ({ answers }) => {
   const intensity = answers[0]; const condition = answers[1];
   const needsRest = intensity==="hard" || condition==="sore";
-  const sleepHours = level?.id==="competitor" ? "8〜9時間" : level?.id==="advanced" ? "7〜8時間" : "7時間以上";
   return (
     <Card style={{ marginTop:16, border:"2px solid #6366f115" }}>
       <div style={{ fontWeight:800, fontSize:15, marginBottom:12, color:"#111" }}>💤 今日の回復プロトコル</div>
       {needsRest ? (
-        <div style={{ background:"#fef3c7", borderRadius:10, padding:"10px 12px", marginBottom:12, fontSize:13, color:"#92400e" }}>
-          ⚠️ 今日は積極的な休養が必要です
-        </div>
+        <>
+          <div style={{ background:"#fef3c7", borderRadius:10, padding:"10px 12px", marginBottom:10, fontSize:13, color:"#92400e" }}>
+            ⚠️ 今日は積極的な休養が必要です
+          </div>
+          {["軽いストレッチ 15〜20分","フォームローラーでセルフケア","睡眠 8時間以上を確保"].map((t,i)=>(
+            <div key={i} style={{ fontSize:13, color:"#374151", padding:"7px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
+          ))}
+        </>
       ) : (
-        <div style={{ background:"#f0fdf4", borderRadius:10, padding:"10px 12px", marginBottom:12, fontSize:13, color:"#15803d" }}>
-          ✅ コンディション良好です
-        </div>
+        <>
+          <div style={{ background:"#f0fdf4", borderRadius:10, padding:"10px 12px", marginBottom:10, fontSize:13, color:"#15803d" }}>
+            ✅ コンディション良好です
+          </div>
+          {["アクティブリカバリー（ウォーキング30分）","軽いストレッチ 10分","睡眠 7〜8時間を確保"].map((t,i)=>(
+            <div key={i} style={{ fontSize:13, color:"#374151", padding:"7px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
+          ))}
+        </>
       )}
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#374151" }}>😴 睡眠</div>
-        {[`推奨睡眠時間：${sleepHours}`, "就寝時刻の目安：23時前", "起床後15分以内に光を浴びる"].map(t=>(
-          <div key={t} style={{ fontSize:12, color:"#374151", padding:"5px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
-        ))}
-      </div>
-      <div style={{ marginBottom:10 }}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#374151" }}>🧘 アクティブリカバリー</div>
-        {(needsRest
-          ? ["フォームローラーでセルフケア", "軽いストレッチ 15〜20分", "入浴でリラックス"]
-          : ["ウォーキング（30分程度）", "軽いストレッチ 10分", "フォームローラーでのセルフケア"]
-        ).map(t=>(
-          <div key={t} style={{ fontSize:12, color:"#374151", padding:"5px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
-        ))}
-      </div>
-      <div>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#374151" }}>💊 サプリメント（任意）</div>
-        {["マグネシウム（就寝前）", "ビタミンD（朝食後）", "BCAA（トレ前後）"].map(t=>(
-          <div key={t} style={{ fontSize:12, color:"#374151", padding:"5px 0", borderBottom:"1px solid #f0f0f0" }}>✦ {t}</div>
-        ))}
-      </div>
     </Card>
   );
 };
@@ -407,9 +324,9 @@ const DIET_QS = [
     { id:"maintain",emoji:"⚖️", label:"維持したい" },
   ]},
   { label:"食事の準備時間は？", options:[
-    { id:"quick", emoji:"⚡", label:"10分以内",       sub:"簡単なもので OK" },
-    { id:"mid",   emoji:"🍳", label:"30分程度",       sub:"ある程度作れる" },
-    { id:"full",  emoji:"👨‍🍳", label:"しっかり作れる", sub:"時間に余裕あり" },
+    { id:"quick",  emoji:"⚡", label:"10分以内",    sub:"簡単なもので OK" },
+    { id:"mid",    emoji:"🍳", label:"30分程度",    sub:"ある程度作れる" },
+    { id:"full",   emoji:"👨‍🍳", label:"しっかり作れる", sub:"時間に余裕あり" },
   ]},
   { label:"今日のトレーニングは？", options:[
     { id:"yes",   emoji:"🏋️", label:"あり" },
@@ -446,17 +363,20 @@ const RECOVERY_QS = [
     { id:"rest",   emoji:"😴", label:"休み" },
   ]},
   { label:"今日の体のコンディションは？", options:[
-    { id:"sore",  emoji:"😣",  label:"筋肉痛あり" },
-    { id:"tired", emoji:"😮‍💨", label:"疲労感あり" },
-    { id:"great", emoji:"😊",  label:"良好" },
+    { id:"sore",    emoji:"😣", label:"筋肉痛あり" },
+    { id:"tired",   emoji:"😮‍💨", label:"疲労感あり" },
+    { id:"great",   emoji:"😊", label:"良好" },
   ]},
 ];
 
 const MainScreen = ({ goal, level }) => {
-  const [active, setActive] = useState(null);
+  const [active, setActive] = useState(null);   // diet | training | recovery
   const [result, setResult] = useState(null);
 
-  const handleSelect = (id) => { setActive(id); setResult(null); };
+  const handleSelect = (id) => {
+    setActive(id);
+    setResult(null);
+  };
 
   const METHODS = [
     { id:"diet",     icon:"🥗", name:"食事",         desc:"今日の食事プランを提案してもらう" },
@@ -464,15 +384,9 @@ const MainScreen = ({ goal, level }) => {
     { id:"recovery", icon:"💤", name:"回復",         desc:"最適な休養方法を教えてもらう" },
   ];
 
-  const resetBtn = (
-    <button onClick={()=>{ setActive(null); setResult(null); }}
-      style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", background:"#f0f0f0", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>
-      別の提案を見る
-    </button>
-  );
-
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", overflowY:"auto" }}>
+      {/* Header */}
       <div style={{ padding:"16px 22px 12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 }}>
         <span style={{ fontSize:20 }}>☰</span>
         <span style={{ fontWeight:700, fontSize:16 }}>Fit Project AI</span>
@@ -480,6 +394,7 @@ const MainScreen = ({ goal, level }) => {
       </div>
 
       <div style={{ padding:"0 20px 20px", overflowY:"auto" }}>
+        {/* Goal card */}
         <div style={{ background:"linear-gradient(135deg,#1e293b,#334155)", borderRadius:20, padding:"18px", color:"#fff", marginBottom:22 }}>
           <div style={{ fontSize:11, color:"#94a3b8", marginBottom:4 }}>登録中の目標</div>
           <div style={{ fontWeight:800, fontSize:17, marginBottom:10 }}>{goal?.emoji} {goal?.name}</div>
@@ -490,6 +405,7 @@ const MainScreen = ({ goal, level }) => {
           </div>
         </div>
 
+        {/* Method select */}
         <div style={{ fontSize:13, fontWeight:700, color:"#374151", marginBottom:12 }}>今日は何の提案が欲しいですか？</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom: active ? 20 : 0 }}>
           {METHODS.map(m => (
@@ -509,19 +425,20 @@ const MainScreen = ({ goal, level }) => {
           ))}
         </div>
 
+        {/* Accordion flow */}
         {active === "diet" && (
           result
-            ? <>{<DietProposal answers={result} level={level} />}{resetBtn}</>
+            ? <><DietProposal answers={result} level={level} /><button onClick={()=>{setActive(null);setResult(null);}} style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", background:"#f0f0f0", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>別の提案を見る</button></>
             : <div style={{ marginTop:4 }}><AccordionFlow questions={DIET_QS} onComplete={setResult} accentColor="#6366f1" /></div>
         )}
         {active === "training" && (
           result
-            ? <>{<TrainingProposal answers={result} level={level} />}{resetBtn}</>
+            ? <><TrainingProposal answers={result} /><button onClick={()=>{setActive(null);setResult(null);}} style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", background:"#f0f0f0", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>別の提案を見る</button></>
             : <div style={{ marginTop:4 }}><AccordionFlow questions={TRAINING_QS} onComplete={setResult} accentColor="#6366f1" /></div>
         )}
         {active === "recovery" && (
           result
-            ? <>{<RecoveryProposal answers={result} level={level} />}{resetBtn}</>
+            ? <><RecoveryProposal answers={result} /><button onClick={()=>{setActive(null);setResult(null);}} style={{ marginTop:12, width:"100%", padding:"12px", borderRadius:12, border:"none", background:"#f0f0f0", fontSize:13, fontWeight:600, cursor:"pointer", color:"#374151" }}>別の提案を見る</button></>
             : <div style={{ marginTop:4 }}><AccordionFlow questions={RECOVERY_QS} onComplete={setResult} accentColor="#6366f1" /></div>
         )}
       </div>
@@ -580,6 +497,7 @@ const ProgressScreen = ({ userInfo }) => {
     <div style={{ flex:1, overflowY:"auto", padding:"20px 22px" }}>
       <h2 style={{ fontWeight:800, fontSize:22, color:"#111", marginBottom:20 }}>進捗</h2>
 
+      {/* Streak */}
       <div style={{ background:"linear-gradient(135deg,#1e293b,#334155)", borderRadius:20, padding:"18px", color:"#fff", marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
         <div>
           <div style={{ fontSize:11, color:"#94a3b8", marginBottom:4 }}>連続記録日数</div>
@@ -588,6 +506,7 @@ const ProgressScreen = ({ userInfo }) => {
         <div style={{ fontSize:48 }}>🔥</div>
       </div>
 
+      {/* Graph */}
       <Card style={{ marginBottom:16, overflow:"hidden" }}>
         <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>体重の推移</div>
         <div style={{ fontSize:12, color:"#9ca3af", marginBottom:14 }}>直近 {weights.length} 件の記録</div>
@@ -597,6 +516,7 @@ const ProgressScreen = ({ userInfo }) => {
         </div>
       </Card>
 
+      {/* Goal progress */}
       <Card style={{ marginBottom:16 }}>
         <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>目標達成率</div>
         <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#9ca3af", marginBottom:6 }}>
@@ -610,6 +530,7 @@ const ProgressScreen = ({ userInfo }) => {
         <div style={{ textAlign:"right", fontSize:13, fontWeight:700, color:"#6366f1", marginTop:6 }}>{pct}%</div>
       </Card>
 
+      {/* Record input */}
       <Card>
         <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>今日の記録</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -660,7 +581,7 @@ const ChatScreen = ({ goal, level, userInfo }) => {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          model:"claude-haiku-4-5-20251001",
+          model:"claude-sonnet-4-20250514",
           max_tokens:400,
           system:`あなたはFit Project AIのパーソナルコーチです。
 ユーザーの目標：${goal?.name || "体づくり"}
@@ -690,6 +611,7 @@ const ChatScreen = ({ goal, level, userInfo }) => {
 
   return (
     <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
+      {/* Header */}
       <div style={{ padding:"14px 20px", borderBottom:"1px solid #f0f0f0", display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
         <div style={{ width:38, height:38, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>💪</div>
         <div>
@@ -698,6 +620,7 @@ const ChatScreen = ({ goal, level, userInfo }) => {
         </div>
       </div>
 
+      {/* Messages */}
       <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 8px" }}>
         {msgs.map((m, i) => (
           <div key={i} style={{ display:"flex", justifyContent: m.role==="user"?"flex-end":"flex-start", marginBottom:12 }}>
@@ -718,7 +641,7 @@ const ChatScreen = ({ goal, level, userInfo }) => {
               <div style={{ display:"flex", gap:4 }}>
                 {[0,1,2].map(i=>(
                   <div key={i} style={{ width:7, height:7, borderRadius:"50%", background:"#9ca3af",
-                    animation:`bounce 1s ${i*0.2}s infinite` }}/>
+                    animation:`bounce 1s ${i*0.2}s infinite`, }}/>
                 ))}
               </div>
             </div>
@@ -727,6 +650,7 @@ const ChatScreen = ({ goal, level, userInfo }) => {
         <div ref={bottomRef}/>
       </div>
 
+      {/* Input */}
       <div style={{ padding:"10px 14px 14px", borderTop:"1px solid #f0f0f0", display:"flex", gap:8, flexShrink:0 }}>
         <input
           value={input} onChange={e=>setInput(e.target.value)}
@@ -750,19 +674,14 @@ const ChatScreen = ({ goal, level, userInfo }) => {
 // ─── INFO SCREEN ──────────────────────────────────────────────────────────────
 
 const InfoScreen = ({ userInfo, level }) => {
-  const proposal = PROPOSAL_BY_LEVEL[level?.id] || PROPOSAL_BY_LEVEL.beginner;
+  const m = MACRO[level?.id] || MACRO.beginner;
+  const k = KCAL[level?.id] || 2200;
   return (
     <div style={{ flex:1, overflowY:"auto", padding:"20px 22px" }}>
       <h2 style={{ fontWeight:800, fontSize:22, color:"#111", marginBottom:20 }}>自分の情報</h2>
       <Card style={{ marginBottom:14 }}>
         <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>📊 基本情報</div>
-        {[
-          ["年齢",         `${userInfo?.age||"—"} 歳`],
-          ["現在体重",     `${userInfo?.weight||"—"} kg`],
-          ["現在体脂肪率", `${userInfo?.fat||"—"} %`],
-          ["目標体重",     `${userInfo?.targetWeight||"—"} kg`],
-          ["目標体脂肪率", `${userInfo?.targetFat||"—"} %`],
-        ].map(([l,v])=>(
+        {[["年齢",`${userInfo?.age||"—"} 歳`],["現在体重",`${userInfo?.weight||"—"} kg`],["現在体脂肪率",`${userInfo?.fat||"—"} %`],["目標体重",`${userInfo?.targetWeight||"—"} kg`],["目標体脂肪率",`${userInfo?.targetFat||"—"} %`]].map(([l,v])=>(
           <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #f0f0f0" }}>
             <span style={{ fontSize:13, color:"#6b7280" }}>{l}</span>
             <span style={{ fontSize:13, fontWeight:700 }}>{v}</span>
@@ -772,14 +691,8 @@ const InfoScreen = ({ userInfo, level }) => {
       <Card style={{ marginBottom:14 }}>
         <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>🔥 推定必要カロリー</div>
         <p style={{ fontSize:12, color:"#9ca3af", margin:"0 0 12px" }}>レベル「{level?.name}」に基づく推定値</p>
-        <div style={{ display:"flex", alignItems:"center", gap:16, marginBottom:12 }}>
-          <DonutChart p={proposal.p} f={proposal.f} c={proposal.c} />
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:32, fontWeight:900, color:"#6366f1" }}>{proposal.kcal}<span style={{ fontSize:14, fontWeight:400, color:"#9ca3af" }}>kcal/日</span></div>
-            <div style={{ fontSize:11, color:"#9ca3af", marginTop:4 }}>{proposal.note}</div>
-          </div>
-        </div>
-        {[["たんぱく質",`${proposal.p}g`,"#6366f1"],["脂質",`${proposal.f}g`,"#f59e0b"],["炭水化物",`${proposal.c}g`,"#10b981"]].map(([l,v,c])=>(
+        <div style={{ fontSize:32, fontWeight:900, color:"#6366f1", marginBottom:12 }}>{k}<span style={{ fontSize:14, fontWeight:400, color:"#9ca3af" }}>kcal/日</span></div>
+        {[["たんぱく質",`${m.p}g`,"#6366f1"],["脂質",`${m.f}g`,"#f59e0b"],["炭水化物",`${m.c}g`,"#10b981"]].map(([l,v,c])=>(
           <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"7px 0", borderBottom:"1px solid #f0f0f0" }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
               <div style={{ width:8, height:8, borderRadius:"50%", background:c }}/>
@@ -889,17 +802,17 @@ export default function App() {
   const [userInfo, setInfo]     = useState(null);
   const [tab, setTab]           = useState("main");
 
-  if (step==="goal")  return <Shell><PhoneShell><OnboardingGoalSelect  selected={selectedGoal}  onSelect={setGoal} onNext={()=>setStep("level")} /></PhoneShell></Shell>;
-  if (step==="level") return <Shell><PhoneShell><OnboardingLevelSelect selected={selectedLevel} onSelect={setLv}   onNext={()=>setStep("info")}  /></PhoneShell></Shell>;
-  if (step==="info")  return <Shell><PhoneShell><OnboardingBasicInfo   onDone={info=>{ setInfo(info); setStep("app"); }} /></PhoneShell></Shell>;
+  if (step==="goal") return <Shell><PhoneShell><OnboardingGoalSelect selected={selectedGoal} onSelect={setGoal} onNext={()=>setStep("level")} /></PhoneShell></Shell>;
+  if (step==="level") return <Shell><PhoneShell><OnboardingLevelSelect selected={selectedLevel} onSelect={setLv} onNext={()=>setStep("info")} /></PhoneShell></Shell>;
+  if (step==="info")  return <Shell><PhoneShell><OnboardingBasicInfo onDone={info=>{setInfo(info);setStep("app");}} /></PhoneShell></Shell>;
 
   return (
     <Shell>
       <PhoneShell>
-        {tab==="main"     && <MainScreen     goal={selectedGoal} level={selectedLevel} />}
+        {tab==="main"     && <MainScreen goal={selectedGoal} level={selectedLevel} />}
         {tab==="progress" && <ProgressScreen userInfo={userInfo} />}
-        {tab==="chat"     && <ChatScreen     goal={selectedGoal} level={selectedLevel} userInfo={userInfo} />}
-        {tab==="info"     && <InfoScreen     userInfo={userInfo} level={selectedLevel} />}
+        {tab==="chat"     && <ChatScreen goal={selectedGoal} level={selectedLevel} userInfo={userInfo} />}
+        {tab==="info"     && <InfoScreen userInfo={userInfo} level={selectedLevel} />}
         {tab==="settings" && <SettingsScreen goal={selectedGoal} level={selectedLevel} onChangeLevel={setLv} />}
         <BottomNav active={tab} onChange={setTab} />
       </PhoneShell>
