@@ -3351,6 +3351,76 @@ function showNameInputModal(userId) {
 }
 
 // ============================================================
+// プラン選択モーダル（初回セットアップ）
+// ============================================================
+function showPlanSelectModal() {
+  let modal = document.getElementById('plan-select-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'plan-select-modal';
+    modal.style.cssText = `
+      position:fixed; inset:0; background:rgba(0,0,0,0.9);
+      display:flex; align-items:center; justify-content:center;
+      z-index:9999; padding:24px;
+    `;
+
+    const optionsHtml = Object.entries(PLANS).map(([id, plan]) =>
+      `<button data-plan-id="${id}" style="
+        width:100%; padding:16px 20px; margin-bottom:12px;
+        border-radius:12px; border:1px solid rgba(200,241,53,0.3);
+        background:rgba(200,241,53,0.05); color:#fff;
+        font-size:15px; font-weight:600; cursor:pointer;
+        text-align:left; line-height:1.4;
+      ">${plan.label}</button>`
+    ).join('');
+
+    modal.innerHTML = `
+      <div style="background:#111; border:1px solid #333; border-radius:20px; padding:32px 24px; max-width:400px; width:100%;">
+        <p style="font-size:11px; color:#c8f135; letter-spacing:0.15em; margin-bottom:12px;">PLAN SETUP</p>
+        <h2 style="font-size:22px; font-weight:700; color:#fff; margin-bottom:8px;">
+          取り組む<span style="color:#c8f135;">プラン</span>を選んでください
+        </h2>
+        <p style="font-size:13px; color:#888; margin-bottom:24px; line-height:1.6;">
+          AIコーチがプランに特化した提案を行います。<br>プランは後から変更できます。
+        </p>
+        <div id="plan-select-modal-options">${optionsHtml}</div>
+        <button id="plan-select-skip" style="
+          width:100%; padding:12px; margin-top:4px;
+          background:transparent; border:1px solid #333;
+          border-radius:12px; color:#666; font-size:13px; cursor:pointer;
+        ">あとで設定する</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+
+  const finish = (planId) => {
+    localStorage.setItem(userKey('plan_onboarded'), '1');
+    modal.style.display = 'none';
+    if (planId) {
+      currentPlan = planId;
+      localStorage.setItem(userKey('current_plan'), planId);
+    }
+    mainContent.style.display = 'block';
+    if (currentPlan && PLANS[currentPlan]) {
+      initPlanMode();
+    } else {
+      selectedGoal = '2';
+      hideSection(goalSection);
+      showSection(methodSection);
+      renderPlanUI();
+    }
+    loadDashboard();
+  };
+
+  modal.querySelectorAll('button[data-plan-id]').forEach(btn => {
+    btn.onclick = () => finish(btn.dataset.planId);
+  });
+  document.getElementById('plan-select-skip').onclick = () => finish(null);
+}
+
+// ============================================================
 // オンボーディング
 // ============================================================
 (function initOnboarding() {
@@ -4278,29 +4348,34 @@ async function renderUserThreadMessages(threadId, userId, container) {
 function showAfterCheckin() {
   const checkinGate = document.getElementById('checkin-gate');
   if (checkinGate) checkinGate.style.display = 'none';
-  mainContent.style.display = 'block';
+
   // 解除ボタンのイベント登録（初回のみ）
   const unregBtn = document.getElementById('plan-unregister-btn');
   if (unregBtn && !unregBtn._bound) {
     unregBtn.addEventListener('click', unsetCurrentPlan);
     unregBtn._bound = true;
   }
-  // 登録プランをロードしてプランモードを初期化
+
+  // 登録プランをロード
   currentPlan = localStorage.getItem(userKey('current_plan')) || null;
   console.log('[planMode] currentPlan:', currentPlan);
+
+  // 初回プラン未設定の場合：プラン選択モーダルを表示してここで中断
+  if (!currentPlan && !localStorage.getItem(userKey('plan_onboarded'))) {
+    showPlanSelectModal();
+    return;
+  }
+
+  mainContent.style.display = 'block';
+
   if (currentPlan && typeof PLANS !== 'undefined' && PLANS[currentPlan]) {
     console.log('[planMode] initPlanMode() 呼び出し');
     initPlanMode();
   } else {
     console.log('[planMode] 通常フロー：goalSection スキップ、STEP02 開始');
-    selectedGoal = '2'; // 通常フロー用デフォルト（goal選択UI廃止に伴う安全値）
+    selectedGoal = '2';
     hideSection(goalSection);
     showSection(methodSection);
-    updateStepIndicator(2);
-    const step1 = document.querySelector('.step[data-step="1"]');
-    const stepLine = document.querySelector('.step-line');
-    if (step1) step1.style.display = 'none';
-    if (stepLine) stepLine.style.display = 'none';
     renderPlanUI();
   }
   loadDashboard();
@@ -4318,19 +4393,15 @@ function setCurrentPlan(planId) {
 }
 
 function unsetCurrentPlan() {
+  if (!confirm('登録中のプランを解除しますか？\n解除するとプランなしの通常モードに切り替わります。')) return;
   localStorage.removeItem(userKey('current_plan'));
   currentPlan = null;
   console.log('[planMode] プラン解除');
+  // goalSection は使わないため、通常フローとして STEP02 開始
+  selectedGoal = '2';
+  hideSection(goalSection);
+  showSection(methodSection);
   renderPlanUI();
-  // goal セクションを再表示
-  showSection(goalSection);
-  hideSection(methodSection);
-  updateStepIndicator(1);
-  selectedGoal = null;
-  const step1 = document.querySelector('.step[data-step="1"]');
-  const stepLine = document.querySelector('.step-line');
-  if (step1) step1.style.removeProperty('display');
-  if (stepLine) stepLine.style.removeProperty('display');
 }
 
 function renderPlanUI() {
