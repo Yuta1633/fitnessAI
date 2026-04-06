@@ -481,13 +481,26 @@
       </a>
     </div>
 
-    <div id="plan-badge" style="display:none; font-size:11px; font-weight:700; color:#c8f135; background:rgba(200,241,53,0.08); border:1px solid rgba(200,241,53,0.25); border-radius:6px; padding:5px 12px; margin-bottom:10px; letter-spacing:0.06em; display:none; justify-content:space-between; align-items:center; gap:12px;">
-      <span id="plan-badge-label"></span>
-      <button id="plan-unregister-btn" style="font-size:10px; color:var(--muted); background:none; border:none; cursor:pointer; padding:0; line-height:1;">解除</button>
+    <!-- 登録済みプランバッジ -->
+    <div id="plan-badge" class="plan-badge" style="display:none;">
+      <div class="plan-badge-left">
+        <span class="plan-badge-eyebrow">CURRENT PLAN</span>
+        <span id="plan-badge-label" class="plan-badge-name"></span>
+      </div>
+      <button id="plan-unregister-btn" class="plan-unregister-btn" aria-label="プラン設定">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+          <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
+        </svg>
+      </button>
     </div>
-    <div id="plan-select-card" style="display:none; background:rgba(200,241,53,0.04); border:1px solid rgba(200,241,53,0.2); border-radius:10px; padding:14px 16px; margin-bottom:10px;">
-      <div style="font-size:10px; color:var(--accent); letter-spacing:0.1em; font-weight:700; margin-bottom:10px;">REGISTERED PLAN</div>
-      <div id="plan-options"></div>
+
+    <!-- プラン未登録時の選択カード -->
+    <div id="plan-select-card" class="plan-select-card" style="display:none;">
+      <div class="plan-select-card-header">
+        <span class="plan-badge-eyebrow">PLAN</span>
+        <p class="plan-select-prompt">取り組むプランを選んで開始</p>
+      </div>
+      <div id="plan-options" class="plan-options-list"></div>
     </div>
 
     <div class="step-indicator" id="step-indicator" style="display:none;">

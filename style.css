@@ -2974,3 +2974,305 @@ body {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* ============================================================
+   Plan UI — Badge, Select Card, Modal
+   ============================================================ */
+
+/* --- Plan Badge (登録済みプラン表示) --- */
+.plan-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(200,241,53,0.07) 0%, rgba(200,241,53,0.03) 100%);
+  border: 1px solid rgba(200,241,53,0.22);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-badge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.4), transparent);
+}
+
+.plan-badge-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plan-badge-eyebrow {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.plan-badge-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+
+.plan-unregister-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.plan-unregister-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: var(--white);
+}
+
+/* --- Plan Select Card (メイン画面内・プラン未登録時) --- */
+.plan-select-card {
+  background: linear-gradient(135deg, rgba(18,18,26,0.9), rgba(12,12,18,0.7));
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-select-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.2), transparent);
+}
+
+.plan-select-card-header {
+  margin-bottom: 18px;
+}
+
+.plan-select-prompt {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white);
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+}
+
+.plan-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.plan-option-row:hover {
+  background: rgba(200,241,53,0.06);
+  border-color: rgba(200,241,53,0.22);
+  transform: translateY(-1px);
+}
+
+.plan-option-row-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.plan-option-row-arrow {
+  font-size: 13px;
+  color: var(--accent);
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.plan-option-row:hover .plan-option-row-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* --- Plan Select Modal (初回セットアップ) --- */
+@keyframes planModalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.plan-modal-inner {
+  background: linear-gradient(160deg, #17171f 0%, #0d0d14 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 24px;
+  padding: 40px 28px 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(200,241,53,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+  animation: planModalIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.plan-modal-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.3), transparent);
+}
+
+.plan-modal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  background: rgba(200,241,53,0.08);
+  border: 1px solid rgba(200,241,53,0.2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-bottom: 20px;
+}
+
+.plan-modal-tag::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: glowPulse 2s ease infinite;
+}
+
+.plan-modal-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+
+.plan-modal-title span { color: #c8f135; }
+
+.plan-modal-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.35);
+  line-height: 1.75;
+  margin-bottom: 28px;
+}
+
+.plan-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.plan-modal-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-modal-option::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(200,241,53,0.06), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.plan-modal-option:hover {
+  background: rgba(200,241,53,0.05);
+  border-color: rgba(200,241,53,0.28);
+  transform: translateY(-2px);
+}
+
+.plan-modal-option:hover::after {
+  opacity: 1;
+}
+
+.plan-modal-option-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.plan-modal-option-arrow {
+  font-size: 16px;
+  color: var(--accent);
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.plan-modal-option:hover .plan-modal-option-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+.plan-modal-skip {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  color: rgba(255,255,255,0.25);
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.plan-modal-skip:hover {
+  color: rgba(255,255,255,0.45);
+  border-color: rgba(255,255,255,0.12);
+}

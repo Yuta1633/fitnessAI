@@ -3358,37 +3358,22 @@ function showPlanSelectModal() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'plan-select-modal';
-    modal.style.cssText = `
-      position:fixed; inset:0; background:rgba(0,0,0,0.9);
-      display:flex; align-items:center; justify-content:center;
-      z-index:9999; padding:24px;
-    `;
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(3,3,8,0.94);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;backdrop-filter:blur(8px);';
 
     const optionsHtml = Object.entries(PLANS).map(([id, plan]) =>
-      `<button data-plan-id="${id}" style="
-        width:100%; padding:16px 20px; margin-bottom:12px;
-        border-radius:12px; border:1px solid rgba(200,241,53,0.3);
-        background:rgba(200,241,53,0.05); color:#fff;
-        font-size:15px; font-weight:600; cursor:pointer;
-        text-align:left; line-height:1.4;
-      ">${plan.label}</button>`
+      `<button data-plan-id="${id}" class="plan-modal-option">
+        <span class="plan-modal-option-name">${plan.label}</span>
+        <span class="plan-modal-option-arrow">→</span>
+      </button>`
     ).join('');
 
     modal.innerHTML = `
-      <div style="background:#111; border:1px solid #333; border-radius:20px; padding:32px 24px; max-width:400px; width:100%;">
-        <p style="font-size:11px; color:#c8f135; letter-spacing:0.15em; margin-bottom:12px;">PLAN SETUP</p>
-        <h2 style="font-size:22px; font-weight:700; color:#fff; margin-bottom:8px;">
-          取り組む<span style="color:#c8f135;">プラン</span>を選んでください
-        </h2>
-        <p style="font-size:13px; color:#888; margin-bottom:24px; line-height:1.6;">
-          AIコーチがプランに特化した提案を行います。<br>プランは後から変更できます。
-        </p>
-        <div id="plan-select-modal-options">${optionsHtml}</div>
-        <button id="plan-select-skip" style="
-          width:100%; padding:12px; margin-top:4px;
-          background:transparent; border:1px solid #333;
-          border-radius:12px; color:#666; font-size:13px; cursor:pointer;
-        ">あとで設定する</button>
+      <div class="plan-modal-inner">
+        <div class="plan-modal-tag">PLAN SETUP</div>
+        <h2 class="plan-modal-title">取り組む<span>プラン</span>を<br>選んでください</h2>
+        <p class="plan-modal-desc">AIコーチがプランに最適化した提案を行います。<br>プランはいつでも変更できます。</p>
+        <div class="plan-modal-options" id="plan-select-modal-options">${optionsHtml}</div>
+        <button id="plan-select-skip" class="plan-modal-skip">あとで設定する</button>
       </div>
     `;
     document.body.appendChild(modal);
@@ -4420,12 +4405,12 @@ function renderPlanUI() {
     // 未登録：プラン選択カード表示
     badge.style.display = 'none';
     optionsEl.innerHTML = Object.entries(PLANS).map(([id, plan]) =>
-      `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="font-size:13px;color:var(--white);">${plan.label}</span>
-        <button data-plan-id="${id}" class="plan-register-btn" style="font-size:11px;font-weight:700;color:#000;background:var(--accent);border:none;border-radius:6px;padding:4px 12px;cursor:pointer;">登録する</button>
-      </div>`
+      `<button data-plan-id="${id}" class="plan-option-row">
+        <span class="plan-option-row-name">${plan.label}</span>
+        <span class="plan-option-row-arrow">→</span>
+      </button>`
     ).join('');
-    optionsEl.querySelectorAll('.plan-register-btn').forEach(btn => {
+    optionsEl.querySelectorAll('.plan-option-row').forEach(btn => {
       btn.addEventListener('click', () => setCurrentPlan(btn.dataset.planId));
     });
     selectCard.style.display = 'block';
