@@ -462,8 +462,8 @@
     <!-- ヘッダー -->
     <header class="site-header">
       <span class="section-tag">AI FITNESS COACH</span>
-      <h1 class="header-hero">今日、何を<span class="accent">変える</span>？</h1>
-      <p class="header-sub">目標を選ぶだけで、あなた専用のプランを生成します</p>
+      <h1 class="header-hero" id="header-greeting">今日、何を<span class="accent">変える</span>？</h1>
+      <p class="header-sub" id="header-sub">プランに沿って、今日のアクションを選ぼう</p>
     </header>
 
     <!-- コーチング面談予約バナー -->
@@ -523,20 +523,55 @@
       </div>
     </section>
 
-    <section id="method-section" class="card hidden">
-      <div class="section-tag">STEP 02</div>
-      <h2 class="section-title">アプローチの<strong>手段</strong>は？</h2>
-      <div class="button-group method-group">
-        <button class="choice-btn method-btn" data-method="nutrition"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg></span><span class="btn-text">栄養</span><span class="btn-sub">食事から変える</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn method-btn" data-method="training"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="btn-text">トレーニング</span><span class="btn-sub">動いて変える</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn method-btn" data-method="recovery"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span><span class="btn-text">回復</span><span class="btn-sub">休んで変える</span><span class="btn-arrow">→</span></button>
+    <section id="method-section" class="card method-hero-section hidden">
+      <p class="method-hero-eyebrow">何で変える？</p>
+      <div class="method-hero-tiles">
+
+        <button class="choice-btn method-tile method-tile--nutrition" data-method="nutrition">
+          <div class="method-tile-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+          </div>
+          <div class="method-tile-body">
+            <div class="method-tile-name">栄養</div>
+            <div class="method-tile-desc">食事から体を変える</div>
+          </div>
+          <div class="method-tile-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+
+        <button class="choice-btn method-tile method-tile--training" data-method="training">
+          <div class="method-tile-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M6 4v16M18 4v16M6 12h12M4 8h4M4 16h4M16 8h4M16 16h4"/></svg>
+          </div>
+          <div class="method-tile-body">
+            <div class="method-tile-name">トレーニング</div>
+            <div class="method-tile-desc">動いて体を変える</div>
+          </div>
+          <div class="method-tile-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+
+        <button class="choice-btn method-tile method-tile--recovery" data-method="recovery">
+          <div class="method-tile-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </div>
+          <div class="method-tile-body">
+            <div class="method-tile-name">回復</div>
+            <div class="method-tile-desc">休んで体を整える</div>
+          </div>
+          <div class="method-tile-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+
       </div>
     </section>
 
     <section id="sub-section" class="card hidden">
-      <div class="section-tag">STEP 03</div>
-      <h2 class="section-title">あなたの<strong>状況</strong>は？</h2>
-      <div id="sub-buttons" class="button-group sub-group"></div>
+      <p class="sub-section-label">状況を教えてください</p>
+      <div id="sub-buttons" class="sub-chips"></div>
     </section>
 
     <section id="ai-response" class="card response-card hidden">

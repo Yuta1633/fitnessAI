@@ -345,6 +345,7 @@ async function updateUI(session) {
         if (!profile || !profile.name) {
           showNameInputModal(session.user.id);
         } else {
+          currentUserName = profile.name;
           userNameEl.textContent = `${profile.name}（${session.user.email}）`;
           showAfterCheckin();
         }
@@ -1487,6 +1488,7 @@ let selectedGoal   = null;
 let selectedMethod = null;
 let selectedSub    = null;
 let currentPlan    = null; // 登録中プラン ID（提案の最上位条件）
+let currentUserName = null; // ユーザー表示名
 let conversationHistory = [];
 
 const subOptions = {
@@ -1654,8 +1656,8 @@ function createSubButtons(goal, method) {
   const options = subOptions[effectiveGoal]?.[method] || subOptions[goal]?.[method] || [];
   options.forEach(opt => {
     const btn = document.createElement('button');
-    btn.className = 'choice-btn';
-    btn.innerHTML = `<span class="btn-text">${escapeHtml(opt)}</span><span class="btn-arrow">→</span>`;
+    btn.className = 'sub-chip';
+    btn.textContent = opt;
     btn.addEventListener('click', () => {
       selectedSub = opt;
       highlightButton(subSection, btn);
@@ -1666,9 +1668,8 @@ function createSubButtons(goal, method) {
 
   if (selectedMethod !== 'nutrition') {
     const otherBtn = document.createElement('button');
-    otherBtn.className = 'choice-btn';
-    otherBtn.style.borderStyle = 'dashed';
-    otherBtn.innerHTML = `<span class="btn-text">${escapeHtml('その他（自由入力）')}</span><span class="btn-arrow">→</span>`;
+    otherBtn.className = 'sub-chip sub-chip--other';
+    otherBtn.textContent = 'その他（自由入力）';
     otherBtn.addEventListener('click', () => {
       otherBtn.style.display = 'none';
       const inputWrap = document.createElement('div');
@@ -4330,9 +4331,27 @@ async function renderUserThreadMessages(threadId, userId, container) {
 // ============================================================
 // チェックインゲート
 // ============================================================
+function updateHeaderGreeting() {
+  const h = new Date().getHours();
+  const greet = h < 11 ? 'おはよう' : h < 17 ? 'こんにちは' : 'お疲れさま';
+  const heroEl = document.getElementById('header-greeting');
+  const subEl  = document.getElementById('header-sub');
+  if (heroEl) {
+    heroEl.innerHTML = currentUserName
+      ? `${greet}、<span class="accent">${escapeHtml(currentUserName)}</span>`
+      : `今日、何を<span class="accent">変える</span>？`;
+  }
+  if (subEl) {
+    subEl.textContent = currentUserName
+      ? '今日のアクションを選ぼう'
+      : 'プランに沿って、今日のアクションを選ぼう';
+  }
+}
+
 function showAfterCheckin() {
   const checkinGate = document.getElementById('checkin-gate');
   if (checkinGate) checkinGate.style.display = 'none';
+  updateHeaderGreeting();
 
   // 解除ボタンのイベント登録（初回のみ）
   const unregBtn = document.getElementById('plan-unregister-btn');

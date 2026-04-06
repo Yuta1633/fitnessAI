@@ -2976,6 +2976,494 @@ body {
 }
 
 /* ============================================================
+   Method Hero Section — STEP02 as primary screen
+   ============================================================ */
+section.method-hero-section.card {
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  margin-bottom: 10px;
+  overflow: visible;
+}
+section.method-hero-section.card::before { display: none; }
+section.method-hero-section.card:hover {
+  transform: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.method-hero-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding: 0 2px;
+}
+
+.method-hero-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Base tile */
+.method-tile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 20px;
+  background: linear-gradient(135deg, rgba(20,20,30,0.92), rgba(13,13,20,0.85));
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1),
+              border-color 0.25s ease,
+              background 0.25s ease,
+              box-shadow 0.25s ease;
+}
+
+.method-tile::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+/* Icon container */
+.method-tile-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.25s, border-color 0.25s;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+
+.method-tile-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.method-tile-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  margin-bottom: 3px;
+}
+
+.method-tile-desc {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.method-tile-arrow {
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: color 0.2s, transform 0.2s;
+  opacity: 0.5;
+}
+
+/* Nutrition — green */
+.method-tile--nutrition:hover,
+.method-tile--nutrition.selected {
+  border-color: rgba(200,241,53,0.3);
+  background: linear-gradient(135deg, rgba(200,241,53,0.07), rgba(200,241,53,0.02));
+  box-shadow: 0 8px 32px rgba(200,241,53,0.06), 0 2px 8px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.method-tile--nutrition:hover .method-tile-icon-wrap,
+.method-tile--nutrition.selected .method-tile-icon-wrap {
+  background: rgba(200,241,53,0.1);
+  border-color: rgba(200,241,53,0.2);
+  color: #c8f135;
+}
+.method-tile--nutrition:hover .method-tile-arrow,
+.method-tile--nutrition.selected .method-tile-arrow {
+  color: #c8f135; opacity: 1; transform: translateX(3px);
+}
+
+/* Training — amber */
+.method-tile--training:hover,
+.method-tile--training.selected {
+  border-color: rgba(255,159,67,0.35);
+  background: linear-gradient(135deg, rgba(255,159,67,0.07), rgba(255,159,67,0.02));
+  box-shadow: 0 8px 32px rgba(255,159,67,0.07), 0 2px 8px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.method-tile--training:hover .method-tile-icon-wrap,
+.method-tile--training.selected .method-tile-icon-wrap {
+  background: rgba(255,159,67,0.1);
+  border-color: rgba(255,159,67,0.2);
+  color: #ff9f43;
+}
+.method-tile--training:hover .method-tile-arrow,
+.method-tile--training.selected .method-tile-arrow {
+  color: #ff9f43; opacity: 1; transform: translateX(3px);
+}
+
+/* Recovery — blue */
+.method-tile--recovery:hover,
+.method-tile--recovery.selected {
+  border-color: rgba(84,160,255,0.35);
+  background: linear-gradient(135deg, rgba(84,160,255,0.07), rgba(84,160,255,0.02));
+  box-shadow: 0 8px 32px rgba(84,160,255,0.07), 0 2px 8px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.method-tile--recovery:hover .method-tile-icon-wrap,
+.method-tile--recovery.selected .method-tile-icon-wrap {
+  background: rgba(84,160,255,0.1);
+  border-color: rgba(84,160,255,0.2);
+  color: #54a0ff;
+}
+.method-tile--recovery:hover .method-tile-arrow,
+.method-tile--recovery.selected .method-tile-arrow {
+  color: #54a0ff; opacity: 1; transform: translateX(3px);
+}
+
+/* ============================================================
+   Sub Section — Chip Grid
+   ============================================================ */
+.sub-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 16px;
+  letter-spacing: 0.02em;
+}
+
+.sub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sub-chip {
+  padding: 10px 16px;
+  border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.03);
+  color: rgba(238,238,232,0.65);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.sub-chip:hover {
+  background: rgba(200,241,53,0.07);
+  border-color: rgba(200,241,53,0.22);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+.sub-chip.selected {
+  background: rgba(200,241,53,0.12);
+  border-color: rgba(200,241,53,0.45);
+  color: var(--accent);
+}
+
+.sub-chip--other {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+/* ============================================================
+   Plan UI — Badge, Select Card, Modal
+   ============================================================ */
+.plan-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(200,241,53,0.07), rgba(200,241,53,0.03));
+  border: 1px solid rgba(200,241,53,0.22);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-badge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.4), transparent);
+}
+
+.plan-badge-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plan-badge-eyebrow {
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.plan-badge-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+
+.plan-unregister-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.plan-unregister-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+  color: var(--white);
+}
+
+/* --- Plan Select Card --- */
+.plan-select-card {
+  background: linear-gradient(135deg, rgba(18,18,26,0.9), rgba(12,12,18,0.7));
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 18px;
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-select-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.2), transparent);
+}
+
+.plan-select-card-header { margin-bottom: 18px; }
+
+.plan-select-prompt {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white);
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+}
+
+.plan-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.plan-option-row:hover {
+  background: rgba(200,241,53,0.06);
+  border-color: rgba(200,241,53,0.22);
+  transform: translateY(-1px);
+}
+
+.plan-option-row-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.plan-option-row-arrow {
+  font-size: 13px;
+  color: var(--accent);
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.plan-option-row:hover .plan-option-row-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+/* --- Plan Select Modal --- */
+@keyframes planModalIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.plan-modal-inner {
+  background: linear-gradient(160deg, #17171f 0%, #0d0d14 100%);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 24px;
+  padding: 40px 28px 28px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(200,241,53,0.05),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+  position: relative;
+  overflow: hidden;
+  animation: planModalIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
+}
+
+.plan-modal-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,241,53,0.3), transparent);
+}
+
+.plan-modal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', 'Noto Sans JP', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  background: rgba(200,241,53,0.08);
+  border: 1px solid rgba(200,241,53,0.2);
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin-bottom: 20px;
+}
+
+.plan-modal-tag::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: glowPulse 2s ease infinite;
+}
+
+.plan-modal-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.plan-modal-title span { color: #c8f135; }
+
+.plan-modal-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.35);
+  line-height: 1.75;
+  margin-bottom: 28px;
+}
+
+.plan-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.plan-modal-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.25s, border-color 0.25s, transform 0.25s;
+}
+
+.plan-modal-option:hover {
+  background: rgba(200,241,53,0.05);
+  border-color: rgba(200,241,53,0.28);
+  transform: translateY(-2px);
+}
+
+.plan-modal-option-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.plan-modal-option-arrow {
+  font-size: 16px;
+  color: var(--accent);
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.2s;
+  flex-shrink: 0;
+}
+
+.plan-modal-option:hover .plan-modal-option-arrow {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+.plan-modal-skip {
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  color: rgba(255,255,255,0.25);
+  font-size: 12px;
+  font-family: 'Noto Sans JP', sans-serif;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.plan-modal-skip:hover {
+  color: rgba(255,255,255,0.45);
+  border-color: rgba(255,255,255,0.12);
+}
+
+/* ============================================================
    Plan UI — Badge, Select Card, Modal
    ============================================================ */
 
