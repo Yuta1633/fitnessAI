@@ -2976,7 +2976,20 @@ body {
 }
 
 /* ============================================================
-   Method Hero Section — STEP02 as primary screen
+   Header — bold & minimal
+   ============================================================ */
+.site-header {
+  margin-bottom: 28px;
+}
+.header-hero {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.15 !important;
+}
+
+/* ============================================================
+   Method Hero Section — full-color tiles
    ============================================================ */
 section.method-hero-section.card {
   background: transparent;
@@ -2987,163 +3000,138 @@ section.method-hero-section.card {
   overflow: visible;
 }
 section.method-hero-section.card::before { display: none; }
-section.method-hero-section.card:hover {
-  transform: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.method-hero-eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  text-transform: uppercase;
-  margin-bottom: 14px;
-  padding: 0 2px;
-}
+section.method-hero-section.card:hover { transform: none; border-color: transparent; box-shadow: none; }
 
 .method-hero-tiles {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* Base tile */
 .method-tile {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   width: 100%;
-  padding: 20px 20px;
-  background: linear-gradient(135deg, rgba(20,20,30,0.92), rgba(13,13,20,0.85));
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 18px;
+  padding: 26px 24px;
+  border-radius: 20px;
   cursor: pointer;
   text-align: left;
   position: relative;
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1),
-              border-color 0.25s ease,
-              background 0.25s ease,
-              box-shadow 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1),
+              box-shadow 0.3s ease;
 }
 
-.method-tile::before {
+/* Ambient glow orb per tile (always on) */
+.method-tile::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  top: -40px;
+  right: -40px;
+  filter: blur(50px);
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.3s;
 }
+
+.method-tile:hover::after, .method-tile.selected::after { opacity: 0.9; }
 
 /* Icon container */
 .method-tile-icon-wrap {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.25s, border-color 0.25s;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
 }
 
-.method-tile-body {
-  flex: 1;
-  min-width: 0;
-}
-
+/* Name — big & bold */
 .method-tile-name {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--white);
-  letter-spacing: -0.01em;
-  margin-bottom: 3px;
-}
-
-.method-tile-desc {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 400;
+  flex: 1;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .method-tile-arrow {
-  color: var(--muted);
   flex-shrink: 0;
-  transition: color 0.2s, transform 0.2s;
   opacity: 0.5;
+  transition: opacity 0.2s, transform 0.25s cubic-bezier(0.16,1,0.3,1);
 }
+.method-tile:hover .method-tile-arrow,
+.method-tile.selected .method-tile-arrow { opacity: 1; transform: translateX(5px); }
 
-/* Nutrition — green */
-.method-tile--nutrition:hover,
-.method-tile--nutrition.selected {
-  border-color: rgba(200,241,53,0.3);
-  background: linear-gradient(135deg, rgba(200,241,53,0.07), rgba(200,241,53,0.02));
-  box-shadow: 0 8px 32px rgba(200,241,53,0.06), 0 2px 8px rgba(0,0,0,0.3);
-  transform: translateY(-2px);
-}
-.method-tile--nutrition:hover .method-tile-icon-wrap,
-.method-tile--nutrition.selected .method-tile-icon-wrap {
-  background: rgba(200,241,53,0.1);
-  border-color: rgba(200,241,53,0.2);
+/* ── Nutrition (green) ── */
+.method-tile--nutrition {
+  background: linear-gradient(135deg, rgba(200,241,53,0.10) 0%, rgba(18,22,12,0.95) 60%);
+  border: 1px solid rgba(200,241,53,0.22);
+  box-shadow: 0 4px 24px rgba(200,241,53,0.05);
   color: #c8f135;
 }
-.method-tile--nutrition:hover .method-tile-arrow,
-.method-tile--nutrition.selected .method-tile-arrow {
-  color: #c8f135; opacity: 1; transform: translateX(3px);
+.method-tile--nutrition::after { background: #c8f135; }
+.method-tile--nutrition .method-tile-icon-wrap {
+  background: rgba(200,241,53,0.12);
+  color: #c8f135;
+}
+.method-tile--nutrition .method-tile-name { color: #e8faaa; }
+.method-tile--nutrition:hover, .method-tile--nutrition.selected {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(200,241,53,0.18), 0 2px 8px rgba(0,0,0,0.4);
+  border-color: rgba(200,241,53,0.45);
+  background: linear-gradient(135deg, rgba(200,241,53,0.16) 0%, rgba(18,22,12,0.95) 60%);
 }
 
-/* Training — amber */
-.method-tile--training:hover,
-.method-tile--training.selected {
-  border-color: rgba(255,159,67,0.35);
-  background: linear-gradient(135deg, rgba(255,159,67,0.07), rgba(255,159,67,0.02));
-  box-shadow: 0 8px 32px rgba(255,159,67,0.07), 0 2px 8px rgba(0,0,0,0.3);
-  transform: translateY(-2px);
-}
-.method-tile--training:hover .method-tile-icon-wrap,
-.method-tile--training.selected .method-tile-icon-wrap {
-  background: rgba(255,159,67,0.1);
-  border-color: rgba(255,159,67,0.2);
+/* ── Training (amber) ── */
+.method-tile--training {
+  background: linear-gradient(135deg, rgba(255,159,67,0.10) 0%, rgba(22,16,10,0.95) 60%);
+  border: 1px solid rgba(255,159,67,0.22);
+  box-shadow: 0 4px 24px rgba(255,159,67,0.05);
   color: #ff9f43;
 }
-.method-tile--training:hover .method-tile-arrow,
-.method-tile--training.selected .method-tile-arrow {
-  color: #ff9f43; opacity: 1; transform: translateX(3px);
+.method-tile--training::after { background: #ff9f43; }
+.method-tile--training .method-tile-icon-wrap {
+  background: rgba(255,159,67,0.12);
+  color: #ff9f43;
+}
+.method-tile--training .method-tile-name { color: #ffd4a0; }
+.method-tile--training:hover, .method-tile--training.selected {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(255,159,67,0.18), 0 2px 8px rgba(0,0,0,0.4);
+  border-color: rgba(255,159,67,0.45);
+  background: linear-gradient(135deg, rgba(255,159,67,0.16) 0%, rgba(22,16,10,0.95) 60%);
 }
 
-/* Recovery — blue */
-.method-tile--recovery:hover,
-.method-tile--recovery.selected {
-  border-color: rgba(84,160,255,0.35);
-  background: linear-gradient(135deg, rgba(84,160,255,0.07), rgba(84,160,255,0.02));
-  box-shadow: 0 8px 32px rgba(84,160,255,0.07), 0 2px 8px rgba(0,0,0,0.3);
-  transform: translateY(-2px);
-}
-.method-tile--recovery:hover .method-tile-icon-wrap,
-.method-tile--recovery.selected .method-tile-icon-wrap {
-  background: rgba(84,160,255,0.1);
-  border-color: rgba(84,160,255,0.2);
+/* ── Recovery (blue) ── */
+.method-tile--recovery {
+  background: linear-gradient(135deg, rgba(84,160,255,0.10) 0%, rgba(10,14,22,0.95) 60%);
+  border: 1px solid rgba(84,160,255,0.22);
+  box-shadow: 0 4px 24px rgba(84,160,255,0.05);
   color: #54a0ff;
 }
-.method-tile--recovery:hover .method-tile-arrow,
-.method-tile--recovery.selected .method-tile-arrow {
-  color: #54a0ff; opacity: 1; transform: translateX(3px);
+.method-tile--recovery::after { background: #54a0ff; }
+.method-tile--recovery .method-tile-icon-wrap {
+  background: rgba(84,160,255,0.12);
+  color: #54a0ff;
+}
+.method-tile--recovery .method-tile-name { color: #a8ccff; }
+.method-tile--recovery:hover, .method-tile--recovery.selected {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(84,160,255,0.18), 0 2px 8px rgba(0,0,0,0.4);
+  border-color: rgba(84,160,255,0.45);
+  background: linear-gradient(135deg, rgba(84,160,255,0.16) 0%, rgba(10,14,22,0.95) 60%);
 }
 
 /* ============================================================
    Sub Section — Chip Grid
    ============================================================ */
-.sub-section-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--muted);
-  margin-bottom: 16px;
-  letter-spacing: 0.02em;
-}
 
 .sub-chips {
   display: flex;

@@ -4335,16 +4335,10 @@ function updateHeaderGreeting() {
   const h = new Date().getHours();
   const greet = h < 11 ? 'おはよう' : h < 17 ? 'こんにちは' : 'お疲れさま';
   const heroEl = document.getElementById('header-greeting');
-  const subEl  = document.getElementById('header-sub');
   if (heroEl) {
     heroEl.innerHTML = currentUserName
       ? `${greet}、<span class="accent">${escapeHtml(currentUserName)}</span>`
       : `今日、何を<span class="accent">変える</span>？`;
-  }
-  if (subEl) {
-    subEl.textContent = currentUserName
-      ? '今日のアクションを選ぼう'
-      : 'プランに沿って、今日のアクションを選ぼう';
   }
 }
 
