@@ -812,12 +812,7 @@
 <script src="prompts.js"></script>
 
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const sb = createClient(
-  'https://xlaboiimqsesglstdjqj.supabase.co',
-  'sb_publishable_9fxRahudPNG9gHRJKkPD3Q_s8m-OUna'
-);
+import { supabase as sb } from './supabase.js';
 window.__sb = sb;
 
 const DAILY_LIMIT = 100;
