@@ -4289,8 +4289,14 @@ function showAfterCheckin() {
   mainContent.style.display = 'block';
   // 登録プランをロードしてプランモードを初期化
   currentPlan = localStorage.getItem(userKey('current_plan')) || null;
+  console.log('[planMode] currentPlan:', currentPlan);
+  console.log('[planMode] typeof PLANS:', typeof PLANS);
+  console.log('[planMode] PLANS[currentPlan]:', currentPlan && typeof PLANS !== 'undefined' ? PLANS[currentPlan] : 'N/A');
   if (currentPlan && typeof PLANS !== 'undefined' && PLANS[currentPlan]) {
+    console.log('[planMode] initPlanMode() 呼び出し');
     initPlanMode();
+  } else {
+    console.log('[planMode] initPlanMode() スキップ');
   }
   loadDashboard();
 }
@@ -4306,7 +4312,11 @@ function initPlanMode() {
   selectedGoal = plan.baseGoal;
   // goal セクションをスキップ（plan が目的を代替するため）
   hideSection(goalSection);
-  // ステップ表示を調整（step1 "目的" を非表示、step2 から開始）
+  console.log('[planMode] goalSection hidden, display:', goalSection.style.display);
+  // method セクションを表示（step1 スキップ → step2 から開始）
+  showSection(methodSection);
+  updateStepIndicator(2);
+  // ステップ表示を調整（step1 "目的" を非表示）
   const step1 = document.querySelector('.step[data-step="1"]');
   const stepLine = document.querySelector('.step-line');
   if (step1) step1.style.display = 'none';
@@ -4317,6 +4327,7 @@ function initPlanMode() {
     badge.textContent = `登録中プラン：${plan.label}`;
     badge.style.display = 'block';
   }
+  console.log('[planMode] initPlanMode 完了, selectedGoal:', selectedGoal);
 }
 
 function renderCheckinSummary(checkin) {
