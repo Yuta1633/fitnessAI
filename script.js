@@ -2297,19 +2297,11 @@ resetBtn.addEventListener('click', () => {
   chatHistory.innerHTML = '';
   chatInputArea.classList.add('hidden');
   resetBtn.classList.add('hidden');
-  if (currentPlan && PLANS[currentPlan]) {
-    // プランモード：目的選択をスキップしてメソッド選択へ
-    selectedGoal = PLANS[currentPlan].baseGoal;
-    hideSection(goalSection);
-    showSection(methodSection);
-    updateStepIndicator(2);
-  } else {
-    selectedGoal = null;
-    goalSection.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
-    showSection(goalSection);
-    hideSection(methodSection);
-    updateStepIndicator(1);
-  }
+  // planMode・通常フロー共通：常に STEP02 から開始
+  selectedGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : '2';
+  hideSection(goalSection);
+  showSection(methodSection);
+  updateStepIndicator(2);
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -4300,7 +4292,15 @@ function showAfterCheckin() {
     console.log('[planMode] initPlanMode() 呼び出し');
     initPlanMode();
   } else {
-    console.log('[planMode] initPlanMode() スキップ');
+    console.log('[planMode] 通常フロー：goalSection スキップ、STEP02 開始');
+    selectedGoal = '2'; // 通常フロー用デフォルト（goal選択UI廃止に伴う安全値）
+    hideSection(goalSection);
+    showSection(methodSection);
+    updateStepIndicator(2);
+    const step1 = document.querySelector('.step[data-step="1"]');
+    const stepLine = document.querySelector('.step-line');
+    if (step1) step1.style.display = 'none';
+    if (stepLine) stepLine.style.display = 'none';
     renderPlanUI();
   }
   loadDashboard();
