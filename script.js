@@ -4337,7 +4337,7 @@ function updateHeaderGreeting() {
   const heroEl = document.getElementById('header-greeting');
   if (heroEl) {
     heroEl.innerHTML = currentUserName
-      ? `${greet}、<span class="accent">${escapeHtml(currentUserName)}</span>`
+      ? `<span class="header-greet">${greet}、</span><span class="header-name">${escapeHtml(currentUserName)}</span>`
       : `今日、何を<span class="accent">変える</span>？`;
   }
 }
