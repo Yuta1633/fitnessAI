@@ -1128,7 +1128,8 @@ function showTrainingQuestions() {
   currentQuestionIndex = 0;
   trainingPhase = 'base';
   baseAnswers = [];
-  const useSplit = (selectedGoal === '2' || selectedGoal === '5');
+  const effectiveGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : selectedGoal;
+  const useSplit = (effectiveGoal === '2' || effectiveGoal === '5') || (currentPlan && PLANS[currentPlan]?.useSplit);
   const questions = useSplit ? QUESTIONS.training_with_split : QUESTIONS.training_base;
   showQuestionStepTraining(questions);
 }
@@ -1137,7 +1138,8 @@ let trainingPhase = 'base';
 let baseAnswers = [];
 
 function showTrainingStep() {
-  const useSplit = (selectedGoal === '2' || selectedGoal === '5');
+  const effectiveGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : selectedGoal;
+  const useSplit = (effectiveGoal === '2' || effectiveGoal === '5') || (currentPlan && PLANS[currentPlan]?.useSplit);
   const questions = useSplit ? QUESTIONS.training_with_split : QUESTIONS.training_base;
   showQuestionStepTraining(questions);
 }
@@ -1484,6 +1486,7 @@ const resetBtn         = document.getElementById('reset-btn');
 let selectedGoal   = null;
 let selectedMethod = null;
 let selectedSub    = null;
+let currentPlan    = null; // 登録中プラン ID（提案の最上位条件）
 let conversationHistory = [];
 
 const subOptions = {
@@ -1647,7 +1650,8 @@ function addMessage(role, text) {
 
 function createSubButtons(goal, method) {
   subButtons.innerHTML = '';
-  const options = subOptions[goal][method];
+  const effectiveGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : goal;
+  const options = subOptions[effectiveGoal]?.[method] || subOptions[goal]?.[method] || [];
   options.forEach(opt => {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
@@ -2153,9 +2157,10 @@ async function generateResponse() {
   resetBtn.classList.add('hidden');
   chatInputArea.classList.add('hidden');
 
-  const goalPrompt   = PROMPTS.goal[selectedGoal];
+  const effectiveGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : selectedGoal;
+  const goalPrompt   = PROMPTS.goal[effectiveGoal];
   const methodPrompt = PROMPTS.method[selectedMethod];
-  const detailPrompt = PROMPTS.detail[selectedGoal]?.[selectedMethod]?.[selectedSub]
+  const detailPrompt = PROMPTS.detail[effectiveGoal]?.[selectedMethod]?.[selectedSub]
     || `ユーザーの要望:「${selectedSub}」に合わせて提案してください。科学的根拠のない提案は禁止です。`;
 
   if (!goalPrompt || !methodPrompt) {
@@ -2171,8 +2176,12 @@ async function generateResponse() {
   let userCtx = cachedUserContext || '';
   try { if (!userCtx) userCtx = await buildUserContext(); } catch (e) { console.warn('コンテキスト構築失敗:', e); }
   const goalLabel = { '1': '体脂肪減少', '2': '筋肥大', '3': '体力向上', '4': '不調改善', '5': '見た目改善' };
-  const goalTag = `【現在の目的番号: ${selectedGoal}「${goalLabel[selectedGoal] || ''}」】\n`;
-  const finalPrompt = `${userCtx}\n${goalTag}${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}`;
+  const goalTag = (currentPlan && PLANS[currentPlan])
+    ? `【登録プラン：${PLANS[currentPlan].label}】\n`
+    : `【現在の目的番号: ${selectedGoal}「${goalLabel[selectedGoal] || ''}」】\n`;
+  const planOverlay = (currentPlan && PLANS[currentPlan]?.overlay?.[selectedMethod])
+    ? PLANS[currentPlan].overlay[selectedMethod] : '';
+  const finalPrompt = `${userCtx}\n${goalTag}${goalPrompt}\n\n${methodPrompt}\n\n${detailPrompt}${pastInfo}${planOverlay}`;
   conversationHistory.push({ role: 'user', content: finalPrompt });
 
   loadingIndicator.classList.add('hidden');
@@ -2276,7 +2285,6 @@ chatInput.addEventListener('keydown', (e) => {
 });
 
 resetBtn.addEventListener('click', () => {
-  selectedGoal   = null;
   selectedMethod = null;
   selectedSub    = null;
   conversationHistory = [];
@@ -2284,14 +2292,24 @@ resetBtn.addEventListener('click', () => {
   currentQuestionIndex = 0;
   trainingPhase = 'base';
   baseAnswers = [];
-  hideSection(methodSection);
   hideSection(subSection);
   hideSection(aiResponse);
-  goalSection.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
-  updateStepIndicator(1);
   chatHistory.innerHTML = '';
   chatInputArea.classList.add('hidden');
   resetBtn.classList.add('hidden');
+  if (currentPlan && PLANS[currentPlan]) {
+    // プランモード：目的選択をスキップしてメソッド選択へ
+    selectedGoal = PLANS[currentPlan].baseGoal;
+    hideSection(goalSection);
+    showSection(methodSection);
+    updateStepIndicator(2);
+  } else {
+    selectedGoal = null;
+    goalSection.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+    showSection(goalSection);
+    hideSection(methodSection);
+    updateStepIndicator(1);
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
@@ -4269,7 +4287,36 @@ function showAfterCheckin() {
   const checkinGate = document.getElementById('checkin-gate');
   if (checkinGate) checkinGate.style.display = 'none';
   mainContent.style.display = 'block';
+  // 登録プランをロードしてプランモードを初期化
+  currentPlan = localStorage.getItem(userKey('current_plan')) || null;
+  if (currentPlan && typeof PLANS !== 'undefined' && PLANS[currentPlan]) {
+    initPlanMode();
+  }
   loadDashboard();
+}
+
+// ============================================================
+// プランモード初期化
+// plan が登録されている場合、goal セクションをスキップし plan を最上位条件にする
+// ============================================================
+function initPlanMode() {
+  const plan = PLANS[currentPlan];
+  if (!plan) return;
+  // 内部 goal を plan の baseGoal に固定
+  selectedGoal = plan.baseGoal;
+  // goal セクションをスキップ（plan が目的を代替するため）
+  hideSection(goalSection);
+  // ステップ表示を調整（step1 "目的" を非表示、step2 から開始）
+  const step1 = document.querySelector('.step[data-step="1"]');
+  const stepLine = document.querySelector('.step-line');
+  if (step1) step1.style.display = 'none';
+  if (stepLine) stepLine.style.display = 'none';
+  // プランバッジを表示
+  const badge = document.getElementById('plan-badge');
+  if (badge) {
+    badge.textContent = `登録中プラン：${plan.label}`;
+    badge.style.display = 'block';
+  }
 }
 
 function renderCheckinSummary(checkin) {
