@@ -1652,6 +1652,21 @@ function addMessage(role, text) {
 
 function createSubButtons(goal, method) {
   subButtons.innerHTML = '';
+
+  // ヘッダーをメソッドに応じて更新
+  const titleEl = document.getElementById('sub-section-title');
+  const leadEl  = document.getElementById('sub-section-lead');
+  const tagEl   = document.getElementById('sub-section-tag');
+  const methodMeta = {
+    nutrition: { tag: '栄養 — 詳細', title: '食事・栄養について、\n気になることは？',  lead: '今の状況に最も近いものを選んでください' },
+    training:  { tag: 'トレーニング — 詳細', title: 'トレーニングの\n状況を教えてください', lead: 'あなたの環境や条件に合わせて提案します' },
+    recovery:  { tag: '回復 — 詳細', title: 'コンディションについて\n教えてください',    lead: '今の体の状態を選んでください' }
+  };
+  const meta = methodMeta[method] || { tag: 'STEP 03', title: '詳細を教えてください', lead: 'あなたの状況に近いものを選んでください' };
+  if (tagEl)   tagEl.textContent  = meta.tag;
+  if (titleEl) titleEl.textContent = meta.title;
+  if (leadEl)  leadEl.textContent  = meta.lead;
+
   const effectiveGoal = (currentPlan && PLANS[currentPlan]) ? PLANS[currentPlan].baseGoal : goal;
   const options = subOptions[effectiveGoal]?.[method] || subOptions[goal]?.[method] || [];
   options.forEach(opt => {
@@ -1673,14 +1688,14 @@ function createSubButtons(goal, method) {
     otherBtn.addEventListener('click', () => {
       otherBtn.style.display = 'none';
       const inputWrap = document.createElement('div');
-      inputWrap.style.cssText = 'display:flex; gap:8px; padding:8px 0;';
+      inputWrap.className = 'sub-other-input-wrap';
       const input = document.createElement('input');
       input.type = 'text';
       input.placeholder = '自由に入力してください';
-      input.style.cssText = 'flex:1; padding:10px; border-radius:8px; border:1px solid #444; background:#1a1a1a; color:#fff; font-size:14px;';
+      input.className = 'sub-other-input';
       const submitBtn = document.createElement('button');
       submitBtn.textContent = '決定';
-      submitBtn.style.cssText = 'padding:10px 16px; border-radius:8px; border:none; background:#c8f135; color:#000; font-weight:700; cursor:pointer; font-size:14px;';
+      submitBtn.className = 'sub-other-submit';
       submitBtn.addEventListener('click', () => {
         const val = input.value.trim();
         if (!val) return;
@@ -2152,6 +2167,13 @@ async function generateResponse() {
     : '';
 
   showSection(aiResponse);
+  // レスポンスカードバッジを更新
+  const badgeEl = document.getElementById('response-card-badge');
+  if (badgeEl) {
+    const methodLabels = { nutrition: '栄養', training: 'トレーニング', recovery: '回復' };
+    badgeEl.textContent = methodLabels[selectedMethod] || '';
+    badgeEl.className = 'response-card-badge response-card-badge--' + (selectedMethod || '');
+  }
   loadingIndicator.classList.remove('hidden');
   chatHistory.innerHTML = '';
   conversationHistory = [];
@@ -3359,27 +3381,45 @@ function showPlanSelectModal() {
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'plan-select-modal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(3,3,8,0.94);display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;backdrop-filter:blur(8px);';
+    modal.className = 'plan-setup-screen';
 
-    const optionsHtml = Object.entries(PLANS).map(([id, plan]) =>
-      `<button data-plan-id="${id}" class="plan-modal-option">
-        <span class="plan-modal-option-name">${plan.label}</span>
-        <span class="plan-modal-option-arrow">→</span>
-      </button>`
-    ).join('');
+    const planCardsHtml = Object.entries(PLANS).map(([id, plan]) => `
+      <button data-plan-id="${id}" class="plan-setup-card" type="button">
+        <div class="plan-setup-card-check">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        </div>
+        <div class="plan-setup-card-body">
+          <div class="plan-setup-card-name">${plan.icon ? plan.icon + '&nbsp;' : ''}${plan.label}</div>
+          <div class="plan-setup-card-desc">${plan.desc || 'このプランに最適化されたAI提案を受け取れます。'}</div>
+        </div>
+      </button>
+    `).join('');
 
     modal.innerHTML = `
-      <div class="plan-modal-inner">
-        <div class="plan-modal-tag">PLAN SETUP</div>
-        <h2 class="plan-modal-title">取り組む<span>プラン</span>を<br>選んでください</h2>
-        <p class="plan-modal-desc">AIコーチがプランに最適化した提案を行います。<br>プランはいつでも変更できます。</p>
-        <div class="plan-modal-options" id="plan-select-modal-options">${optionsHtml}</div>
-        <button id="plan-select-skip" class="plan-modal-skip">あとで設定する</button>
+      <div class="plan-setup-scroll">
+        <div class="plan-setup-inner">
+          <p class="plan-setup-step-tag">INITIAL SETUP</p>
+          <h2 class="plan-setup-title">取り組む<br><span>プランを選んでください</span></h2>
+          <p class="plan-setup-lead">プランを選ぶと、AIコーチの提案がそのプランに特化されます。<br>まずは一つ選んで始めましょう。</p>
+          <div class="plan-setup-cards" id="plan-setup-cards">${planCardsHtml}</div>
+          <p class="plan-setup-hint">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style="vertical-align:-2px;margin-right:4px;color:var(--accent);opacity:0.7;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            プランはホーム画面からいつでも変更できます
+          </p>
+        </div>
+      </div>
+      <div class="plan-setup-footer">
+        <button id="plan-setup-confirm-btn" class="plan-setup-confirm" disabled type="button">
+          プランを選択してください
+        </button>
+        <button id="plan-setup-skip-btn" class="plan-setup-skip" type="button">あとで設定する（スキップ）</button>
       </div>
     `;
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
+
+  let selectedPlanId = null;
 
   const finish = (planId) => {
     localStorage.setItem(userKey('plan_onboarded'), '1');
@@ -3387,6 +3427,9 @@ function showPlanSelectModal() {
     if (planId) {
       currentPlan = planId;
       localStorage.setItem(userKey('current_plan'), planId);
+      if (!localStorage.getItem(userKey('plan_registered_at'))) {
+        localStorage.setItem(userKey('plan_registered_at'), new Date().toISOString());
+      }
     }
     mainContent.style.display = 'block';
     if (currentPlan && PLANS[currentPlan]) {
@@ -3400,10 +3443,24 @@ function showPlanSelectModal() {
     loadDashboard();
   };
 
-  modal.querySelectorAll('button[data-plan-id]').forEach(btn => {
-    btn.onclick = () => finish(btn.dataset.planId);
+  modal.querySelectorAll('[data-plan-id]').forEach(card => {
+    card.onclick = () => {
+      modal.querySelectorAll('[data-plan-id]').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedPlanId = card.dataset.planId;
+      const confirmBtn = document.getElementById('plan-setup-confirm-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        const planName = PLANS[selectedPlanId]?.label || 'このプラン';
+        confirmBtn.textContent = 'このプランで始める →';
+      }
+    };
   });
-  document.getElementById('plan-select-skip').onclick = () => finish(null);
+
+  document.getElementById('plan-setup-confirm-btn').onclick = () => {
+    if (selectedPlanId) finish(selectedPlanId);
+  };
+  document.getElementById('plan-setup-skip-btn').onclick = () => finish(null);
 }
 
 // ============================================================
@@ -4347,11 +4404,31 @@ function showAfterCheckin() {
   if (checkinGate) checkinGate.style.display = 'none';
   updateHeaderGreeting();
 
-  // 解除ボタンのイベント登録（初回のみ）
+  // 解除ボタン・確認モーダルのイベント登録（初回のみ）
   const unregBtn = document.getElementById('plan-unregister-btn');
   if (unregBtn && !unregBtn._bound) {
-    unregBtn.addEventListener('click', unsetCurrentPlan);
+    unregBtn.addEventListener('click', showUnregisterConfirm);
     unregBtn._bound = true;
+  }
+  const unregOkBtn = document.getElementById('unregister-ok-btn');
+  if (unregOkBtn && !unregOkBtn._bound) {
+    unregOkBtn.addEventListener('click', () => {
+      hideUnregisterConfirm();
+      unsetCurrentPlan();
+    });
+    unregOkBtn._bound = true;
+  }
+  const unregCancelBtn = document.getElementById('unregister-cancel-btn');
+  if (unregCancelBtn && !unregCancelBtn._bound) {
+    unregCancelBtn.addEventListener('click', hideUnregisterConfirm);
+    unregCancelBtn._bound = true;
+  }
+  const unregOverlay = document.getElementById('unregister-confirm-overlay');
+  if (unregOverlay && !unregOverlay._bound) {
+    unregOverlay.addEventListener('click', (e) => {
+      if (e.target === unregOverlay) hideUnregisterConfirm();
+    });
+    unregOverlay._bound = true;
   }
 
   // 登録プランをロード
@@ -4384,18 +4461,31 @@ function showAfterCheckin() {
 // ============================================================
 function setCurrentPlan(planId) {
   localStorage.setItem(userKey('current_plan'), planId);
+  // 登録日を記録（未記録の場合のみ）
+  if (!localStorage.getItem(userKey('plan_registered_at'))) {
+    localStorage.setItem(userKey('plan_registered_at'), new Date().toISOString());
+  }
   currentPlan = planId;
   console.log('[planMode] プラン登録:', planId);
   renderPlanUI();
   initPlanMode();
 }
 
+function showUnregisterConfirm() {
+  const overlay = document.getElementById('unregister-confirm-overlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function hideUnregisterConfirm() {
+  const overlay = document.getElementById('unregister-confirm-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
 function unsetCurrentPlan() {
-  if (!confirm('登録中のプランを解除しますか？\n解除するとプランなしの通常モードに切り替わります。')) return;
   localStorage.removeItem(userKey('current_plan'));
+  localStorage.removeItem(userKey('plan_registered_at'));
   currentPlan = null;
   console.log('[planMode] プラン解除');
-  // goalSection は使わないため、通常フローとして STEP02 開始
   selectedGoal = '2';
   hideSection(goalSection);
   showSection(methodSection);
@@ -4403,20 +4493,48 @@ function unsetCurrentPlan() {
 }
 
 function renderPlanUI() {
-  const badge       = document.getElementById('plan-badge');
-  const badgeLabel  = document.getElementById('plan-badge-label');
-  const selectCard  = document.getElementById('plan-select-card');
-  const optionsEl   = document.getElementById('plan-options');
-  if (!badge || !selectCard || !optionsEl) return;
+  const heroCard   = document.getElementById('plan-hero-card');
+  const heroName   = document.getElementById('plan-hero-name');
+  const heroDesc   = document.getElementById('plan-hero-desc');
+  const heroDate   = document.getElementById('plan-hero-date');
+  const heroGoal   = document.getElementById('plan-hero-goal');
+  const selectCard = document.getElementById('plan-select-card');
+  const optionsEl  = document.getElementById('plan-options');
+  if (!heroCard || !selectCard || !optionsEl) return;
 
   if (currentPlan && PLANS[currentPlan]) {
-    // 登録済み：バッジ表示
-    if (badgeLabel) badgeLabel.textContent = `登録中プラン：${PLANS[currentPlan].label}`;
-    badge.style.display = 'flex';
+    const plan = PLANS[currentPlan];
+    const goalLabel = { '1': '脂肪を落とす', '2': '筋肉をつける', '3': '体力を上げる', '4': '不調を改善', '5': '体型を整える' };
+
+    if (heroName) heroName.textContent = plan.label;
+    if (heroDesc) heroDesc.textContent = plan.desc || '';
+
+    // 登録日
+    if (heroDate) {
+      const rawDate = localStorage.getItem(userKey('plan_registered_at'));
+      if (rawDate) {
+        const d = new Date(rawDate);
+        const dateStr = `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+        heroDate.textContent = `登録日：${dateStr}`;
+      } else {
+        heroDate.textContent = '登録日：不明';
+      }
+    }
+
+    // フォーカス（baseGoal）
+    if (heroGoal) {
+      const goalText = goalLabel[plan.baseGoal] || 'カスタム';
+      heroGoal.textContent = `フォーカス：${goalText}`;
+    }
+
+    // 確認モーダルにプラン名を反映
+    const confirmPlanName = document.getElementById('unregister-confirm-plan-name');
+    if (confirmPlanName) confirmPlanName.textContent = `「${plan.label}」`;
+
+    heroCard.style.display = 'block';
     selectCard.style.display = 'none';
   } else {
-    // 未登録：プラン選択カード表示
-    badge.style.display = 'none';
+    heroCard.style.display = 'none';
     optionsEl.innerHTML = Object.entries(PLANS).map(([id, plan]) =>
       `<button data-plan-id="${id}" class="plan-option-row">
         <span class="plan-option-row-name">${plan.label}</span>
@@ -4442,15 +4560,9 @@ function initPlanMode() {
   // goal セクションをスキップ（plan が目的を代替するため）
   hideSection(goalSection);
   console.log('[planMode] goalSection hidden, display:', goalSection.style.display);
-  // method セクションを表示（step1 スキップ → step2 から開始）
+  // method セクションを表示
   showSection(methodSection);
-  updateStepIndicator(2);
-  // ステップ表示を調整（step1 "目的" を非表示）
-  const step1 = document.querySelector('.step[data-step="1"]');
-  const stepLine = document.querySelector('.step-line');
-  if (step1) step1.style.display = 'none';
-  if (stepLine) stepLine.style.display = 'none';
-  // バッジ・UI 更新
+  // ヒーローカード・UI 更新
   renderPlanUI();
   console.log('[planMode] initPlanMode 完了, selectedGoal:', selectedGoal);
 }

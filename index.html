@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#c8f135">
+  <meta name="theme-color" content="#4f6ef7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/manifest.json">
@@ -218,7 +218,7 @@
               </button>
               <button class="goal-period-btn" data-period="standard" data-weeks="12" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">中期（約3か月）<span style="font-size:11px;color:#c8f135;margin-left:6px;">おすすめ</span></span>
+                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">中期（約3か月）<span style="font-size:11px;color:var(--accent);margin-left:6px;">おすすめ</span></span>
                 </div>
                 <div style="font-size:11px;color:var(--muted);margin-top:2px;">無理なくしっかり変えたい人向け</div>
               </button>
@@ -283,7 +283,7 @@
               autocomplete="off"
               oninput="wlShowSuggest(this.value)"
               onfocus="wlShowSuggest(this.value)">
-            <div id="wl-suggest" style="display:none; position:absolute; top:100%; left:0; right:0; background:#1a1a24; border:1px solid #2a2a38; border-radius:14px; overflow:hidden; z-index:100; margin-top:4px; box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+            <div id="wl-suggest" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--card-bg); border:1px solid var(--border); border-radius:14px; overflow:hidden; z-index:100; margin-top:4px; box-shadow:var(--shadow-md);"></div>
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <input type="number" id="wl-sets" placeholder="セット数" class="checkin-input" min="1" max="20" inputmode="numeric">
@@ -293,7 +293,7 @@
             <div style="display:flex; gap:6px; align-items:center;">
               <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal" style="flex:1; min-width:0;">
               <button onclick="document.getElementById('wl-weight').value='0'" type="button"
-                style="flex-shrink:0; padding:0 10px; height:44px; background:#1a1a24; border:1px solid #2a2a38; border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">
+                style="flex-shrink:0; padding:0 10px; height:44px; background:var(--card-bg-elevated); border:1px solid var(--border); border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">
                 自重
               </button>
             </div>
@@ -479,16 +479,86 @@
       </a>
     </div>
 
-    <!-- 登録済みプランバッジ -->
-    <div id="plan-badge" class="plan-badge" style="display:none;">
-      <div class="plan-badge-left">
-        <span id="plan-badge-label" class="plan-badge-name"></span>
+    <!-- 登録中プラン管理カード -->
+    <div id="plan-hero-card" class="plan-hero-card" style="display:none;">
+
+      <!-- ゾーン1: プラン情報 -->
+      <div class="plan-hero-zone plan-hero-zone--info">
+        <div class="plan-hero-top">
+          <span class="plan-hero-status"><span class="plan-hero-dot"></span>有効</span>
+          <span class="plan-hero-eyebrow">CURRENT PLAN</span>
+        </div>
+        <div class="plan-hero-name" id="plan-hero-name"></div>
+        <div class="plan-hero-meta">
+          <span class="plan-hero-meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="12" rx="2"/><path d="M1 6h14M5 1v2M11 1v2"/></svg>
+            <span id="plan-hero-date">登録日：--</span>
+          </span>
+          <span class="plan-hero-meta-item">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
+            <span id="plan-hero-goal">フォーカス：--</span>
+          </span>
+        </div>
       </div>
-      <button id="plan-unregister-btn" class="plan-unregister-btn" aria-label="プラン設定">
-        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-          <circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/>
-        </svg>
-      </button>
+
+      <!-- ゾーン2: プラン概要 -->
+      <div class="plan-hero-zone plan-hero-zone--detail">
+        <p class="plan-hero-desc" id="plan-hero-desc"></p>
+        <div class="plan-hero-features">
+          <div class="plan-hero-feature-item">
+            <span class="plan-hero-feature-icon">🥗</span>
+            <span>栄養提案をプランに最適化</span>
+          </div>
+          <div class="plan-hero-feature-item">
+            <span class="plan-hero-feature-icon">💪</span>
+            <span>トレーニング内容をプランで絞り込み</span>
+          </div>
+          <div class="plan-hero-feature-item">
+            <span class="plan-hero-feature-icon">🌙</span>
+            <span>回復・コンディション提案もプラン対応</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ゾーン3: 危険操作エリア -->
+      <div class="plan-hero-zone plan-danger-zone">
+        <div class="plan-danger-zone-label">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
+          危険な操作
+        </div>
+        <p class="plan-danger-zone-desc">プランを解除すると、専用の提案モードが終了します。これまでの提案履歴は残ります。</p>
+        <button id="plan-unregister-btn" class="plan-unregister-danger-btn">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
+          プランを解除する
+        </button>
+      </div>
+
+    </div>
+
+    <!-- プラン解除確認モーダル（強化版） -->
+    <div id="unregister-confirm-overlay" class="unregister-confirm-overlay" style="display:none;">
+      <div class="unregister-confirm-card">
+        <div class="unregister-confirm-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L22 20H2L12 2z"/><path d="M12 9v5M12 16.5v.5"/></svg>
+        </div>
+        <p class="unregister-confirm-title">プランを解除しますか？</p>
+        <p class="unregister-confirm-plan-name" id="unregister-confirm-plan-name"></p>
+        <div class="unregister-confirm-checklist">
+          <div class="unregister-confirm-check-item">
+            <span class="check-dot check-dot--ok"></span>提案履歴はすべて残ります
+          </div>
+          <div class="unregister-confirm-check-item">
+            <span class="check-dot check-dot--ok"></span>再登録はいつでもできます
+          </div>
+          <div class="unregister-confirm-check-item">
+            <span class="check-dot check-dot--warn"></span>プラン専用の提案モードが終了します
+          </div>
+        </div>
+        <div class="unregister-confirm-actions">
+          <button id="unregister-ok-btn" class="unregister-ok-btn">解除する</button>
+          <button id="unregister-cancel-btn" class="unregister-cancel-btn">キャンセル</button>
+        </div>
+      </div>
     </div>
 
     <!-- プラン未登録時の選択カード -->
@@ -500,15 +570,8 @@
       <div id="plan-options" class="plan-options-list"></div>
     </div>
 
-    <div class="step-indicator" id="step-indicator" style="display:none;">
-      <div class="step active" data-step="1"><span class="step-num">01</span><span class="step-label">目的</span></div>
-      <div class="step-line"></div>
-      <div class="step" data-step="2"><span class="step-num">02</span><span class="step-label">手段</span></div>
-      <div class="step-line"></div>
-      <div class="step" data-step="3"><span class="step-num">03</span><span class="step-label">詳細</span></div>
-    </div>
 
-    <section id="goal-section" class="card active">
+<section id="goal-section" class="card active">
       <div class="section-tag">STEP 01</div>
       <h2 class="section-title">まず、あなたの<strong>目的</strong>は？</h2>
       <div class="button-group goal-group">
@@ -556,13 +619,20 @@
       </div>
     </section>
 
-    <section id="sub-section" class="card hidden">
+    <section id="sub-section" class="card sub-section-card hidden">
+      <div class="sub-section-header">
+        <span class="section-tag" id="sub-section-tag">STEP 03</span>
+        <h2 class="section-title sub-section-title" id="sub-section-title">詳細を教えてください</h2>
+        <p class="sub-section-lead" id="sub-section-lead">あなたの状況に近いものを選んでください</p>
+      </div>
       <div id="sub-buttons" class="sub-chips"></div>
     </section>
 
     <section id="ai-response" class="card response-card hidden">
-      <div class="section-tag">YOUR PLAN</div>
-      <h2 class="section-title">AIコーチから<strong>あなたへ</strong></h2>
+      <div class="response-card-header">
+        <span class="response-card-label">COACHING</span>
+        <span class="response-card-badge" id="response-card-badge"></span>
+      </div>
       <div id="response-area">
         <div id="loading-indicator" class="loading hidden">
           <div class="loading-dots"><span></span><span></span><span></span></div>
@@ -571,10 +641,12 @@
         <div id="chat-history" class="chat-history"></div>
       </div>
       <div id="chat-input-area" class="chat-input-area hidden">
-        <input type="text" id="chat-input" class="chat-input" placeholder="返答を入力してください...">
-        <button id="chat-send-btn" class="chat-send-btn">送信</button>
+        <input type="text" id="chat-input" class="chat-input" placeholder="コーチへ返答する...">
+        <button id="chat-send-btn" class="chat-send-btn" aria-label="送信">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
       </div>
-      <button id="reset-btn" class="reset-btn hidden">最初からやり直す</button>
+      <button id="reset-btn" class="reset-btn hidden">別のアプローチを試す</button>
     </section>
 
     <!-- スケルトンローディング -->
@@ -982,7 +1054,7 @@ window.wlInit = async function() {
     });
   }
   const listEl = document.getElementById('wl-list');
-  if (listEl) listEl.innerHTML = '<p style="color:#8a8a96;font-size:13px;text-align:center;padding:30px 0;">読み込み中...</p>';
+  if (listEl) listEl.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:30px 0;">読み込み中...</p>';
   const volEl = document.getElementById('wl-vol-num');
   if (volEl) volEl.textContent = '--';
   wlLogs = [];
@@ -993,7 +1065,7 @@ async function wlFetch() {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      wlMsg('ログインが必要です', '#8a8a96');
+      wlMsg('ログインが必要です', 'var(--text-tertiary)');
       return;
     }
     const { data, error } = await sb
@@ -1090,7 +1162,7 @@ function wlRender() {
       const diff = tw - lw;
       const pct = Math.round((diff / lw) * 100);
       vsEl.innerHTML = diff > 0
-        ? '先週比 <strong style="color:#c8f135">▲' + pct + '%</strong><br>+' + diff.toLocaleString() + 'kg'
+        ? '先週比 <strong style="color:#22c55e">▲' + pct + '%</strong><br>+' + diff.toLocaleString() + 'kg'
         : diff < 0
         ? '先週比 <strong style="color:#ff4d6a">▼' + Math.abs(pct) + '%</strong><br>' + diff.toLocaleString() + 'kg'
         : '先週と同じ';
@@ -1101,7 +1173,7 @@ function wlRender() {
   const container = document.getElementById('wl-list');
   if (!container) return;
   if (!wlLogs.length) {
-    container.innerHTML = '<p style="color:#8a8a96;font-size:13px;text-align:center;padding:40px 0;">まだ記録がありません</p>';
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:40px 0;">まだ記録がありません</p>';
     return;
   }
 
@@ -1116,7 +1188,7 @@ function wlRender() {
     grp.style.marginBottom = '16px';
 
     const lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:12px;color:#8a8a96;font-weight:700;margin-bottom:8px;padding-left:2px;';
+    lbl.style.cssText = 'font-size:12px;color:var(--text-tertiary);font-weight:700;margin-bottom:8px;padding-left:2px;';
     if (date === today) {
       lbl.textContent = '今日';
     } else {
@@ -1136,7 +1208,7 @@ function wlRender() {
       name.style.cssText = 'font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
       name.textContent = l.exercise;
       const detail = document.createElement('div');
-      detail.style.cssText = 'font-size:12px;color:#8a8a96;margin-top:2px;';
+      detail.style.cssText = 'font-size:12px;color:var(--text-tertiary);margin-top:2px;';
       detail.textContent = l.sets + 'セット × ' + l.reps + '回 × ' + l.weight + 'kg';
       info.appendChild(name);
       info.appendChild(detail);
@@ -1146,10 +1218,10 @@ function wlRender() {
       const volWrap = document.createElement('div');
       volWrap.style.textAlign = 'right';
       const volNum = document.createElement('div');
-      volNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:22px;color:#c8f135;line-height:1;';
+      volNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);line-height:1;';
       volNum.textContent = vol.toLocaleString();
       const volUnit = document.createElement('div');
-      volUnit.style.cssText = 'font-size:10px;color:#8a8a96;';
+      volUnit.style.cssText = 'font-size:10px;color:var(--text-tertiary);';
       volUnit.textContent = 'kg vol';
       volWrap.appendChild(volNum);
       volWrap.appendChild(volUnit);
@@ -1189,7 +1261,7 @@ function wlToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'wl-toast';
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#eeeee8;color:#050507;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;white-space:nowrap;z-index:9999;';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a2e;color:#ffffff;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);';
     document.body.appendChild(t);
   }
   t.textContent = msg;
@@ -1211,9 +1283,9 @@ window.wlShowSuggest = function(val) {
   box.innerHTML = '';
   filtered.slice(0, 6).forEach(e => {
     const div = document.createElement('div');
-    div.style.cssText = 'padding:12px 16px;font-size:14px;color:#eeeee8;cursor:pointer;border-bottom:1px solid #2a2a38;';
+    div.style.cssText = 'padding:12px 16px;font-size:14px;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;';
     div.textContent = e;
-    div.onmouseover = function() { this.style.background = '#2a2a38'; };
+    div.onmouseover = function() { this.style.background = 'var(--accent-soft)'; };
     div.onmouseout = function() { this.style.background = ''; };
     div.onclick = function() { window.wlSelectSuggest(e); };
     box.appendChild(div);
