@@ -3,59 +3,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#4f6ef7">
+  <meta name="theme-color" content="#6366f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/manifest.json">
-  <title>フィットネスAIコーチ</title>
+  <title>Fit Project AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ── 初期設定オンボーディング ── */
+    #init-onboarding {
+      position: fixed; inset: 0; z-index: 9000;
+      background: linear-gradient(135deg, #f8f7ff, #eef2ff, #f0f9ff);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-start; padding: 48px 24px 32px;
+      font-family: 'Noto Sans JP', sans-serif;
+      overflow-y: auto;
+    }
+    #init-onboarding .ob-logo {
+      font-size: 22px; font-weight: 900; color: #111; margin-bottom: 32px; letter-spacing: -0.5px;
+    }
+    #init-onboarding .ob-logo span { color: #6366f1; }
+    .ob-step { display: none; width: 100%; max-width: 420px; }
+    .ob-step.active { display: block; }
+    .ob-step-dots { display: flex; gap: 6px; margin-bottom: 28px; }
+    .ob-step-dot { height: 4px; border-radius: 99px; background: #e5e7eb; transition: all 0.3s; }
+    .ob-step-dot.done { background: #6366f1; }
+    .ob-step-label { font-size: 12px; font-weight: 700; color: #6366f1; margin-bottom: 8px; }
+    .ob-step h2 { font-size: 26px; font-weight: 900; color: #111; line-height: 1.3; margin-bottom: 6px; }
+    .ob-step p { font-size: 13px; color: #9ca3af; margin-bottom: 24px; line-height: 1.6; }
+    .ob-select-row {
+      border: 2px solid #f0f0f0; border-radius: 16px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px; cursor: pointer;
+      background: #fff; transition: all 0.2s; margin-bottom: 10px;
+    }
+    .ob-select-row.selected { border-color: #6366f1; background: #f5f3ff; }
+    .ob-select-row .ob-emoji {
+      width: 46px; height: 46px; border-radius: 12px; background: #ede9fe;
+      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+    }
+    .ob-select-row .ob-row-name { font-weight: 700; font-size: 14px; color: #111; }
+    .ob-select-row .ob-row-desc { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .ob-select-row .ob-check {
+      width: 26px; height: 26px; border-radius: 50%; background: #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 13px; margin-left: auto; flex-shrink: 0; transition: all 0.2s;
+    }
+    .ob-select-row.selected .ob-check { background: #6366f1; }
+    .ob-warning {
+      background: #fff7ed; border-radius: 12px; padding: 10px 14px;
+      display: flex; gap: 8px; align-items: flex-start; margin-top: 4px; margin-bottom: 16px;
+    }
+    .ob-warning span { font-size: 12px; color: #92400e; line-height: 1.5; }
+    .ob-success {
+      background: #f0fdf4; border-radius: 12px; padding: 10px 14px;
+      display: flex; gap: 8px; align-items: flex-start; margin-top: 4px; margin-bottom: 16px;
+    }
+    .ob-success span { font-size: 12px; color: #15803d; line-height: 1.5; }
+    .ob-primary-btn {
+      width: 100%; padding: 15px; border-radius: 16px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; border: none; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; font-family: 'Noto Sans JP', sans-serif;
+    }
+    .ob-primary-btn:disabled {
+      background: #e5e7eb; color: #9ca3af; cursor: not-allowed;
+    }
+    .ob-primary-btn.green { background: linear-gradient(135deg, #10b981, #059669); }
+    .ob-input-row {
+      display: flex; align-items: center; border: 2px solid #f0f0f0;
+      border-radius: 12px; background: #fafafa; overflow: hidden; margin-bottom: 12px;
+    }
+    .ob-input-row label { font-size: 13px; color: #9ca3af; padding: 0 12px; white-space: nowrap; }
+    .ob-input-row input {
+      flex: 1; padding: 12px 8px; border: none; background: transparent;
+      font-size: 16px; font-weight: 700; outline: none; color: #111;
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+    .ob-input-row .ob-unit { padding: 0 14px; font-size: 13px; color: #9ca3af; font-weight: 600; }
+
+    /* ── アコーディオン提案フロー ── */
+    #proposal-flow { padding: 0; }
+    .method-card-new {
+      border: 2px solid #2a2a3a; border-radius: 16px; padding: 16px 18px;
+      display: flex; align-items: center; gap: 14px; cursor: pointer;
+      background: #0e0e1a; transition: all 0.2s; margin-bottom: 10px;
+    }
+    .method-card-new.active { border-color: #6366f1; background: #1a1a2e; }
+    .method-card-new .mc-icon {
+      width: 48px; height: 48px; border-radius: 14px; background: #1e1e2e;
+      display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+    }
+    .method-card-new .mc-name { font-weight: 700; font-size: 15px; color: #fff; }
+    .method-card-new .mc-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .accordion-flow { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .accordion-block {
+      border: 2px solid #2a2a3a; border-radius: 16px; overflow: hidden;
+      transition: all 0.2s; background: #0e0e1a;
+    }
+    .accordion-block.done { border-color: #6366f1; background: #12122a; }
+    .accordion-block.open { border-color: #4a4a6a; }
+    .accordion-header {
+      padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .accordion-header-left { display: flex; align-items: center; gap: 10px; }
+    .accordion-num {
+      width: 26px; height: 26px; border-radius: 50%; background: #2a2a3a;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #6b7280; flex-shrink: 0; transition: all 0.2s;
+    }
+    .accordion-block.done .accordion-num { background: #6366f1; color: #fff; }
+    .accordion-block.open .accordion-num { background: #3a3a5a; color: #fff; }
+    .accordion-label { font-size: 14px; font-weight: 700; color: #9ca3af; transition: all 0.2s; }
+    .accordion-block.done .accordion-label,
+    .accordion-block.open .accordion-label { color: #fff; }
+    .accordion-answer {
+      font-size: 12px; font-weight: 600; color: #6366f1;
+      background: #1e1e3a; padding: 3px 10px; border-radius: 99px;
+    }
+    .accordion-options { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+    .accordion-option {
+      border: 2px solid #2a2a3a; border-radius: 12px; padding: 12px 14px;
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      background: #14141e; transition: all 0.15s;
+    }
+    .accordion-option:hover { border-color: #6366f1; background: #1a1a2e; }
+    .accordion-option .ao-emoji { font-size: 18px; }
+    .accordion-option .ao-label { font-weight: 600; font-size: 13px; color: #fff; }
+    .accordion-option .ao-sub { font-size: 11px; color: #6b7280; }
+
+    /* ── 提案カード ── */
+    .proposal-result {
+      margin-top: 16px; border: 2px solid #2a2a3a; border-radius: 16px;
+      padding: 18px; background: #0e0e1a;
+    }
+    .proposal-result h3 { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 12px; }
+    .proposal-row {
+      font-size: 13px; color: #9ca3af; padding: 8px 0;
+      border-bottom: 1px solid #1e1e2e; display: flex; align-items: flex-start; gap: 8px;
+    }
+    .proposal-row:last-child { border-bottom: none; }
+    .proposal-row .pr-bullet { color: #6366f1; font-weight: 700; flex-shrink: 0; }
+    .macro-row {
+      display: flex; gap: 10px; margin: 12px 0;
+    }
+    .macro-chip {
+      flex: 1; border-radius: 12px; padding: 12px 8px; text-align: center;
+    }
+    .macro-chip .mc-label { font-size: 11px; font-weight: 700; }
+    .macro-chip .mc-val { font-size: 16px; font-weight: 900; color: #fff; margin-top: 2px; }
+    .kcal-big { font-size: 36px; font-weight: 900; color: #6366f1; line-height: 1; }
+    .kcal-unit { font-size: 13px; color: #6b7280; }
+    .reset-proposal-btn {
+      margin-top: 14px; width: 100%; padding: 12px; border-radius: 12px;
+      border: 2px solid #2a2a3a; background: transparent; color: #9ca3af;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s;
+    }
+    .reset-proposal-btn:hover { border-color: #6366f1; color: #6366f1; }
+
+    /* ── 登録中プランカード（新） ── */
+    .goal-hero-card {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      border-radius: 20px; padding: 18px; margin-bottom: 20px;
+    }
+    .goal-hero-label { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+    .goal-hero-name { font-weight: 800; font-size: 18px; color: #fff; margin-bottom: 10px; }
+    .goal-hero-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .goal-hero-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px;
+    }
+    .goal-hero-badge.purple { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+    .goal-hero-badge.green  { background: rgba(34,197,94,0.2);  color: #86efac; }
+
+    /* ── セクションタイトル（新） ── */
+    .new-section-label {
+      font-size: 13px; font-weight: 700; color: #9ca3af; margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+  </style>
 </head>
 <body>
 
   <div class="bg-grid"></div>
 
   <!-- ======================================================
-       オンボーディングモーダル
+       初期設定オンボーディング（新・初回のみ）
        ====================================================== -->
-  <div id="onboarding-modal" class="onboarding-backdrop" style="display:none;">
-    <div class="onboarding-card">
-      <div class="onboarding-step active" data-onboarding="1">
-        <div class="onboarding-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-        </div>
-        <h3 class="onboarding-title">ようこそ</h3>
-        <p class="onboarding-desc">フィットネスAIコーチは、科学的根拠に基づいた<br>あなた専用のプランを生成します。</p>
+  <div id="init-onboarding" style="display:none;">
+    <div class="ob-logo">Fit Project <span>AI</span></div>
+
+    <!-- STEP 1: 目標選択 -->
+    <div class="ob-step active" id="ob-step-1">
+      <div class="ob-step-dots">
+        <div class="ob-step-dot done" style="width:40px;"></div>
+        <div class="ob-step-dot" style="width:20px;"></div>
+        <div class="ob-step-dot" style="width:20px;"></div>
       </div>
-      <div class="onboarding-step" data-onboarding="2">
-        <div class="onboarding-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.418 0 8-3.582 8-8 0-6-8-14-8-14S4 8 4 14c0 4.418 3.582 8 8 8z"/></svg>
-        </div>
-        <h3 class="onboarding-title">3ステップで完結</h3>
-        <p class="onboarding-desc">目的 → 手段 → 状況を選ぶだけで<br>AIがパーソナルプランを即座に提案します。</p>
+      <div class="ob-step-label">STEP 01 / 初期設定</div>
+      <h2>あなたの目標を<br>選んでください</h2>
+      <p>一度選ぶと変更には申請が必要になります。<br>慎重に選んでください。</p>
+
+      <div class="ob-select-row" data-goal="chest" onclick="obSelectGoal(this)">
+        <div class="ob-emoji">💪</div>
+        <div><div class="ob-row-name">大胸筋筋肥大</div><div class="ob-row-desc">上半身・大胸筋を中心に増やしたい方向け</div></div>
+        <div class="ob-check">›</div>
       </div>
-      <div class="onboarding-step" data-onboarding="3">
-        <div class="onboarding-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
-        </div>
-        <h3 class="onboarding-title">継続で機能が開放</h3>
-        <p class="onboarding-desc">利用を続けるとパーソナル分析や<br>ボディメイク診断が開放されます。</p>
+      <div class="ob-select-row" data-goal="back" onclick="obSelectGoal(this)">
+        <div class="ob-emoji">🏋️</div>
+        <div><div class="ob-row-name">背中筋肥大</div><div class="ob-row-desc">背中のライン・厚みを増やしたい方向け</div></div>
+        <div class="ob-check">›</div>
       </div>
-      <div class="onboarding-dots">
-        <div class="onboarding-dot active" data-dot="1"></div>
-        <div class="onboarding-dot" data-dot="2"></div>
-        <div class="onboarding-dot" data-dot="3"></div>
+      <div class="ob-select-row" data-goal="fat" onclick="obSelectGoal(this)">
+        <div class="ob-emoji">🔥</div>
+        <div><div class="ob-row-name">脂肪減少</div><div class="ob-row-desc">体脂肪を減らし引き締まった体を作りたい方</div></div>
+        <div class="ob-check">›</div>
       </div>
-      <button class="onboarding-btn" id="onboarding-next-btn">次へ</button>
-      <button class="onboarding-skip" id="onboarding-skip-btn">スキップ</button>
+
+      <div class="ob-warning">
+        <span>⚠️</span>
+        <span>目標の変更は設定から申請できます。審査に最大24時間かかります。</span>
+      </div>
+      <button class="ob-primary-btn" id="ob-goal-next" disabled onclick="obGoToStep(2)">次へ →</button>
+    </div>
+
+    <!-- STEP 2: レベル選択 -->
+    <div class="ob-step" id="ob-step-2">
+      <div class="ob-step-dots">
+        <div class="ob-step-dot done" style="width:40px;"></div>
+        <div class="ob-step-dot done" style="width:40px;"></div>
+        <div class="ob-step-dot" style="width:20px;"></div>
+      </div>
+      <div class="ob-step-label">STEP 02 / 初期設定</div>
+      <h2>トレーニング<br>レベルを教えてください</h2>
+      <p>レベルに合わせて提案内容が変わります。<br>設定からいつでも変更できます。</p>
+
+      <div class="ob-select-row" data-level="beginner" onclick="obSelectLevel(this)">
+        <div class="ob-emoji">🌱</div>
+        <div><div class="ob-row-name">初心者</div><div class="ob-row-desc">トレーニング歴〜6ヶ月</div></div>
+        <div class="ob-check">›</div>
+      </div>
+      <div class="ob-select-row" data-level="intermediate" onclick="obSelectLevel(this)">
+        <div class="ob-emoji">💪</div>
+        <div><div class="ob-row-name">中級者</div><div class="ob-row-desc">トレーニング歴 6ヶ月〜2年</div></div>
+        <div class="ob-check">›</div>
+      </div>
+      <div class="ob-select-row" data-level="advanced" onclick="obSelectLevel(this)">
+        <div class="ob-emoji">🔥</div>
+        <div><div class="ob-row-name">上級者</div><div class="ob-row-desc">トレーニング歴 2年以上</div></div>
+        <div class="ob-check">›</div>
+      </div>
+      <div class="ob-select-row" data-level="competitor" onclick="obSelectLevel(this)">
+        <div class="ob-emoji">🏆</div>
+        <div><div class="ob-row-name">競技者</div><div class="ob-row-desc">大会出場経験あり</div></div>
+        <div class="ob-check">›</div>
+      </div>
+
+      <div class="ob-success">
+        <span>✅</span>
+        <span>レベルは設定からいつでも変更できます。変更するとその場で提案内容が更新されます。</span>
+      </div>
+      <button class="ob-primary-btn" id="ob-level-next" disabled onclick="obGoToStep(3)">次へ →</button>
+    </div>
+
+    <!-- STEP 3: 基本情報 -->
+    <div class="ob-step" id="ob-step-3">
+      <div class="ob-step-dots">
+        <div class="ob-step-dot done" style="width:40px;"></div>
+        <div class="ob-step-dot done" style="width:40px;"></div>
+        <div class="ob-step-dot done" style="width:40px;"></div>
+      </div>
+      <div class="ob-step-label">STEP 03 / 初期設定</div>
+      <h2>基本情報を<br>入力してください</h2>
+      <p>提案の精度を高めるために使用します。<br>後から変更できます。</p>
+
+      <div class="ob-input-row">
+        <label>年齢</label>
+        <input type="number" id="ob-age" placeholder="25" oninput="obCheckInfo()">
+        <div class="ob-unit">歳</div>
+      </div>
+      <div class="ob-input-row">
+        <label>現在体重</label>
+        <input type="number" id="ob-weight" placeholder="70.0" step="0.1" oninput="obCheckInfo()">
+        <div class="ob-unit">kg</div>
+      </div>
+      <div class="ob-input-row">
+        <label>現在体脂肪率</label>
+        <input type="number" id="ob-fat" placeholder="15.0" step="0.1" oninput="obCheckInfo()">
+        <div class="ob-unit">%</div>
+      </div>
+      <div class="ob-input-row">
+        <label>目標体重</label>
+        <input type="number" id="ob-target-weight" placeholder="75.0" step="0.1" oninput="obCheckInfo()">
+        <div class="ob-unit">kg</div>
+      </div>
+      <div class="ob-input-row">
+        <label>目標体脂肪率</label>
+        <input type="number" id="ob-target-fat" placeholder="10.0" step="0.1" oninput="obCheckInfo()">
+        <div class="ob-unit">%</div>
+      </div>
+
+      <button class="ob-primary-btn green" id="ob-info-done" disabled onclick="obComplete()" style="margin-top:8px;">
+        設定を完了する ✓
+      </button>
     </div>
   </div>
 
   <!-- ======================================================
-       通知許可バナー
+       通知許可バナー（既存のまま）
        ====================================================== -->
   <div id="notification-banner" class="notification-banner">
     <span class="notification-banner-text">通知をオンにすると、コーチからのリマインドを受け取れます</span>
@@ -64,7 +323,7 @@
   </div>
 
   <!-- ======================================================
-       ツールiframeオーバーレイ
+       ツールiframeオーバーレイ（既存のまま）
        ====================================================== -->
   <div id="tool-overlay">
     <div class="overlay-bar">
@@ -75,64 +334,47 @@
       <span class="overlay-title" id="overlay-title">ツール</span>
       <button class="overlay-back" onclick="closeToolOverlay(); switchTab('home');" style="margin-left:auto">
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-        AIコーチ
+        ホーム
       </button>
     </div>
     <iframe id="tool-iframe" src="" loading="lazy"></iframe>
   </div>
 
   <!-- ======================================================
-       ツールパネル
+       ツールパネル（既存のまま）
        ====================================================== -->
   <div id="tools-panel">
     <button class="tools-back-btn" onclick="switchTab('home')">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      AIコーチに戻る
+      ホームに戻る
     </button>
     <div class="tools-hdr">
       <div class="tools-hdr-label">LINE特典 TOOLS</div>
       <h2>科学的<span>計算</span><br>ツール</h2>
       <p>科学的根拠に基づいた4つの無料ツール。<br>年齢・目標別に最適な数値を算出します。</p>
     </div>
-
     <div class="tools-grid">
       <div class="tool-card" onclick="openTool('tool1_protein.html','プロテイン計算')">
         <div class="tool-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v20M17 2v20M7 8h10M7 12h10M7 16h10"/></svg></div>
-        <div class="tool-info">
-          <div class="tool-name">プロテイン摂取量計算</div>
-          <div class="tool-desc">性別・体重・年齢・目標から最適なタンパク質量を算出。年齢補正あり。</div>
-        </div>
+        <div class="tool-info"><div class="tool-name">プロテイン摂取量計算</div><div class="tool-desc">性別・体重・年齢・目標から最適なタンパク質量を算出。年齢補正あり。</div></div>
         <div class="tool-badge">ISSN</div>
       </div>
-
       <div class="tool-card" onclick="openTool('tool2_diagnosis.html','続かない原因診断')">
         <div class="tool-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="9" r="5"/><path d="M9 14v2a3 3 0 006 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="10" y1="22" x2="14" y2="22"/></svg></div>
-        <div class="tool-info">
-          <div class="tool-name">続かない原因診断</div>
-          <div class="tool-desc">10問の行動科学ベース診断で、運動が続かない本当の原因を特定。</div>
-        </div>
+        <div class="tool-info"><div class="tool-name">続かない原因診断</div><div class="tool-desc">10問の行動科学ベース診断で、運動が続かない本当の原因を特定。</div></div>
         <div class="tool-badge">行動科学</div>
       </div>
-
       <div class="tool-card" onclick="openTool('tool3_timing.html','食事タイミングプランナー')">
         <div class="tool-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-        <div class="tool-info">
-          <div class="tool-name">食事タイミングプランナー</div>
-          <div class="tool-desc">生活リズム・年齢から体内時計に最適な食事スケジュールを自動生成。</div>
-        </div>
+        <div class="tool-info"><div class="tool-name">食事タイミングプランナー</div><div class="tool-desc">生活リズム・年齢から体内時計に最適な食事スケジュールを自動生成。</div></div>
         <div class="tool-badge">時間栄養学</div>
       </div>
-
       <div class="tool-card" onclick="openTool('tool4_training.html','トレーニング頻度計算')">
         <div class="tool-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg></div>
-        <div class="tool-info">
-          <div class="tool-name">トレーニング頻度計算</div>
-          <div class="tool-desc">年齢・経験・目標・可動日から週間プランとスプリットを自動設計。</div>
-        </div>
+        <div class="tool-info"><div class="tool-name">トレーニング頻度計算</div><div class="tool-desc">年齢・経験・目標・可動日から週間プランとスプリットを自動設計。</div></div>
         <div class="tool-badge">NSCA</div>
       </div>
     </div>
-
     <div class="tools-sci-note">
       <span style="font-size:14px; color:var(--accent-muted);">-</span>
       <span>全ツールはISSN・ACSM・NSCAなど国際的なスポーツ科学・栄養学のガイドラインを根拠に設計されています。</span>
@@ -140,15 +382,13 @@
   </div>
 
   <!-- ======================================================
-       記録パネル
+       記録パネル（既存のまま）
        ====================================================== -->
   <div id="record-panel">
     <button class="tools-back-btn" onclick="switchTab('home')">
       <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      AIコーチに戻る
+      ホームに戻る
     </button>
-
-    <!-- 記録タブ切り替え -->
     <div style="display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--black); position:sticky; top:0; z-index:10;">
       <button onclick="switchRecordTab('body')" id="rtab-body"
         style="flex:1; padding:14px 0; background:none; border:none; border-bottom:2px solid var(--accent); color:var(--white); font-size:13px; font-weight:700; cursor:pointer; font-family:'Noto Sans JP',sans-serif; transition:all 0.2s;">
@@ -159,160 +399,100 @@
         トレーニング記録
       </button>
     </div>
-
     <div class="record-panel-content">
-
-    <div id="dashboard">
-
-      <!-- 継続記録 -->
-      <div class="card visible" style="margin-bottom: 14px;">
-        <p class="section-tag">STREAK</p>
-        <p class="section-title">継続<strong>記録</strong></p>
-        <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
-          <div class="stat-card" style="flex:1;">
-            <p id="streak-count" class="stat-metric accent">0</p>
-            <p class="stat-label">日連続</p>
+      <div id="dashboard">
+        <div class="card visible" style="margin-bottom: 14px;">
+          <p class="section-tag">STREAK</p>
+          <p class="section-title">継続<strong>記録</strong></p>
+          <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+            <div class="stat-card" style="flex:1;"><p id="streak-count" class="stat-metric accent">0</p><p class="stat-label">日連続</p></div>
+            <div class="stat-card" style="flex:1;"><p id="weekly-count" class="stat-metric">0</p><p class="stat-label">今週の利用回数</p></div>
           </div>
-          <div class="stat-card" style="flex:1;">
-            <p id="weekly-count" class="stat-metric">0</p>
-            <p class="stat-label">今週の利用回数</p>
+          <div id="streak-badge" class="badge-card" style="display:none;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <p id="badge-icon" style="font-size:32px; line-height:1;"></p>
+              <div><p id="badge-title" style="font-size:15px; font-weight:700; color:var(--accent);"></p><p id="badge-desc" class="stat-label" style="margin-top:2px;"></p></div>
+            </div>
+            <div id="badge-next" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);"></div>
           </div>
         </div>
-        <div id="streak-badge" class="badge-card" style="display:none;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <p id="badge-icon" style="font-size:32px; line-height:1;"></p>
-            <div>
-              <p id="badge-title" style="font-size:15px; font-weight:700; color:var(--accent);"></p>
-              <p id="badge-desc" class="stat-label" style="margin-top:2px;"></p>
+        <div class="card visible" style="margin-bottom: 14px;">
+          <p class="section-tag">BODY DATA</p>
+          <p class="section-title">体組成<strong>記録</strong></p>
+          <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input type="number" id="weight-input" placeholder="体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
+            <input type="number" id="bodyfat-input" placeholder="体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
+          </div>
+          <button id="record-btn" class="checkin-submit" style="margin-bottom:16px;">記録する</button>
+          <div id="record-history"></div>
+          <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
+            <p class="checkin-label">目標設定</p>
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+              <input type="number" id="goal-weight-input" placeholder="目標体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
+              <input type="number" id="goal-bodyfat-input" placeholder="目標体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
+            </div>
+            <div style="margin-bottom:12px;">
+              <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">いつまでに目標を達成したいですか？</p>
+              <div id="goal-period-selector" style="display:flex;flex-direction:column;gap:6px;">
+                <button class="goal-period-btn" data-period="short" data-weeks="4" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">短期（約1か月）</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px;">早く結果を出したい人向け</div></button>
+                <button class="goal-period-btn" data-period="standard" data-weeks="12" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">中期（約3か月）<span style="font-size:11px;color:var(--accent);margin-left:6px;">おすすめ</span></span></div><div style="font-size:11px;color:var(--muted);margin-top:2px;">無理なくしっかり変えたい人向け</div></button>
+                <button class="goal-period-btn" data-period="long" data-weeks="24" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;"><div style="display:flex;justify-content:space-between;align-items:center;"><span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">長期（約6か月）</span></div><div style="font-size:11px;color:var(--muted);margin-top:2px;">大きく体を変えたい人向け</div></button>
+              </div>
+            </div>
+            <button id="goal-save-btn" class="checkin-submit">目標を保存</button>
+            <p id="goal-current" style="font-size:12px; color:var(--muted); margin-top:8px;"></p>
+          </div>
+          <div id="progress-card" style="display:none; border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
+            <p class="checkin-label">進捗</p>
+            <div id="progress-content"></div>
+          </div>
+        </div>
+        <div class="card visible" id="chart-card" style="margin-bottom: 14px; display:none;">
+          <p class="section-tag">PROGRESS</p>
+          <p class="section-title">進捗<strong>グラフ</strong></p>
+          <div class="chart-tabs">
+            <button class="chart-tab active" data-chart="weight" onclick="switchChart('weight')">体重</button>
+            <button class="chart-tab" data-chart="bodyFat" onclick="switchChart('bodyFat')">体脂肪率</button>
+            <button class="chart-tab" data-chart="usage" onclick="switchChart('usage')">利用頻度</button>
+          </div>
+          <div class="chart-container"><canvas id="progress-chart"></canvas></div>
+        </div>
+      </div>
+
+      <div id="workout-panel" style="display:none; padding:16px 0;">
+        <div class="card visible" style="margin-bottom:14px;">
+          <p class="section-tag">WEEKLY VOLUME</p>
+          <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+            <div><span id="wl-vol-num" style="font-family:'Bebas Neue',sans-serif; font-size:48px; color:var(--accent); line-height:1;">--</span><span style="font-size:13px; color:var(--muted); margin-left:4px;">kg</span></div>
+            <div id="wl-vol-vs" style="font-size:12px; color:var(--muted); text-align:right; line-height:1.7;">先週比を計算中...</div>
+          </div>
+        </div>
+        <div class="card visible" style="margin-bottom:14px;">
+          <p class="section-tag">ADD LOG</p>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
+            <div style="position:relative;">
+              <input type="text" id="wl-exercise" placeholder="種目名（例：ベンチプレス）" class="checkin-input" style="width:100%;" autocomplete="off" oninput="wlShowSuggest(this.value)" onfocus="wlShowSuggest(this.value)">
+              <div id="wl-suggest" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--card-bg); border:1px solid var(--border); border-radius:14px; overflow:hidden; z-index:100; margin-top:4px; box-shadow:var(--shadow-md);"></div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <input type="number" id="wl-sets" placeholder="セット数" class="checkin-input" min="1" max="20" inputmode="numeric">
+              <input type="number" id="wl-reps" placeholder="回数/セット" class="checkin-input" min="1" max="100" inputmode="numeric">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal" style="flex:1; min-width:0;">
+                <button onclick="document.getElementById('wl-weight').value='0'" type="button" style="flex-shrink:0; padding:0 10px; height:44px; background:var(--card-bg-elevated); border:1px solid var(--border); border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">自重</button>
+              </div>
+              <input type="date" id="wl-date" class="checkin-input">
             </div>
           </div>
-          <div id="badge-next" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);"></div>
+          <button id="wl-add-btn" class="checkin-submit">記録する</button>
         </div>
+        <p class="section-tag" style="margin-bottom:12px; padding-left:2px;">HISTORY</p>
+        <div id="wl-list"><p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p></div>
       </div>
-
-      <!-- 体組成記録 & 目標設定 -->
-      <div class="card visible" style="margin-bottom: 14px;">
-        <p class="section-tag">BODY DATA</p>
-        <p class="section-title">体組成<strong>記録</strong></p>
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-          <input type="number" id="weight-input" placeholder="体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
-          <input type="number" id="bodyfat-input" placeholder="体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
-        </div>
-        <button id="record-btn" class="checkin-submit" style="margin-bottom:16px;">記録する</button>
-        <div id="record-history"></div>
-
-        <div style="border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
-          <p class="checkin-label">目標設定</p>
-          <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input type="number" id="goal-weight-input" placeholder="目標体重 (kg)" step="0.1" class="checkin-input" style="flex:1;">
-            <input type="number" id="goal-bodyfat-input" placeholder="目標体脂肪率 (%)" step="0.1" class="checkin-input" style="flex:1;">
-          </div>
-          <div style="margin-bottom:12px;">
-            <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">いつまでに目標を達成したいですか？</p>
-            <div id="goal-period-selector" style="display:flex;flex-direction:column;gap:6px;">
-              <button class="goal-period-btn" data-period="short" data-weeks="4" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">短期（約1か月）</span>
-                </div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px;">早く結果を出したい人向け</div>
-              </button>
-              <button class="goal-period-btn" data-period="standard" data-weeks="12" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">中期（約3か月）<span style="font-size:11px;color:var(--accent);margin-left:6px;">おすすめ</span></span>
-                </div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px;">無理なくしっかり変えたい人向け</div>
-              </button>
-              <button class="goal-period-btn" data-period="long" data-weeks="24" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer;text-align:left;transition:all 0.2s;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span class="period-label" style="font-weight:600;font-size:13px;color:var(--white);">長期（約6か月）</span>
-                </div>
-                <div style="font-size:11px;color:var(--muted);margin-top:2px;">大きく体を変えたい人向け</div>
-              </button>
-            </div>
-          </div>
-          <button id="goal-save-btn" class="checkin-submit">目標を保存</button>
-          <p id="goal-current" style="font-size:12px; color:var(--muted); margin-top:8px;"></p>
-        </div>
-
-        <div id="progress-card" style="display:none; border-top:1px solid var(--border); margin-top:16px; padding-top:16px;">
-          <p class="checkin-label">進捗</p>
-          <div id="progress-content"></div>
-        </div>
-      </div>
-
-      <!-- 進捗グラフ -->
-      <div class="card visible" id="chart-card" style="margin-bottom: 14px; display:none;">
-        <p class="section-tag">PROGRESS</p>
-        <p class="section-title">進捗<strong>グラフ</strong></p>
-        <div class="chart-tabs">
-          <button class="chart-tab active" data-chart="weight" onclick="switchChart('weight')">体重</button>
-          <button class="chart-tab" data-chart="bodyFat" onclick="switchChart('bodyFat')">体脂肪率</button>
-          <button class="chart-tab" data-chart="usage" onclick="switchChart('usage')">利用頻度</button>
-        </div>
-        <div class="chart-container">
-          <canvas id="progress-chart"></canvas>
-        </div>
-      </div>
-
-    </div><!-- dashboard閉じ -->
-
-    <!-- ======================================================
-         トレーニング記録パネル
-         ====================================================== -->
-    <div id="workout-panel" style="display:none; padding:16px 0;">
-
-      <!-- 今週のボリューム -->
-      <div class="card visible" style="margin-bottom:14px;">
-        <p class="section-tag">WEEKLY VOLUME</p>
-        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-          <div>
-            <span id="wl-vol-num" style="font-family:'Bebas Neue',sans-serif; font-size:48px; color:var(--accent); line-height:1;">--</span>
-            <span style="font-size:13px; color:var(--muted); margin-left:4px;">kg</span>
-          </div>
-          <div id="wl-vol-vs" style="font-size:12px; color:var(--muted); text-align:right; line-height:1.7;">先週比を計算中...</div>
-        </div>
-      </div>
-
-      <!-- 記録フォーム -->
-      <div class="card visible" style="margin-bottom:14px;">
-        <p class="section-tag">ADD LOG</p>
-        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:12px;">
-          <div style="position:relative;">
-            <input type="text" id="wl-exercise" placeholder="種目名（例：ベンチプレス）"
-              class="checkin-input" style="width:100%;"
-              autocomplete="off"
-              oninput="wlShowSuggest(this.value)"
-              onfocus="wlShowSuggest(this.value)">
-            <div id="wl-suggest" style="display:none; position:absolute; top:100%; left:0; right:0; background:var(--card-bg); border:1px solid var(--border); border-radius:14px; overflow:hidden; z-index:100; margin-top:4px; box-shadow:var(--shadow-md);"></div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <input type="number" id="wl-sets" placeholder="セット数" class="checkin-input" min="1" max="20" inputmode="numeric">
-            <input type="number" id="wl-reps" placeholder="回数/セット" class="checkin-input" min="1" max="100" inputmode="numeric">
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div style="display:flex; gap:6px; align-items:center;">
-              <input type="number" id="wl-weight" placeholder="重量 (kg)" class="checkin-input" step="0.5" min="0" inputmode="decimal" style="flex:1; min-width:0;">
-              <button onclick="document.getElementById('wl-weight').value='0'" type="button"
-                style="flex-shrink:0; padding:0 10px; height:44px; background:var(--card-bg-elevated); border:1px solid var(--border); border-radius:14px; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; font-family:'Noto Sans JP',sans-serif;">
-                自重
-              </button>
-            </div>
-            <input type="date" id="wl-date" class="checkin-input">
-          </div>
-        </div>
-        <button id="wl-add-btn" class="checkin-submit">記録する</button>
-      </div>
-
-      <!-- 記録リスト -->
-      <p class="section-tag" style="margin-bottom:12px; padding-left:2px;">HISTORY</p>
-      <div id="wl-list">
-        <p style="color:var(--muted); font-size:13px; text-align:center; padding:30px 0;">読み込み中...</p>
-      </div>
-
-    </div><!-- workout-panel閉じ -->
-
-    </div><!-- record-panel-content閉じ -->
-  </div><!-- record-panel閉じ -->
+    </div>
+  </div>
 
   <!-- ======================================================
        メインパネル
@@ -320,992 +500,720 @@
   <div id="main-panel" style="padding-bottom: var(--nav-height);">
     <div class="container">
 
-<!-- ログインエリア -->
-<div id="auth-area" class="auth-area">
-  <div id="login-box">
-    <p class="auth-hint">ログインしてご利用ください</p>
-    <button id="google-login-btn" class="google-login-btn">
-      <img src="https://www.google.com/favicon.ico" width="18" alt="Google">
-      Googleでログイン
-    </button>
-    <p style="margin-top:12px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
-  </div>
-  <div id="user-box" style="display:none;">
-    <p id="user-name" class="user-name"></p>
-    <p id="usage-count" class="usage-count"></p>
-    <button id="logout-btn" class="logout-btn">ログアウト</button>
-  </div>
-</div>
-
-<!-- アクセス権なし画面（購入ボタン付き） -->
-<div id="not-allowed-screen" style="display:none; text-align:center; padding:60px 20px;">
-  <div class="purchase-card">
-    <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-    <h2 class="purchase-title">フルサポートプランに参加しよう</h2>
-    <p class="purchase-subtitle">3ヶ月パーソナルコーチング + AI3ヶ月利用権</p>
-
-    <!-- 支払い方法選択 -->
-    <div class="plan-toggle" id="plan-toggle">
-      <button onclick="selectPlan('onetime')" id="plan-onetime" class="plan-btn active">
-        一括払い<br><span class="price">¥99,800</span>
-      </button>
-      <button onclick="selectPlan('split3')" id="plan-split3" class="plan-btn">
-        3回払い<br><span class="price">¥33,267</span><span class="price-unit">/月</span>
-      </button>
-      <button onclick="selectPlan('split6')" id="plan-split6" class="plan-btn">
-        6回払い<br><span class="price">¥16,634</span><span class="price-unit">/月</span>
-      </button>
-    </div>
-    <p id="plan-note" class="plan-note">税込・買い切り</p>
-
-    <div style="margin-bottom:12px;">
-      <input type="text" id="referral-code" placeholder="紹介者コード（お持ちの方のみ）" style="width:100%; padding:10px 14px; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none;" oninput="this.value=this.value.toUpperCase()">
-    </div>
-    <button id="purchase-btn" onclick="startCheckout()" class="purchase-cta">購入してはじめる →</button>
-
-    <p id="purchase-msg" class="purchase-msg"></p>
-
-    <div class="purchase-features">
-      <p class="purchase-features-label">プランに含まれるもの</p>
-      <div class="purchase-features-list">
-        <p class="feature-item">専属AIコーチによる個別プラン生成</p>
-        <p class="feature-item">3ヶ月間のパーソナルコーチング</p>
-        <p class="feature-item">栄養・トレーニング・回復の総合サポート</p>
-        <p class="feature-item">サービス提供終了後も3ヶ月間AI利用可能</p>
-      </div>
-    </div>
-
-    <p style="margin-top:16px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
-    <p style="margin-top:8px; font-size:12px; color:var(--text-tertiary);">ご質問は <a href="#contact" class="link-accent">お問い合わせフォーム</a> から</p>
-  </div>
-</div>
-
-<!-- 同意モーダル -->
-<div id="consent-modal" class="consent-backdrop" style="display:none;">
-  <div class="consent-card">
-    <h2 class="consent-title">ご利用にあたって</h2>
-    <p class="consent-subtitle">サービスをご利用いただくには、以下の規約への同意が必要です。</p>
-
-    <div class="consent-body">
-      <p class="consent-text">本サービスは、フィットネスに関する助言・サポートを提供するものであり、特定の成果を保証するものではありません。医療行為や専門的な指導に代わるものでもありません。</p>
-      <p class="consent-text-muted">詳しくは各規約をご確認ください。</p>
-    </div>
-
-    <div class="consent-links">
-      <a href="/Terms.html" target="_blank" class="consent-link">利用規約</a>
-      <a href="/Privacy.html" target="_blank" class="consent-link">プライバシーポリシー</a>
-    </div>
-
-    <div id="consent-label" class="consent-checkbox-label" onclick="document.getElementById('consent-checkbox').click()">
-      <input type="checkbox" id="consent-checkbox" class="consent-checkbox" onclick="event.stopPropagation()">
-      <span class="consent-checkbox-text"><a href="/Terms.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">利用規約</a>と<a href="/Privacy.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">プライバシーポリシー</a>に同意します</span>
-    </div>
-
-    <button id="consent-agree-btn" disabled class="consent-btn">同意してはじめる</button>
-  </div>
-</div>
-
-<!-- デイリーチェックイン（ゲート） -->
-<div id="checkin-gate" class="checkin-gate" style="display:none;">
-  <div class="checkin-gate-inner">
-    <p class="section-tag" style="margin-bottom:8px;">DAILY CHECK-IN</p>
-    <h2 class="checkin-gate-title">今日のコンディションを教えてください</h2>
-    <p class="checkin-gate-sub">あなたの状況に合わせてAIコーチを最適化します</p>
-
-    <div class="checkin-group">
-      <p class="checkin-label">今のいちばんの目的は？</p>
-      <div class="checkin-options">
-        <label class="checkin-option"><input type="radio" name="focus" value="脂肪を落としたい"><span>脂肪を落とす</span></label>
-        <label class="checkin-option"><input type="radio" name="focus" value="筋肉をつけたい"><span>筋肉をつける</span></label>
-        <label class="checkin-option"><input type="radio" name="focus" value="体力を上げたい"><span>体力を上げる</span></label>
-        <label class="checkin-option"><input type="radio" name="focus" value="不調を改善したい"><span>不調を改善</span></label>
-        <label class="checkin-option"><input type="radio" name="focus" value="体型を整えたい"><span>体型を整える</span></label>
-      </div>
-    </div>
-    <div class="checkin-group">
-      <p class="checkin-label">今日は何を重点的にやりたい？</p>
-      <div class="checkin-options">
-        <label class="checkin-option"><input type="radio" name="priority" value="栄養管理"><span>栄養管理</span></label>
-        <label class="checkin-option"><input type="radio" name="priority" value="トレーニング"><span>トレーニング</span></label>
-        <label class="checkin-option"><input type="radio" name="priority" value="回復・休養"><span>回復・休養</span></label>
-        <label class="checkin-option"><input type="radio" name="priority" value="おまかせ"><span>おまかせ</span></label>
-      </div>
-    </div>
-    <div class="checkin-group">
-      <p class="checkin-label">体調</p>
-      <div class="checkin-options">
-        <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
-        <label class="checkin-option"><input type="radio" name="condition" value="普通"><span>普通</span></label>
-        <label class="checkin-option"><input type="radio" name="condition" value="やや疲れ"><span>やや疲れ</span></label>
-        <label class="checkin-option"><input type="radio" name="condition" value="体調不良"><span>体調不良</span></label>
-      </div>
-    </div>
-    <div class="checkin-group">
-      <p class="checkin-label">昨晩の睡眠</p>
-      <div class="checkin-options">
-        <label class="checkin-option"><input type="radio" name="sleep" value="よく眠れた"><span>よく眠れた</span></label>
-        <label class="checkin-option"><input type="radio" name="sleep" value="普通"><span>普通</span></label>
-        <label class="checkin-option"><input type="radio" name="sleep" value="あまり眠れなかった"><span>あまり眠れず</span></label>
-      </div>
-    </div>
-    <div class="checkin-group">
-      <p class="checkin-label">メモ（任意）</p>
-      <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛、膝が少し痛い" class="checkin-input" style="width:100%;">
-    </div>
-    <button id="checkin-save-btn" class="checkin-submit" style="margin-top:8px;">チェックインしてはじめる</button>
-  </div>
-</div>
-
-<!-- メインコンテンツ -->
-<div id="main-content" style="display:none;">
-
-    <!-- ヘッダー -->
-    <header class="site-header">
-      <h1 class="header-hero" id="header-greeting">今日、何を<span class="accent">変える</span>？</h1>
-    </header>
-
-    <!-- コーチング面談予約バナー -->
-    <div class="coaching-banner">
-      <div class="coaching-banner-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      </div>
-      <div class="coaching-banner-text">
-        <p class="coaching-banner-title">コーチに直接相談する</p>
-        <p class="coaching-banner-desc">専属コーチが1対1でサポートします</p>
-      </div>
-      <a href="https://timerex.net/s/fit.project.ai.1633_95b1/638bdf1a" target="_blank" class="coaching-banner-btn">
-        予約する
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="9 18 15 12 9 6"/></svg>
-      </a>
-    </div>
-
-    <!-- 登録中プラン管理カード -->
-    <div id="plan-hero-card" class="plan-hero-card" style="display:none;">
-
-      <!-- ゾーン1: プラン情報 -->
-      <div class="plan-hero-zone plan-hero-zone--info">
-        <div class="plan-hero-top">
-          <span class="plan-hero-status"><span class="plan-hero-dot"></span>有効</span>
-          <span class="plan-hero-eyebrow">CURRENT PLAN</span>
+      <!-- ログインエリア（既存のまま） -->
+      <div id="auth-area" class="auth-area">
+        <div id="login-box">
+          <p class="auth-hint">ログインしてご利用ください</p>
+          <button id="google-login-btn" class="google-login-btn">
+            <img src="https://www.google.com/favicon.ico" width="18" alt="Google">
+            Googleでログイン
+          </button>
+          <p style="margin-top:12px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
         </div>
-        <div class="plan-hero-name" id="plan-hero-name"></div>
-        <div class="plan-hero-meta">
-          <span class="plan-hero-meta-item">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="12" rx="2"/><path d="M1 6h14M5 1v2M11 1v2"/></svg>
-            <span id="plan-hero-date">登録日：--</span>
-          </span>
-          <span class="plan-hero-meta-item">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>
-            <span id="plan-hero-goal">フォーカス：--</span>
-          </span>
+        <div id="user-box" style="display:none;">
+          <p id="user-name" class="user-name"></p>
+          <p id="usage-count" class="usage-count"></p>
+          <button id="logout-btn" class="logout-btn">ログアウト</button>
         </div>
       </div>
 
-      <!-- ゾーン2: プラン概要 -->
-      <div class="plan-hero-zone plan-hero-zone--detail">
-        <p class="plan-hero-desc" id="plan-hero-desc"></p>
-        <div class="plan-hero-features">
-          <div class="plan-hero-feature-item">
-            <span class="plan-hero-feature-icon">🥗</span>
-            <span>栄養提案をプランに最適化</span>
-          </div>
-          <div class="plan-hero-feature-item">
-            <span class="plan-hero-feature-icon">💪</span>
-            <span>トレーニング内容をプランで絞り込み</span>
-          </div>
-          <div class="plan-hero-feature-item">
-            <span class="plan-hero-feature-icon">🌙</span>
-            <span>回復・コンディション提案もプラン対応</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ゾーン3: 危険操作エリア -->
-      <div class="plan-hero-zone plan-danger-zone">
-        <div class="plan-danger-zone-label">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>
-          危険な操作
-        </div>
-        <p class="plan-danger-zone-desc">プランを解除すると、専用の提案モードが終了します。これまでの提案履歴は残ります。</p>
-        <button id="plan-unregister-btn" class="plan-unregister-danger-btn">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>
-          プランを解除する
-        </button>
-      </div>
-
-    </div>
-
-    <!-- プラン解除確認モーダル（強化版） -->
-    <div id="unregister-confirm-overlay" class="unregister-confirm-overlay" style="display:none;">
-      <div class="unregister-confirm-card">
-        <div class="unregister-confirm-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L22 20H2L12 2z"/><path d="M12 9v5M12 16.5v.5"/></svg>
-        </div>
-        <p class="unregister-confirm-title">プランを解除しますか？</p>
-        <p class="unregister-confirm-plan-name" id="unregister-confirm-plan-name"></p>
-        <div class="unregister-confirm-checklist">
-          <div class="unregister-confirm-check-item">
-            <span class="check-dot check-dot--ok"></span>提案履歴はすべて残ります
-          </div>
-          <div class="unregister-confirm-check-item">
-            <span class="check-dot check-dot--ok"></span>再登録はいつでもできます
-          </div>
-          <div class="unregister-confirm-check-item">
-            <span class="check-dot check-dot--warn"></span>プラン専用の提案モードが終了します
-          </div>
-        </div>
-        <div class="unregister-confirm-actions">
-          <button id="unregister-ok-btn" class="unregister-ok-btn">解除する</button>
-          <button id="unregister-cancel-btn" class="unregister-cancel-btn">キャンセル</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- プラン未登録時の選択カード -->
-    <div id="plan-select-card" class="plan-select-card" style="display:none;">
-      <div class="plan-select-card-header">
-        <span class="plan-badge-eyebrow">PLAN</span>
-        <p class="plan-select-prompt">取り組むプランを選んで開始</p>
-      </div>
-      <div id="plan-options" class="plan-options-list"></div>
-    </div>
-
-
-<section id="goal-section" class="card active">
-      <div class="section-tag">STEP 01</div>
-      <h2 class="section-title">まず、あなたの<strong>目的</strong>は？</h2>
-      <div class="button-group goal-group">
-        <button class="choice-btn" data-goal="1"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.418 0 8-3.582 8-8 0-6-8-14-8-14S4 8 4 14c0 4.418 3.582 8 8 8z"/><path d="M12 22c2 0 4-1.5 4-5 0-3-4-7-4-7s-4 4-4 7c0 3.5 2 5 4 5z"/></svg></span><span class="btn-text">脂肪を落としたい</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn" data-goal="2"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M6 12h12M4 8h4M4 16h4M16 8h4M16 16h4"/></svg></span><span class="btn-text">筋肉をつけたい</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn" data-goal="3"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="btn-text">体力を上げたい</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn" data-goal="4"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span><span class="btn-text">不調を改善したい</span><span class="btn-arrow">→</span></button>
-        <button class="choice-btn" data-goal="5"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="btn-text">体型を整える（見た目特化）</span><span class="btn-arrow">→</span></button>
-      </div>
-    </section>
-
-    <section id="method-section" class="card method-hero-section hidden">
-      <div class="method-hero-tiles">
-
-        <button class="choice-btn method-tile method-tile--nutrition" data-method="nutrition">
-          <div class="method-tile-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
-          </div>
-          <div class="method-tile-name">栄養</div>
-          <div class="method-tile-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>
-          </div>
-        </button>
-
-        <button class="choice-btn method-tile method-tile--training" data-method="training">
-          <div class="method-tile-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M6 4v16M18 4v16M6 12h12M4 8h4M4 16h4M16 8h4M16 16h4"/></svg>
-          </div>
-          <div class="method-tile-name">トレーニング</div>
-          <div class="method-tile-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>
-          </div>
-        </button>
-
-        <button class="choice-btn method-tile method-tile--recovery" data-method="recovery">
-          <div class="method-tile-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="26" height="26"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-          </div>
-          <div class="method-tile-name">回復</div>
-          <div class="method-tile-arrow">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polyline points="9 18 15 12 9 6"/></svg>
-          </div>
-        </button>
-
-      </div>
-    </section>
-
-    <section id="sub-section" class="card sub-section-card hidden">
-      <div class="sub-section-header">
-        <span class="section-tag" id="sub-section-tag">STEP 03</span>
-        <h2 class="section-title sub-section-title" id="sub-section-title">詳細を教えてください</h2>
-        <p class="sub-section-lead" id="sub-section-lead">あなたの状況に近いものを選んでください</p>
-      </div>
-      <div id="sub-buttons" class="sub-chips"></div>
-    </section>
-
-    <section id="ai-response" class="card response-card hidden">
-      <div class="response-card-header">
-        <span class="response-card-label">COACHING</span>
-        <span class="response-card-badge" id="response-card-badge"></span>
-      </div>
-      <div id="response-area">
-        <div id="loading-indicator" class="loading hidden">
-          <div class="loading-dots"><span></span><span></span><span></span></div>
-          <p>プランを生成中...</p>
-        </div>
-        <div id="chat-history" class="chat-history"></div>
-      </div>
-      <div id="chat-input-area" class="chat-input-area hidden">
-        <input type="text" id="chat-input" class="chat-input" placeholder="コーチへ返答する...">
-        <button id="chat-send-btn" class="chat-send-btn" aria-label="送信">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-      <button id="reset-btn" class="reset-btn hidden">別のアプローチを試す</button>
-    </section>
-
-    <!-- スケルトンローディング -->
-    <div id="dashboard-skeleton" style="margin-top: 24px; display:none;">
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line medium"></div>
-      </div>
-      <div class="skeleton-card">
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line long"></div>
-        <div class="skeleton skeleton-line medium"></div>
-      </div>
-    </div>
-
-    <div style="margin-top: 24px;">
-
-      <!-- 今日のコンディション表示 -->
-      <div class="card visible" id="checkin-summary-card" style="margin-bottom:14px; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <p class="section-tag">TODAY'S CONDITION</p>
-          <button id="checkin-edit-btn" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 12px; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">変更する</button>
-        </div>
-        <div id="checkin-summary-content" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
-      </div>
-
-      <div class="card visible" style="margin-bottom: 14px;">
-        <p class="section-tag">WEEKLY REPORT</p>
-        <p class="section-title">今週の<strong>内訳</strong></p>
-        <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;">
-          <p style="color:var(--muted); font-size:13px;">読み込み中...</p>
-        </div>
-      </div>
-
-      <!-- チャット履歴 -->
-      <div class="card visible" id="history-card" style="margin-bottom: 14px; display:none;">
-        <p class="section-tag">HISTORY</p>
-        <p class="section-title">過去の<strong>相談</strong></p>
-        <div id="chat-history-list" class="history-list"></div>
-      </div>
-
-      <!-- コーチとのやり取り -->
-      <div class="card visible" id="coach-threads-card" style="margin-bottom: 14px; display:none;">
-        <p class="section-tag">COACH THREAD</p>
-        <p class="section-title">コーチとの<strong>やり取り</strong></p>
-        <div id="coach-threads-list"></div>
-      </div>
-
-      <!-- AIパーソナル分析（7日連続で開放） -->
-      <div class="card visible" id="personal-analysis-card" style="margin-bottom: 14px;">
-        <p class="section-tag">PERSONAL ANALYSIS</p>
-        <p class="section-title">あなたの<strong>タイプ分析</strong></p>
-        <div id="pa-locked" style="text-align:center; padding:20px 0;">
+      <!-- アクセス権なし画面（既存のまま） -->
+      <div id="not-allowed-screen" style="display:none; text-align:center; padding:60px 20px;">
+        <div class="purchase-card">
           <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">7日連続利用で開放</p>
-          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
-          <div class="progress-track" style="margin:0 20px;">
-            <div id="pa-progress-bar" class="progress-fill" style="width:0%;"></div>
+          <h2 class="purchase-title">フルサポートプランに参加しよう</h2>
+          <p class="purchase-subtitle">3ヶ月パーソナルコーチング + AI3ヶ月利用権</p>
+          <div class="plan-toggle" id="plan-toggle">
+            <button onclick="selectPlan('onetime')" id="plan-onetime" class="plan-btn active">一括払い<br><span class="price">¥99,800</span></button>
+            <button onclick="selectPlan('split3')" id="plan-split3" class="plan-btn">3回払い<br><span class="price">¥33,267</span><span class="price-unit">/月</span></button>
+            <button onclick="selectPlan('split6')" id="plan-split6" class="plan-btn">6回払い<br><span class="price">¥16,634</span><span class="price-unit">/月</span></button>
           </div>
-          <p id="pa-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 7日</p>
-        </div>
-        <div id="pa-unlocked" style="display:none;">
-          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">全履歴からあなたのフィットネスタイプ・バランス・弱点をAIが診断します。</p>
-          <button id="pa-run-btn" class="action-btn-outline">パーソナル分析を実行 →</button>
-          <div id="pa-loading" style="display:none; text-align:center; padding:20px 0;">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-            <p style="color:var(--muted); font-size:13px; margin-top:8px;">分析中...（10〜20秒）</p>
+          <p id="plan-note" class="plan-note">税込・買い切り</p>
+          <div style="margin-bottom:12px;">
+            <input type="text" id="referral-code" placeholder="紹介者コード（お持ちの方のみ）" style="width:100%; padding:10px 14px; background:var(--card-bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--white); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none;" oninput="this.value=this.value.toUpperCase()">
           </div>
-          <div id="pa-result" style="display:none; margin-top:16px;"></div>
-        </div>
-      </div>
-
-      <!-- AIボディメイク診断（30日連続で開放） -->
-      <div class="card visible" id="body-diagnosis-card" style="margin-bottom: 14px;">
-        <p class="section-tag">BODY DIAGNOSIS</p>
-        <p class="section-title">AIボディメイク<strong>診断</strong></p>
-        <div id="bd-locked" style="text-align:center; padding:20px 0;">
-          <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
-          <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">30日連続利用で開放</p>
-          <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
-          <div class="progress-track" style="margin:0 20px;">
-            <div id="bd-progress-bar" class="progress-fill blue" style="width:0%;"></div>
-          </div>
-          <p id="bd-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 30日</p>
-        </div>
-        <div id="bd-unlocked" style="display:none;">
-          <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">正面からの全身写真をアップロードすると、AIが体型を分析して改善ポイントを提案します。</p>
-          <div id="bd-consent" class="bd-consent-box">
-            <p style="font-size:13px; font-weight:700; color:var(--white); margin-bottom:10px;">写真の取り扱いについて</p>
-            <div style="font-size:12px; color:var(--muted); line-height:1.7; margin-bottom:12px;">
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はAI分析のためだけに使用されます</p>
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;写真はサーバーに保存されません（端末上で処理）</p>
-              <p style="margin-bottom:6px; color:var(--accent-muted);">&#10003;運営側が写真を閲覧することは一切ありません</p>
-              <p style="color:var(--accent-muted);">&#10003;分析完了後、写真データは自動的に破棄されます</p>
+          <button id="purchase-btn" onclick="startCheckout()" class="purchase-cta">購入してはじめる →</button>
+          <p id="purchase-msg" class="purchase-msg"></p>
+          <div class="purchase-features">
+            <p class="purchase-features-label">プランに含まれるもの</p>
+            <div class="purchase-features-list">
+              <p class="feature-item">専属AIコーチによる個別プラン生成</p>
+              <p class="feature-item">3ヶ月間のパーソナルコーチング</p>
+              <p class="feature-item">栄養・トレーニング・回復の総合サポート</p>
+              <p class="feature-item">サービス提供終了後も3ヶ月間AI利用可能</p>
             </div>
-            <label class="consent-checkbox-label" style="margin-bottom:0; padding:10px;">
-              <input type="checkbox" id="bd-consent-checkbox" class="consent-checkbox" style="accent-color:#4fc3f7;">
-              <span class="consent-checkbox-text">上記の内容を理解し、写真のアップロードに同意します</span>
-            </label>
           </div>
-          <div id="bd-upload-area" class="bd-upload-area" style="display:none;" onclick="document.getElementById('bd-file-input').click()">
-            <p style="margin-bottom:8px; color:var(--muted);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></p>
-            <p style="font-size:14px; color:var(--white); font-weight:700;">写真をアップロード</p>
-            <p style="font-size:12px; color:var(--muted); margin-top:4px;">タップして写真を選択 or 撮影</p>
-            <input type="file" id="bd-file-input" accept="image/*" capture="environment" style="display:none;">
-          </div>
-          <div id="bd-preview" style="display:none; margin-top:12px; text-align:center;">
-            <img id="bd-preview-img" style="max-width:100%; max-height:300px; border-radius:12px; border:1px solid var(--border);">
-            <button id="bd-run-btn" class="action-btn-outline" style="margin-top:12px; color:#4fc3f7; border-color:#4fc3f7;">AIに診断してもらう →</button>
-            <button id="bd-reset-photo" class="action-btn-ghost" style="margin-top:8px;">写真を変更する</button>
-          </div>
-          <div id="bd-loading" style="display:none; text-align:center; padding:20px 0;">
-            <div class="loading-dots"><span></span><span></span><span></span></div>
-            <p style="color:var(--muted); font-size:13px; margin-top:8px;">体型を分析中...（10〜20秒）</p>
-          </div>
-          <div id="bd-result" style="display:none; margin-top:16px;"></div>
-          <p style="font-size:11px; color:var(--text-tertiary); margin-top:12px; text-align:center;">※ 写真はAI分析のみに使用され、サーバーに保存されません</p>
+          <p style="margin-top:16px;"><a href="/lp.html" class="link-accent">サービスの詳細を見る →</a></p>
         </div>
       </div>
 
-    </div>
-
-</div><!-- main-content閉じ -->
-
-<!-- お問い合わせフォーム -->
-<div id="contact" class="card visible" style="margin-top:24px; margin-bottom:24px;">
-  <p class="section-tag">CONTACT</p>
-  <p class="section-title" style="margin-bottom:8px;">お問い合わせ</p>
-  <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
-  <form id="contact-form" style="display:flex; flex-direction:column; gap:16px;">
-    <div style="display:flex; gap:10px;">
-      <div style="flex:1;">
-        <label class="form-label">姓 <span class="form-required">*</span></label>
-        <input type="text" name="last_name" required placeholder="例: 山田" class="form-input">
+      <!-- 同意モーダル（既存のまま） -->
+      <div id="consent-modal" class="consent-backdrop" style="display:none;">
+        <div class="consent-card">
+          <h2 class="consent-title">ご利用にあたって</h2>
+          <p class="consent-subtitle">サービスをご利用いただくには、以下の規約への同意が必要です。</p>
+          <div class="consent-body">
+            <p class="consent-text">本サービスは、フィットネスに関する助言・サポートを提供するものであり、特定の成果を保証するものではありません。医療行為や専門的な指導に代わるものでもありません。</p>
+            <p class="consent-text-muted">詳しくは各規約をご確認ください。</p>
+          </div>
+          <div class="consent-links">
+            <a href="/Terms.html" target="_blank" class="consent-link">利用規約</a>
+            <a href="/Privacy.html" target="_blank" class="consent-link">プライバシーポリシー</a>
+          </div>
+          <div id="consent-label" class="consent-checkbox-label" onclick="document.getElementById('consent-checkbox').click()">
+            <input type="checkbox" id="consent-checkbox" class="consent-checkbox" onclick="event.stopPropagation()">
+            <span class="consent-checkbox-text"><a href="/Terms.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">利用規約</a>と<a href="/Privacy.html" target="_blank" class="link-accent" style="text-decoration:underline;" onclick="event.stopPropagation()">プライバシーポリシー</a>に同意します</span>
+          </div>
+          <button id="consent-agree-btn" disabled class="consent-btn">同意してはじめる</button>
+        </div>
       </div>
-      <div style="flex:1;">
-        <label class="form-label">名 <span class="form-required">*</span></label>
-        <input type="text" name="first_name" required placeholder="例: 太郎" class="form-input">
-      </div>
-    </div>
-    <div>
-      <label class="form-label">メールアドレス <span class="form-required">*</span></label>
-      <input type="email" name="email" required placeholder="例: example@gmail.com" class="form-input">
-    </div>
-    <div>
-      <label class="form-label">電話番号（任意）</label>
-      <input type="tel" name="phone" placeholder="例: 090-1234-5678" class="form-input">
-    </div>
-    <div>
-      <label class="form-label">お問い合わせ内容 <span class="form-required">*</span></label>
-      <textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" class="form-textarea"></textarea>
-    </div>
-    <button type="submit" class="form-submit">送信する →</button>
-    <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
-  </form>
-</div>
 
-<footer class="site-footer">
-  <div class="footer-links">
-    <a href="/Terms.html" class="footer-link">利用規約</a>
-    <a href="/Privacy.html" class="footer-link">プライバシーポリシー</a>
-    <a href="/Tokushoho.html" class="footer-link">特定商取引法に基づく表記</a>
+      <!-- デイリーチェックイン（既存のまま） -->
+      <div id="checkin-gate" class="checkin-gate" style="display:none;">
+        <div class="checkin-gate-inner">
+          <p class="section-tag" style="margin-bottom:8px;">DAILY CHECK-IN</p>
+          <h2 class="checkin-gate-title">今日のコンディションを教えてください</h2>
+          <p class="checkin-gate-sub">あなたの状況に合わせてAIコーチを最適化します</p>
+          <div class="checkin-group">
+            <p class="checkin-label">今のいちばんの目的は？</p>
+            <div class="checkin-options">
+              <label class="checkin-option"><input type="radio" name="focus" value="脂肪を落としたい"><span>脂肪を落とす</span></label>
+              <label class="checkin-option"><input type="radio" name="focus" value="筋肉をつけたい"><span>筋肉をつける</span></label>
+              <label class="checkin-option"><input type="radio" name="focus" value="体力を上げたい"><span>体力を上げる</span></label>
+              <label class="checkin-option"><input type="radio" name="focus" value="不調を改善したい"><span>不調を改善</span></label>
+              <label class="checkin-option"><input type="radio" name="focus" value="体型を整えたい"><span>体型を整える</span></label>
+            </div>
+          </div>
+          <div class="checkin-group">
+            <p class="checkin-label">今日は何を重点的にやりたい？</p>
+            <div class="checkin-options">
+              <label class="checkin-option"><input type="radio" name="priority" value="栄養管理"><span>栄養管理</span></label>
+              <label class="checkin-option"><input type="radio" name="priority" value="トレーニング"><span>トレーニング</span></label>
+              <label class="checkin-option"><input type="radio" name="priority" value="回復・休養"><span>回復・休養</span></label>
+              <label class="checkin-option"><input type="radio" name="priority" value="おまかせ"><span>おまかせ</span></label>
+            </div>
+          </div>
+          <div class="checkin-group">
+            <p class="checkin-label">体調</p>
+            <div class="checkin-options">
+              <label class="checkin-option"><input type="radio" name="condition" value="絶好調"><span>絶好調</span></label>
+              <label class="checkin-option"><input type="radio" name="condition" value="普通"><span>普通</span></label>
+              <label class="checkin-option"><input type="radio" name="condition" value="やや疲れ"><span>やや疲れ</span></label>
+              <label class="checkin-option"><input type="radio" name="condition" value="体調不良"><span>体調不良</span></label>
+            </div>
+          </div>
+          <div class="checkin-group">
+            <p class="checkin-label">昨晩の睡眠</p>
+            <div class="checkin-options">
+              <label class="checkin-option"><input type="radio" name="sleep" value="よく眠れた"><span>よく眠れた</span></label>
+              <label class="checkin-option"><input type="radio" name="sleep" value="普通"><span>普通</span></label>
+              <label class="checkin-option"><input type="radio" name="sleep" value="あまり眠れなかった"><span>あまり眠れず</span></label>
+            </div>
+          </div>
+          <div class="checkin-group">
+            <p class="checkin-label">メモ（任意）</p>
+            <input type="text" id="checkin-note" placeholder="例：昨日は脚トレで筋肉痛、膝が少し痛い" class="checkin-input" style="width:100%;">
+          </div>
+          <button id="checkin-save-btn" class="checkin-submit" style="margin-top:8px;">チェックインしてはじめる</button>
+        </div>
+      </div>
+
+      <!-- ======================================================
+           メインコンテンツ（新UI）
+           ====================================================== -->
+      <div id="main-content" style="display:none;">
+
+        <header class="site-header">
+          <h1 class="header-hero" id="header-greeting">今日、何を<span class="accent">変える</span>？</h1>
+        </header>
+
+        <!-- コーチング面談予約バナー（既存のまま） -->
+        <div class="coaching-banner">
+          <div class="coaching-banner-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="coaching-banner-text">
+            <p class="coaching-banner-title">コーチに直接相談する</p>
+            <p class="coaching-banner-desc">専属コーチが1対1でサポートします</p>
+          </div>
+          <a href="https://timerex.net/s/fit.project.ai.1633_95b1/638bdf1a" target="_blank" class="coaching-banner-btn">
+            予約する
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
+        </div>
+
+        <!-- 登録中プランカード（既存のまま） -->
+        <div id="plan-hero-card" class="plan-hero-card" style="display:none;">
+          <div class="plan-hero-zone plan-hero-zone--info">
+            <div class="plan-hero-top"><span class="plan-hero-status"><span class="plan-hero-dot"></span>有効</span><span class="plan-hero-eyebrow">CURRENT PLAN</span></div>
+            <div class="plan-hero-name" id="plan-hero-name"></div>
+            <div class="plan-hero-meta">
+              <span class="plan-hero-meta-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="2" width="14" height="12" rx="2"/><path d="M1 6h14M5 1v2M11 1v2"/></svg><span id="plan-hero-date">登録日：--</span></span>
+              <span class="plan-hero-meta-item"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg><span id="plan-hero-goal">フォーカス：--</span></span>
+            </div>
+          </div>
+          <div class="plan-hero-zone plan-hero-zone--detail">
+            <p class="plan-hero-desc" id="plan-hero-desc"></p>
+            <div class="plan-hero-features">
+              <div class="plan-hero-feature-item"><span class="plan-hero-feature-icon">🥗</span><span>栄養提案をプランに最適化</span></div>
+              <div class="plan-hero-feature-item"><span class="plan-hero-feature-icon">💪</span><span>トレーニング内容をプランで絞り込み</span></div>
+              <div class="plan-hero-feature-item"><span class="plan-hero-feature-icon">🌙</span><span>回復・コンディション提案もプラン対応</span></div>
+            </div>
+          </div>
+          <div class="plan-hero-zone plan-danger-zone">
+            <div class="plan-danger-zone-label"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1L15 14H1L8 1z"/><path d="M8 6v4M8 11.5v.5"/></svg>危険な操作</div>
+            <p class="plan-danger-zone-desc">プランを解除すると、専用の提案モードが終了します。これまでの提案履歴は残ります。</p>
+            <button id="plan-unregister-btn" class="plan-unregister-danger-btn"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9h8l1-9"/></svg>プランを解除する</button>
+          </div>
+        </div>
+
+        <!-- プラン解除確認モーダル（既存のまま） -->
+        <div id="unregister-confirm-overlay" class="unregister-confirm-overlay" style="display:none;">
+          <div class="unregister-confirm-card">
+            <div class="unregister-confirm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L22 20H2L12 2z"/><path d="M12 9v5M12 16.5v.5"/></svg></div>
+            <p class="unregister-confirm-title">プランを解除しますか？</p>
+            <p class="unregister-confirm-plan-name" id="unregister-confirm-plan-name"></p>
+            <div class="unregister-confirm-checklist">
+              <div class="unregister-confirm-check-item"><span class="check-dot check-dot--ok"></span>提案履歴はすべて残ります</div>
+              <div class="unregister-confirm-check-item"><span class="check-dot check-dot--ok"></span>再登録はいつでもできます</div>
+              <div class="unregister-confirm-check-item"><span class="check-dot check-dot--warn"></span>プラン専用の提案モードが終了します</div>
+            </div>
+            <div class="unregister-confirm-actions">
+              <button id="unregister-ok-btn" class="unregister-ok-btn">解除する</button>
+              <button id="unregister-cancel-btn" class="unregister-cancel-btn">キャンセル</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- プラン未登録時の選択カード（既存のまま） -->
+        <div id="plan-select-card" class="plan-select-card" style="display:none;">
+          <div class="plan-select-card-header">
+            <span class="plan-badge-eyebrow">PLAN</span>
+            <p class="plan-select-prompt">取り組むプランを選んで開始</p>
+          </div>
+          <div id="plan-options" class="plan-options-list"></div>
+        </div>
+
+        <!-- ══ 新UI: 目標カード + 提案フロー ══ -->
+        <div id="goal-summary-card" class="goal-hero-card" style="display:none;">
+          <div class="goal-hero-label">登録中の目標</div>
+          <div class="goal-hero-name" id="goal-summary-name">—</div>
+          <div class="goal-hero-badges">
+            <span class="goal-hero-badge purple" id="goal-summary-level">—</span>
+            <span class="goal-hero-badge green">● アクティブ</span>
+          </div>
+        </div>
+
+        <!-- 提案フロー -->
+        <div id="proposal-flow" style="display:none;">
+          <div class="new-section-label">今日は何の提案が欲しいですか？</div>
+
+          <div class="method-card-new" id="mc-diet" onclick="selectMethod('diet')">
+            <div class="mc-icon">🥗</div>
+            <div><div class="mc-name">食事</div><div class="mc-desc">今日の食事プランを提案してもらう</div></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:#6b7280;margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="method-card-new" id="mc-training" onclick="selectMethod('training')">
+            <div class="mc-icon">🏋️</div>
+            <div><div class="mc-name">トレーニング</div><div class="mc-desc">今日のメニューを組んでもらう</div></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:#6b7280;margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="method-card-new" id="mc-recovery" onclick="selectMethod('recovery')">
+            <div class="mc-icon">💤</div>
+            <div><div class="mc-name">回復</div><div class="mc-desc">最適な休養方法を教えてもらう</div></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:#6b7280;margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+
+          <!-- アコーディオン質問 -->
+          <div id="accordion-container" class="accordion-flow" style="display:none;"></div>
+
+          <!-- AI提案結果（既存のAI応答エリアを流用） -->
+          <section id="ai-response" class="card response-card" style="display:none; margin-top:16px;">
+            <div class="response-card-header">
+              <span class="response-card-label">COACHING</span>
+              <span class="response-card-badge" id="response-card-badge"></span>
+            </div>
+            <div id="response-area">
+              <div id="loading-indicator" class="loading hidden">
+                <div class="loading-dots"><span></span><span></span><span></span></div>
+                <p>プランを生成中...</p>
+              </div>
+              <div id="chat-history" class="chat-history"></div>
+            </div>
+            <div id="chat-input-area" class="chat-input-area hidden">
+              <input type="text" id="chat-input" class="chat-input" placeholder="コーチへ返答する...">
+              <button id="chat-send-btn" class="chat-send-btn" aria-label="送信">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+            <button id="reset-btn" class="reset-btn hidden">別のアプローチを試す</button>
+          </section>
+        </div>
+
+        <!-- 既存のステップUI（後方互換：script.jsが使う） -->
+        <section id="goal-section" class="card active" style="display:none;">
+          <div class="section-tag">STEP 01</div>
+          <h2 class="section-title">まず、あなたの<strong>目的</strong>は？</h2>
+          <div class="button-group goal-group">
+            <button class="choice-btn" data-goal="1"><span class="btn-icon">🔥</span><span class="btn-text">脂肪を落としたい</span><span class="btn-arrow">→</span></button>
+            <button class="choice-btn" data-goal="2"><span class="btn-icon">💪</span><span class="btn-text">筋肉をつけたい</span><span class="btn-arrow">→</span></button>
+            <button class="choice-btn" data-goal="3"><span class="btn-icon">⚡</span><span class="btn-text">体力を上げたい</span><span class="btn-arrow">→</span></button>
+            <button class="choice-btn" data-goal="4"><span class="btn-icon">❤️</span><span class="btn-text">不調を改善したい</span><span class="btn-arrow">→</span></button>
+            <button class="choice-btn" data-goal="5"><span class="btn-icon">⭐</span><span class="btn-text">体型を整える（見た目特化）</span><span class="btn-arrow">→</span></button>
+          </div>
+        </section>
+        <section id="method-section" class="card method-hero-section hidden" style="display:none !important;"></section>
+        <section id="sub-section" class="card sub-section-card hidden" style="display:none !important;"></section>
+
+        <div style="margin-top: 24px;">
+          <div class="card visible" id="checkin-summary-card" style="margin-bottom:14px; display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <p class="section-tag">TODAY'S CONDITION</p>
+              <button id="checkin-edit-btn" style="background:none; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 12px; color:var(--accent); font-size:11px; font-weight:600; cursor:pointer; transition:all 0.2s ease;">変更する</button>
+            </div>
+            <div id="checkin-summary-content" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+          </div>
+          <div class="card visible" style="margin-bottom: 14px;">
+            <p class="section-tag">WEEKLY REPORT</p>
+            <p class="section-title">今週の<strong>内訳</strong></p>
+            <div id="weekly-report" style="display:flex; gap:12px; flex-wrap:wrap;"><p style="color:var(--muted); font-size:13px;">読み込み中...</p></div>
+          </div>
+          <div class="card visible" id="history-card" style="margin-bottom: 14px; display:none;">
+            <p class="section-tag">HISTORY</p>
+            <p class="section-title">過去の<strong>相談</strong></p>
+            <div id="chat-history-list" class="history-list"></div>
+          </div>
+          <div class="card visible" id="coach-threads-card" style="margin-bottom: 14px; display:none;">
+            <p class="section-tag">COACH THREAD</p>
+            <p class="section-title">コーチとの<strong>やり取り</strong></p>
+            <div id="coach-threads-list"></div>
+          </div>
+          <div class="card visible" id="personal-analysis-card" style="margin-bottom: 14px;">
+            <p class="section-tag">PERSONAL ANALYSIS</p>
+            <p class="section-title">あなたの<strong>タイプ分析</strong></p>
+            <div id="pa-locked" style="text-align:center; padding:20px 0;">
+              <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+              <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">7日連続利用で開放</p>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">選択傾向からあなたのタイプ・バランス・弱点をAIが分析します</p>
+              <div class="progress-track" style="margin:0 20px;"><div id="pa-progress-bar" class="progress-fill" style="width:0%;"></div></div>
+              <p id="pa-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 7日</p>
+            </div>
+            <div id="pa-unlocked" style="display:none;">
+              <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">全履歴からあなたのフィットネスタイプ・バランス・弱点をAIが診断します。</p>
+              <button id="pa-run-btn" class="action-btn-outline">パーソナル分析を実行 →</button>
+              <div id="pa-loading" style="display:none; text-align:center; padding:20px 0;"><div class="loading-dots"><span></span><span></span><span></span></div><p style="color:var(--muted); font-size:13px; margin-top:8px;">分析中...（10〜20秒）</p></div>
+              <div id="pa-result" style="display:none; margin-top:16px;"></div>
+            </div>
+          </div>
+          <div class="card visible" id="body-diagnosis-card" style="margin-bottom: 14px;">
+            <p class="section-tag">BODY DIAGNOSIS</p>
+            <p class="section-title">AIボディメイク<strong>診断</strong></p>
+            <div id="bd-locked" style="text-align:center; padding:20px 0;">
+              <div class="locked-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+              <p style="font-size:14px; font-weight:700; color:var(--white); margin-bottom:6px;">30日連続利用で開放</p>
+              <p style="font-size:12px; color:var(--muted); margin-bottom:16px;">写真を撮ってAIが体型を分析・改善ポイントを提案します</p>
+              <div class="progress-track" style="margin:0 20px;"><div id="bd-progress-bar" class="progress-fill blue" style="width:0%;"></div></div>
+              <p id="bd-progress-text" style="font-size:11px; color:var(--muted); margin-top:8px;">0 / 30日</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- main-content閉じ -->
+
+      <!-- お問い合わせ（既存のまま） -->
+      <div id="contact" class="card visible" style="margin-top:24px; margin-bottom:24px;">
+        <p class="section-tag">CONTACT</p>
+        <p class="section-title" style="margin-bottom:8px;">お問い合わせ</p>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:24px; line-height:1.7;">ご質問・ご相談がありましたらお気軽にどうぞ。<br>通常1〜2営業日以内にご返信いたします。</p>
+        <form id="contact-form" style="display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1;"><label class="form-label">姓 <span class="form-required">*</span></label><input type="text" name="last_name" required placeholder="例: 山田" class="form-input"></div>
+            <div style="flex:1;"><label class="form-label">名 <span class="form-required">*</span></label><input type="text" name="first_name" required placeholder="例: 太郎" class="form-input"></div>
+          </div>
+          <div><label class="form-label">メールアドレス <span class="form-required">*</span></label><input type="email" name="email" required placeholder="例: example@gmail.com" class="form-input"></div>
+          <div><label class="form-label">電話番号（任意）</label><input type="tel" name="phone" placeholder="例: 090-1234-5678" class="form-input"></div>
+          <div><label class="form-label">お問い合わせ内容 <span class="form-required">*</span></label><textarea name="message" required rows="5" placeholder="ご質問やご相談内容をお書きください" class="form-textarea"></textarea></div>
+          <button type="submit" class="form-submit">送信する →</button>
+          <p id="contact-msg" style="font-size:13px; min-height:20px; text-align:center;"></p>
+        </form>
+      </div>
+
+      <footer class="site-footer">
+        <div class="footer-links">
+          <a href="/Terms.html" class="footer-link">利用規約</a>
+          <a href="/Privacy.html" class="footer-link">プライバシーポリシー</a>
+          <a href="/Tokushoho.html" class="footer-link">特定商取引法に基づく表記</a>
+        </div>
+        <p class="footer-copy">© 2026 Fit Project AI</p>
+      </footer>
+    </div>
   </div>
-  <p class="footer-copy">© 2026 Fit Project AI</p>
-</footer>
-
-    </div><!-- container閉じ -->
-  </div><!-- main-panel閉じ -->
 
   <!-- ======================================================
-       ボトムナビゲーションバー
+       ボトムナビ（既存のまま）
        ====================================================== -->
   <nav class="bottom-nav" style="display:none;">
     <button class="nav-tab active" id="nav-home" onclick="switchTab('home')">
-      <svg viewBox="0 0 24 24">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-      </svg>
-      AIコーチ
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      ホーム
     </button>
     <button class="nav-tab" id="nav-record" onclick="switchTab('record')">
-      <svg viewBox="0 0 24 24">
-        <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-        <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-        <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-        <rect x="14" y="14" width="7" height="7" rx="1"></rect>
-      </svg>
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
       記録
     </button>
     <button class="nav-tab" id="nav-tools" onclick="switchTab('tools')">
-      <svg viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"></path>
-        <line x1="12" y1="2" x2="12" y2="5"></line>
-        <line x1="12" y1="19" x2="12" y2="22"></line>
-        <line x1="2" y1="12" x2="5" y2="12"></line>
-        <line x1="19" y1="12" x2="22" y2="12"></line>
-      </svg>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"></path><line x1="12" y1="2" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="22"></line><line x1="2" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="22" y2="12"></line></svg>
       ツール
     </button>
   </nav>
 
-<script src="nutrition-db.js"></script>
-<script src="meal-db.js"></script>
-<script src="prompts.js"></script>
-<script type="module" src="script.js"></script>
-<script>
-let selectedPlan = 'onetime';
+  <script src="nutrition-db.js"></script>
+  <script src="meal-db.js"></script>
+  <script src="prompts.js"></script>
+  <script type="module" src="script.js"></script>
 
-function selectPlan(plan) {
-  selectedPlan = plan;
-  const btns = {
-    onetime: document.getElementById('plan-onetime'),
-    split3: document.getElementById('plan-split3'),
-    split6: document.getElementById('plan-split6'),
-  };
-  const note = document.getElementById('plan-note');
-  Object.values(btns).forEach(b => b.classList.remove('active'));
-  btns[plan].classList.add('active');
-  if (plan === 'onetime') {
-    note.textContent = '税込・買い切り';
-  } else if (plan === 'split3') {
-    note.textContent = '税込・月々自動引き落とし（3回で自動終了）';
-  } else {
-    note.textContent = '税込・月々自動引き落とし（6回で自動終了）';
-  }
-}
+  <script>
+  /* ============================================================
+     初期設定オンボーディング
+     ============================================================ */
+  let obGoal = null, obLevel = null;
 
-async function startCheckout() {
-  const btn = document.getElementById('purchase-btn');
-  const msg = document.getElementById('purchase-msg');
-  const userEmail = window.__currentUserEmail__ || null;
-  if (!userEmail) {
-    msg.textContent = 'まずGoogleでログインしてください';
-    return;
+  function obSelectGoal(el) {
+    document.querySelectorAll('#ob-step-1 .ob-select-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    obGoal = el.dataset.goal;
+    document.getElementById('ob-goal-next').disabled = false;
   }
-  btn.textContent = '処理中...';
-  btn.disabled = true;
-  btn.style.opacity = '0.6';
-  msg.textContent = '';
-  try {
-    const checkoutHeaders = { 'Content-Type': 'application/json' };
-    const sb = window.__supabaseClient__;
-    if (sb) {
-      const { data: { session: s } } = await sb.auth.getSession();
-      if (s?.access_token) checkoutHeaders['Authorization'] = 'Bearer ' + s.access_token;
-    }
-    const res = await fetch('/api/create-checkout', {
-      method: 'POST',
-      headers: checkoutHeaders,
-      body: JSON.stringify({
-        email: userEmail,
-        plan: selectedPlan,
-        referral_code: document.getElementById('referral-code')?.value?.trim() || ''
-      })
-    });
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
+  function obSelectLevel(el) {
+    document.querySelectorAll('#ob-step-2 .ob-select-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    obLevel = el.dataset.level;
+    document.getElementById('ob-level-next').disabled = false;
+  }
+  function obCheckInfo() {
+    const filled = ['ob-age','ob-weight','ob-fat','ob-target-weight','ob-target-fat']
+      .every(id => document.getElementById(id).value.trim() !== '');
+    document.getElementById('ob-info-done').disabled = !filled;
+  }
+  function obGoToStep(n) {
+    document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+    document.getElementById('ob-step-' + n).classList.add('active');
+    window.scrollTo({ top: 0 });
+  }
+  function obComplete() {
+    const info = {
+      goal: obGoal,
+      level: obLevel,
+      age: document.getElementById('ob-age').value,
+      weight: document.getElementById('ob-weight').value,
+      fat: document.getElementById('ob-fat').value,
+      targetWeight: document.getElementById('ob-target-weight').value,
+      targetFat: document.getElementById('ob-target-fat').value,
+    };
+    localStorage.setItem('fpa_init', JSON.stringify(info));
+    document.getElementById('init-onboarding').style.display = 'none';
+    updateGoalSummaryCard();
+  }
+
+  /* ── 初回判定（ログイン後に呼ぶ） ── */
+  window.showInitOnboardingIfNeeded = function() {
+    if (!localStorage.getItem('fpa_init')) {
+      document.getElementById('init-onboarding').style.display = 'flex';
     } else {
-      msg.textContent = data.error || 'エラーが発生しました';
-      btn.textContent = '購入してはじめる →';
-      btn.disabled = false;
-      btn.style.opacity = '1';
+      updateGoalSummaryCard();
     }
-  } catch (e) {
-    msg.textContent = '通信エラーが発生しました';
-    btn.textContent = '購入してはじめる →';
-    btn.disabled = false;
-    btn.style.opacity = '1';
+  };
+
+  function updateGoalSummaryCard() {
+    const info = JSON.parse(localStorage.getItem('fpa_init') || 'null');
+    if (!info) return;
+    const goalNames = { chest:'💪 大胸筋筋肥大', back:'🏋️ 背中筋肥大', fat:'🔥 脂肪減少' };
+    const levelNames = { beginner:'🌱 初心者', intermediate:'💪 中級者', advanced:'🔥 上級者', competitor:'🏆 競技者' };
+    const card = document.getElementById('goal-summary-card');
+    document.getElementById('goal-summary-name').textContent = goalNames[info.goal] || info.goal;
+    document.getElementById('goal-summary-level').textContent = levelNames[info.level] || info.level;
+    card.style.display = 'block';
+    document.getElementById('proposal-flow').style.display = 'block';
   }
-}
 
-/* ============================================================
-   Tab switching
-   ============================================================ */
-function switchTab(tab) {
-  const mainPanel = document.getElementById('main-panel');
-  const toolsPanel = document.getElementById('tools-panel');
-  const recordPanel = document.getElementById('record-panel');
-  const navHome = document.getElementById('nav-home');
-  const navTools = document.getElementById('nav-tools');
-  const navRecord = document.getElementById('nav-record');
-  const overlay = document.getElementById('tool-overlay');
+  /* ============================================================
+     アコーディオン提案フロー
+     ============================================================ */
+  const QUESTIONS = {
+    diet: [
+      { label:'今日の目的は？', options:[
+        { emoji:'💪', label:'筋肉をつけたい', id:'bulk' },
+        { emoji:'🔥', label:'脂肪を落としたい', id:'cut' },
+        { emoji:'⚖️', label:'維持したい', id:'maintain' },
+      ]},
+      { label:'食事の準備時間は？', options:[
+        { emoji:'⚡', label:'10分以内', sub:'手軽に済ませたい', id:'quick' },
+        { emoji:'🍳', label:'30分程度', sub:'ある程度作れる', id:'mid' },
+        { emoji:'👨‍🍳', label:'しっかり作れる', sub:'時間に余裕あり', id:'full' },
+      ]},
+      { label:'今日のトレーニングは？', options:[
+        { emoji:'🏋️', label:'あり', id:'yes' },
+        { emoji:'🚶', label:'軽め', id:'light' },
+        { emoji:'😴', label:'なし（休養日）', id:'no' },
+      ]},
+    ],
+    training: [
+      { label:'今日鍛えたい部位は？', options:[
+        { emoji:'💪', label:'胸', id:'chest' },
+        { emoji:'🏋️', label:'背中', id:'back' },
+        { emoji:'🦵', label:'脚', id:'legs' },
+        { emoji:'🙆', label:'肩・腕', id:'shoulder' },
+        { emoji:'🔥', label:'全身', id:'full' },
+      ]},
+      { label:'使える場所・器具は？', options:[
+        { emoji:'🏛️', label:'ジム', sub:'マシン・フリーウェイト', id:'gym' },
+        { emoji:'🏠', label:'自宅', sub:'ダンベル等あり', id:'home' },
+        { emoji:'🧍', label:'自重のみ', sub:'器具なし', id:'bodyweight' },
+      ]},
+      { label:'使える時間は？', options:[
+        { emoji:'⚡', label:'30分以内', id:'short' },
+        { emoji:'🕐', label:'45〜60分', id:'mid' },
+        { emoji:'💯', label:'60分以上', id:'long' },
+      ]},
+    ],
+    recovery: [
+      { label:'昨日のトレーニング強度は？', options:[
+        { emoji:'🔥', label:'ハード', id:'hard' },
+        { emoji:'💪', label:'普通', id:'normal' },
+        { emoji:'🚶', label:'軽め', id:'light' },
+        { emoji:'😴', label:'休み', id:'rest' },
+      ]},
+      { label:'今日の体のコンディションは？', options:[
+        { emoji:'😣', label:'筋肉痛あり', id:'sore' },
+        { emoji:'😮‍💨', label:'疲労感あり', id:'tired' },
+        { emoji:'😊', label:'良好', id:'great' },
+      ]},
+    ],
+  };
 
-  if (overlay && overlay.classList.contains('open')) {
-    overlay.classList.remove('open');
+  let currentMethod = null;
+  let accordionAnswers = {};
+  let accordionOpen = 0;
+
+  function selectMethod(method) {
+    // カードのアクティブ状態
+    ['diet','training','recovery'].forEach(m => {
+      document.getElementById('mc-' + m).classList.toggle('active', m === method);
+    });
+    currentMethod = method;
+    accordionAnswers = {};
+    accordionOpen = 0;
+    buildAccordion(method);
+    document.getElementById('ai-response').style.display = 'none';
+  }
+
+  function buildAccordion(method) {
+    const container = document.getElementById('accordion-container');
+    const qs = QUESTIONS[method];
+    container.style.display = 'flex';
+    container.innerHTML = '';
+    qs.forEach((q, i) => {
+      const block = document.createElement('div');
+      block.className = 'accordion-block' + (i === 0 ? ' open' : '');
+      block.id = 'ab-' + i;
+      block.innerHTML = `
+        <div class="accordion-header">
+          <div class="accordion-header-left">
+            <div class="accordion-num">${i + 1}</div>
+            <div class="accordion-label">${q.label}</div>
+          </div>
+          <div class="accordion-answer" id="ab-ans-${i}" style="display:none;"></div>
+        </div>
+        <div class="accordion-options" id="ab-opts-${i}" style="${i !== 0 ? 'display:none;' : ''}">
+          ${q.options.map(opt => `
+            <div class="accordion-option" onclick="pickAnswer(${i}, '${opt.id}', '${opt.label}')">
+              <span class="ao-emoji">${opt.emoji}</span>
+              <div>
+                <div class="ao-label">${opt.label}</div>
+                ${opt.sub ? `<div class="ao-sub">${opt.sub}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      container.appendChild(block);
+    });
+  }
+
+  function pickAnswer(idx, id, label) {
+    accordionAnswers[idx] = { id, label };
+    const block = document.getElementById('ab-' + idx);
+    block.classList.remove('open');
+    block.classList.add('done');
+    document.getElementById('ab-opts-' + idx).style.display = 'none';
+    const ansEl = document.getElementById('ab-ans-' + idx);
+    ansEl.textContent = label;
+    ansEl.style.display = 'block';
+    document.getElementById('accordion-num-' + idx); // ノード更新
+
+    const qs = QUESTIONS[currentMethod];
+    if (idx + 1 < qs.length) {
+      const next = document.getElementById('ab-' + (idx + 1));
+      next.classList.add('open');
+      document.getElementById('ab-opts-' + (idx + 1)).style.display = 'flex';
+      next.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    } else {
+      // 全回答完了 → AIに渡す
+      setTimeout(() => triggerAI(), 300);
+    }
+  }
+
+  function triggerAI() {
+    const info = JSON.parse(localStorage.getItem('fpa_init') || '{}');
+    const goalNames = { chest:'大胸筋筋肥大', back:'背中筋肥大', fat:'脂肪減少' };
+    const levelNames = { beginner:'初心者', intermediate:'中級者', advanced:'上級者', competitor:'競技者' };
+
+    const answerText = Object.values(accordionAnswers).map(a => a.label).join(' / ');
+    const methodNames = { diet:'食事', training:'トレーニング', recovery:'回復' };
+
+    // 既存のchoice-btnクリックをシミュレートして script.js の AI 呼び出しを使う
+    const prompt = `
+[${methodNames[currentMethod]}の提案をお願いします]
+目標：${goalNames[info.goal] || '未設定'}
+レベル：${levelNames[info.level] || '未設定'}
+体重：${info.weight || '不明'}kg、体脂肪率：${info.fat || '不明'}%
+目標体重：${info.targetWeight || '不明'}kg
+
+回答：${answerText}
+
+上記の情報をもとに、今日の${methodNames[currentMethod]}プランを具体的に提案してください。
+    `.trim();
+
+    // script.js の既存チャット関数を呼ぶ（存在する場合）
+    const aiSection = document.getElementById('ai-response');
+    aiSection.style.display = 'block';
+    aiSection.scrollIntoView({ behavior:'smooth', block:'start' });
+
+    if (typeof window.callAIWithPrompt === 'function') {
+      window.callAIWithPrompt(prompt);
+    } else {
+      // fallback: chat-input に入れて送信
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send-btn');
+      if (input && sendBtn) {
+        input.value = prompt;
+        sendBtn.click();
+      }
+    }
+  }
+
+  /* ============================================================
+     既存コードそのまま
+     ============================================================ */
+  let selectedPlan = 'onetime';
+
+  function selectPlan(plan) {
+    selectedPlan = plan;
+    const btns = { onetime: document.getElementById('plan-onetime'), split3: document.getElementById('plan-split3'), split6: document.getElementById('plan-split6') };
+    const note = document.getElementById('plan-note');
+    Object.values(btns).forEach(b => b.classList.remove('active'));
+    btns[plan].classList.add('active');
+    if (plan === 'onetime') note.textContent = '税込・買い切り';
+    else if (plan === 'split3') note.textContent = '税込・月々自動引き落とし（3回で自動終了）';
+    else note.textContent = '税込・月々自動引き落とし（6回で自動終了）';
+  }
+
+  async function startCheckout() {
+    const btn = document.getElementById('purchase-btn');
+    const msg = document.getElementById('purchase-msg');
+    const userEmail = window.__currentUserEmail__ || null;
+    if (!userEmail) { msg.textContent = 'まずGoogleでログインしてください'; return; }
+    btn.textContent = '処理中...'; btn.disabled = true; btn.style.opacity = '0.6'; msg.textContent = '';
+    try {
+      const checkoutHeaders = { 'Content-Type': 'application/json' };
+      const sb = window.__supabaseClient__;
+      if (sb) { const { data: { session: s } } = await sb.auth.getSession(); if (s?.access_token) checkoutHeaders['Authorization'] = 'Bearer ' + s.access_token; }
+      const res = await fetch('/api/create-checkout', { method:'POST', headers:checkoutHeaders, body:JSON.stringify({ email:userEmail, plan:selectedPlan, referral_code:document.getElementById('referral-code')?.value?.trim() || '' }) });
+      const data = await res.json();
+      if (data.url) { window.location.href = data.url; }
+      else { msg.textContent = data.error || 'エラーが発生しました'; btn.textContent = '購入してはじめる →'; btn.disabled = false; btn.style.opacity = '1'; }
+    } catch (e) { msg.textContent = '通信エラーが発生しました'; btn.textContent = '購入してはじめる →'; btn.disabled = false; btn.style.opacity = '1'; }
+  }
+
+  function switchTab(tab) {
+    const mainPanel = document.getElementById('main-panel');
+    const toolsPanel = document.getElementById('tools-panel');
+    const recordPanel = document.getElementById('record-panel');
+    const navHome = document.getElementById('nav-home');
+    const navTools = document.getElementById('nav-tools');
+    const navRecord = document.getElementById('nav-record');
+    const overlay = document.getElementById('tool-overlay');
+    if (overlay && overlay.classList.contains('open')) { overlay.classList.remove('open'); document.getElementById('tool-iframe').src = ''; document.body.style.overflow = ''; }
+    mainPanel.style.display = 'none';
+    toolsPanel.classList.remove('open');
+    recordPanel.classList.remove('open');
+    navHome.classList.remove('active'); navTools.classList.remove('active'); navRecord.classList.remove('active');
+    document.body.style.overflow = '';
+    if (tab === 'home') { mainPanel.style.display = 'block'; navHome.classList.add('active'); }
+    else if (tab === 'record') { recordPanel.classList.add('open'); navRecord.classList.add('active'); window.scrollTo({ top:0 }); }
+    else if (tab === 'tools') { toolsPanel.classList.add('open'); navTools.classList.add('active'); window.scrollTo({ top:0 }); }
+  }
+
+  function openTool(file, title) {
+    const overlay = document.getElementById('tool-overlay');
+    const iframe = document.getElementById('tool-iframe');
+    const titleEl = document.getElementById('overlay-title');
+    titleEl.textContent = title;
+    iframe.src = '/' + file;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeToolOverlay() {
+    document.getElementById('tool-overlay').classList.remove('open');
     document.getElementById('tool-iframe').src = '';
     document.body.style.overflow = '';
   }
 
-  mainPanel.style.display = 'none';
-  toolsPanel.classList.remove('open');
-  recordPanel.classList.remove('open');
-  navHome.classList.remove('active');
-  navTools.classList.remove('active');
-  navRecord.classList.remove('active');
-  document.body.style.overflow = '';
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeToolOverlay(); });
+  window.addEventListener('message', function(e) { if (e.data === 'closeToolOverlay') { closeToolOverlay(); switchTab('home'); } });
 
-  if (tab === 'home') {
-    mainPanel.style.display = 'block';
-    navHome.classList.add('active');
-  } else if (tab === 'record') {
-    recordPanel.classList.add('open');
-    navRecord.classList.add('active');
-    window.scrollTo({ top: 0 });
-  } else if (tab === 'tools') {
-    toolsPanel.classList.add('open');
-    navTools.classList.add('active');
-    window.scrollTo({ top: 0 });
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js?v=38').then(reg => { reg.update(); }).catch(() => {}); });
   }
-}
 
-/* ============================================================
-   Tool iframe overlay
-   ============================================================ */
-function openTool(file, title) {
-  const overlay = document.getElementById('tool-overlay');
-  const iframe = document.getElementById('tool-iframe');
-  const titleEl = document.getElementById('overlay-title');
-  titleEl.textContent = title;
-  iframe.src = '/' + file;
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeToolOverlay() {
-  const overlay = document.getElementById('tool-overlay');
-  const iframe = document.getElementById('tool-iframe');
-  overlay.classList.remove('open');
-  iframe.src = '';
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeToolOverlay();
-});
-
-window.addEventListener('message', function(e) {
-  if (e.data === 'closeToolOverlay') {
-    closeToolOverlay();
-    switchTab('home');
-  }
-});
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js?v=38').then(reg => {
-      reg.update();
-    }).catch(() => {});
-  });
-}
-
-
-
-
-
-/* ============================================================
-   記録タブ切り替え
-   ============================================================ */
-function switchRecordTab(tab) {
-  var bodyPanel = document.getElementById('dashboard');
-  var workoutPanel = document.getElementById('workout-panel');
-  var rtabBody = document.getElementById('rtab-body');
-  var rtabWorkout = document.getElementById('rtab-workout');
-
-  if (tab === 'body') {
-    bodyPanel.style.display = 'block';
-    workoutPanel.style.display = 'none';
-    rtabBody.style.borderBottomColor = 'var(--accent)';
-    rtabBody.style.color = 'var(--white)';
-    rtabWorkout.style.borderBottomColor = 'transparent';
-    rtabWorkout.style.color = 'var(--muted)';
-  } else {
-    bodyPanel.style.display = 'none';
-    workoutPanel.style.display = 'block';
-    rtabBody.style.borderBottomColor = 'transparent';
-    rtabBody.style.color = 'var(--muted)';
-    rtabWorkout.style.borderBottomColor = 'var(--accent)';
-    rtabWorkout.style.color = 'var(--white)';
-    wlInit();
-  }
-}
-</script>
-
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const sb = createClient(
-  'https://xlaboiimqsesglstdjqj.supabase.co',
-  'sb_publishable_9fxRahudPNG9gHRJKkPD3Q_s8m-OUna'
-);
-
-let wlLogs = [];
-let wlEventsReady = false;
-
-window.wlInit = async function() {
-  if (!wlEventsReady) {
-    wlEventsReady = true;
-    const dateEl = document.getElementById('wl-date');
-    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
-    document.getElementById('wl-add-btn').addEventListener('click', wlAdd);
-    document.getElementById('wl-exercise').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') wlAdd();
-    });
-  }
-  const listEl = document.getElementById('wl-list');
-  if (listEl) listEl.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:30px 0;">読み込み中...</p>';
-  const volEl = document.getElementById('wl-vol-num');
-  if (volEl) volEl.textContent = '--';
-  wlLogs = [];
-  await wlFetch();
-};
-
-async function wlFetch() {
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      wlMsg('ログインが必要です', 'var(--text-tertiary)');
-      return;
-    }
-    const { data, error } = await sb
-      .from('workout_logs')
-      .select('*')
-      .eq('user_email', session.user.email)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    wlLogs = data || [];
-    wlRender();
-  } catch(e) {
-    wlMsg('読み込みエラー: ' + e.message, '#ff4d6a');
-  }
-}
-
-async function wlAdd() {
-  const exercise = document.getElementById('wl-exercise').value.trim();
-  const sets = parseInt(document.getElementById('wl-sets').value);
-  const reps = parseInt(document.getElementById('wl-reps').value);
-  const weight = parseFloat(document.getElementById('wl-weight').value);
-  const date = document.getElementById('wl-date').value;
-  if (!exercise) { wlToast('種目名を入力してください'); return; }
-  if (!sets || sets < 1) { wlToast('セット数を入力してください'); return; }
-  if (!reps || reps < 1) { wlToast('回数を入力してください'); return; }
-  if (isNaN(weight) || weight < 0) { wlToast('重量を入力してください'); return; }
-  if (!date) { wlToast('日付を選択してください'); return; }
-  const btn = document.getElementById('wl-add-btn');
-  btn.disabled = true;
-  btn.textContent = '保存中...';
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { wlToast('ログインが必要です'); return; }
-    const { data, error } = await sb
-      .from('workout_logs')
-      .insert([{ user_email: session.user.email, date, exercise, sets, reps, weight }])
-      .select()
-      .single();
-    if (error) throw error;
-    wlLogs.unshift(data);
-    wlRender();
-    document.getElementById('wl-exercise').value = '';
-    document.getElementById('wl-sets').value = '';
-    document.getElementById('wl-reps').value = '';
-    document.getElementById('wl-weight').value = '';
-    document.getElementById('wl-exercise').focus();
-    wlToast('記録しました！');
-  } catch(e) {
-    wlToast('保存に失敗しました');
-    console.error(e);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '記録する';
-  }
-}
-
-window.wlDelete = async function(id) {
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) return;
-    const { error } = await sb.from('workout_logs').delete().eq('id', id).eq('user_email', session.user.email);
-    if (error) throw error;
-    wlLogs = wlLogs.filter(l => l.id !== id);
-    wlRender();
-    wlToast('削除しました');
-  } catch(e) {
-    wlToast('削除に失敗しました');
-  }
-};
-
-function wlCalcVol(offset) {
-  const now = new Date();
-  const day = now.getDay();
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-  mon.setHours(0,0,0,0);
-  const sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-  sun.setHours(23,59,59,999);
-  return wlLogs.filter(l => { const d = new Date(l.date); return d >= mon && d <= sun; })
-    .reduce((s, l) => s + l.sets * l.reps * l.weight, 0);
-}
-
-function wlRender() {
-  // ボリューム
-  const tw = wlCalcVol(0), lw = wlCalcVol(-1);
-  const volEl = document.getElementById('wl-vol-num');
-  const vsEl = document.getElementById('wl-vol-vs');
-  if (volEl) volEl.textContent = tw.toLocaleString();
-  if (vsEl) {
-    if (lw === 0) {
-      vsEl.textContent = '先週のデータなし';
+  function switchRecordTab(tab) {
+    var bodyPanel = document.getElementById('dashboard');
+    var workoutPanel = document.getElementById('workout-panel');
+    var rtabBody = document.getElementById('rtab-body');
+    var rtabWorkout = document.getElementById('rtab-workout');
+    if (tab === 'body') {
+      bodyPanel.style.display = 'block'; workoutPanel.style.display = 'none';
+      rtabBody.style.borderBottomColor = 'var(--accent)'; rtabBody.style.color = 'var(--white)';
+      rtabWorkout.style.borderBottomColor = 'transparent'; rtabWorkout.style.color = 'var(--muted)';
     } else {
-      const diff = tw - lw;
-      const pct = Math.round((diff / lw) * 100);
-      vsEl.innerHTML = diff > 0
-        ? '先週比 <strong style="color:#22c55e">▲' + pct + '%</strong><br>+' + diff.toLocaleString() + 'kg'
-        : diff < 0
-        ? '先週比 <strong style="color:#ff4d6a">▼' + Math.abs(pct) + '%</strong><br>' + diff.toLocaleString() + 'kg'
-        : '先週と同じ';
+      bodyPanel.style.display = 'none'; workoutPanel.style.display = 'block';
+      rtabBody.style.borderBottomColor = 'transparent'; rtabBody.style.color = 'var(--muted)';
+      rtabWorkout.style.borderBottomColor = 'var(--accent)'; rtabWorkout.style.color = 'var(--white)';
+      wlInit();
     }
   }
+  </script>
 
-  // リスト
-  const container = document.getElementById('wl-list');
-  if (!container) return;
-  if (!wlLogs.length) {
-    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:40px 0;">まだ記録がありません</p>';
-    return;
-  }
+  <!-- トレーニング記録（既存のまま） -->
+  <script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+  const sb = createClient('https://xlaboiimqsesglstdjqj.supabase.co','sb_publishable_9fxRahudPNG9gHRJKkPD3Q_s8m-OUna');
+  let wlLogs = []; let wlEventsReady = false;
+  window.wlInit = async function() {
+    if (!wlEventsReady) { wlEventsReady = true; const dateEl = document.getElementById('wl-date'); if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; document.getElementById('wl-add-btn').addEventListener('click', wlAdd); document.getElementById('wl-exercise').addEventListener('keydown', function(e) { if (e.key === 'Enter') wlAdd(); }); }
+    const listEl = document.getElementById('wl-list'); if (listEl) listEl.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:30px 0;">読み込み中...</p>';
+    const volEl = document.getElementById('wl-vol-num'); if (volEl) volEl.textContent = '--';
+    wlLogs = []; await wlFetch();
+  };
+  async function wlFetch() { try { const { data: { session } } = await sb.auth.getSession(); if (!session) { wlMsg('ログインが必要です', 'var(--text-tertiary)'); return; } const { data, error } = await sb.from('workout_logs').select('*').eq('user_email', session.user.email).order('date', { ascending: false }).order('created_at', { ascending: false }); if (error) throw error; wlLogs = data || []; wlRender(); } catch(e) { wlMsg('読み込みエラー: ' + e.message, '#ff4d6a'); } }
+  async function wlAdd() { const exercise = document.getElementById('wl-exercise').value.trim(); const sets = parseInt(document.getElementById('wl-sets').value); const reps = parseInt(document.getElementById('wl-reps').value); const weight = parseFloat(document.getElementById('wl-weight').value); const date = document.getElementById('wl-date').value; if (!exercise) { wlToast('種目名を入力してください'); return; } if (!sets || sets < 1) { wlToast('セット数を入力してください'); return; } if (!reps || reps < 1) { wlToast('回数を入力してください'); return; } if (isNaN(weight) || weight < 0) { wlToast('重量を入力してください'); return; } if (!date) { wlToast('日付を選択してください'); return; } const btn = document.getElementById('wl-add-btn'); btn.disabled = true; btn.textContent = '保存中...'; try { const { data: { session } } = await sb.auth.getSession(); if (!session) { wlToast('ログインが必要です'); return; } const { data, error } = await sb.from('workout_logs').insert([{ user_email: session.user.email, date, exercise, sets, reps, weight }]).select().single(); if (error) throw error; wlLogs.unshift(data); wlRender(); document.getElementById('wl-exercise').value = ''; document.getElementById('wl-sets').value = ''; document.getElementById('wl-reps').value = ''; document.getElementById('wl-weight').value = ''; document.getElementById('wl-exercise').focus(); wlToast('記録しました！'); } catch(e) { wlToast('保存に失敗しました'); } finally { btn.disabled = false; btn.textContent = '記録する'; } }
+  window.wlDelete = async function(id) { try { const { data: { session } } = await sb.auth.getSession(); if (!session) return; const { error } = await sb.from('workout_logs').delete().eq('id', id).eq('user_email', session.user.email); if (error) throw error; wlLogs = wlLogs.filter(l => l.id !== id); wlRender(); wlToast('削除しました'); } catch(e) { wlToast('削除に失敗しました'); } };
+  function wlCalcVol(offset) { const now = new Date(); const day = now.getDay(); const mon = new Date(now); mon.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7); mon.setHours(0,0,0,0); const sun = new Date(mon); sun.setDate(mon.getDate() + 6); sun.setHours(23,59,59,999); return wlLogs.filter(l => { const d = new Date(l.date); return d >= mon && d <= sun; }).reduce((s, l) => s + l.sets * l.reps * l.weight, 0); }
+  function wlRender() { const tw = wlCalcVol(0), lw = wlCalcVol(-1); const volEl = document.getElementById('wl-vol-num'); const vsEl = document.getElementById('wl-vol-vs'); if (volEl) volEl.textContent = tw.toLocaleString(); if (vsEl) { if (lw === 0) { vsEl.textContent = '先週のデータなし'; } else { const diff = tw - lw; const pct = Math.round((diff / lw) * 100); vsEl.innerHTML = diff > 0 ? '先週比 <strong style="color:#22c55e">▲' + pct + '%</strong><br>+' + diff.toLocaleString() + 'kg' : diff < 0 ? '先週比 <strong style="color:#ff4d6a">▼' + Math.abs(pct) + '%</strong><br>' + diff.toLocaleString() + 'kg' : '先週と同じ'; } } const container = document.getElementById('wl-list'); if (!container) return; if (!wlLogs.length) { container.innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:40px 0;">まだ記録がありません</p>'; return; } const today = new Date().toISOString().split('T')[0]; const days = ['日','月','火','水','木','金','土']; const grouped = {}; wlLogs.forEach(l => { if (!grouped[l.date]) grouped[l.date] = []; grouped[l.date].push(l); }); container.innerHTML = ''; Object.keys(grouped).sort((a,b) => b.localeCompare(a)).forEach(date => { const grp = document.createElement('div'); grp.style.marginBottom = '16px'; const lbl = document.createElement('div'); lbl.style.cssText = 'font-size:12px;color:var(--text-tertiary);font-weight:700;margin-bottom:8px;padding-left:2px;'; if (date === today) { lbl.textContent = '今日'; } else { const d = new Date(date + 'T00:00:00'); lbl.textContent = (d.getMonth()+1) + '月' + d.getDate() + '日（' + days[d.getDay()] + '）'; } grp.appendChild(lbl); grouped[date].forEach(l => { const vol = l.sets * l.reps * l.weight; const row = document.createElement('div'); row.style.cssText = 'background:#12121a;border:1px solid #1e1e2a;border-radius:14px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;'; const info = document.createElement('div'); info.style.cssText = 'flex:1;min-width:0;'; const name = document.createElement('div'); name.style.cssText = 'font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'; name.textContent = l.exercise; const detail = document.createElement('div'); detail.style.cssText = 'font-size:12px;color:var(--text-tertiary);margin-top:2px;'; detail.textContent = l.sets + 'セット × ' + l.reps + '回 × ' + l.weight + 'kg'; info.appendChild(name); info.appendChild(detail); const right = document.createElement('div'); right.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:12px;flex-shrink:0;'; const volWrap = document.createElement('div'); volWrap.style.textAlign = 'right'; const volNum = document.createElement('div'); volNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);line-height:1;'; volNum.textContent = vol.toLocaleString(); const volUnit = document.createElement('div'); volUnit.style.cssText = 'font-size:10px;color:var(--text-tertiary);'; volUnit.textContent = 'kg vol'; volWrap.appendChild(volNum); volWrap.appendChild(volUnit); const delBtn = document.createElement('button'); delBtn.textContent = '×'; delBtn.style.cssText = 'background:none;border:none;color:#3a3a4a;font-size:18px;cursor:pointer;padding:4px;'; delBtn.onmouseover = function() { this.style.color = '#ff4d6a'; }; delBtn.onmouseout = function() { this.style.color = '#3a3a4a'; }; const lid = l.id; delBtn.onclick = function() { window.wlDelete(lid); }; right.appendChild(volWrap); right.appendChild(delBtn); row.appendChild(info); row.appendChild(right); grp.appendChild(row); }); container.appendChild(grp); }); window.wlLogExercises = [...new Set(wlLogs.map(l => l.exercise))]; }
+  function wlMsg(text, color) { const el = document.getElementById('wl-list'); if (!el) return; el.innerHTML = ''; const p = document.createElement('p'); p.style.cssText = 'font-size:13px;text-align:center;padding:30px 0;color:' + color + ';'; p.textContent = text; el.appendChild(p); }
+  function wlToast(msg) { let t = document.getElementById('wl-toast'); if (!t) { t = document.createElement('div'); t.id = 'wl-toast'; t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a2e;color:#ffffff;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);'; document.body.appendChild(t); } t.textContent = msg; t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)'; clearTimeout(t._timer); t._timer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(10px)'; }, 2500); }
+  window.wlShowSuggest = function(val) { const box = document.getElementById('wl-suggest'); if (!box) return; const exercises = window.wlLogExercises || []; const filtered = val ? exercises.filter(e => e.includes(val)) : exercises; if (!filtered.length) { box.style.display = 'none'; return; } box.innerHTML = ''; filtered.slice(0, 6).forEach(e => { const div = document.createElement('div'); div.style.cssText = 'padding:12px 16px;font-size:14px;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;'; div.textContent = e; div.onmouseover = function() { this.style.background = 'var(--accent-soft)'; }; div.onmouseout = function() { this.style.background = ''; }; div.onclick = function() { window.wlSelectSuggest(e); }; box.appendChild(div); }); box.style.display = 'block'; };
+  window.wlSelectSuggest = function(exercise) { const input = document.getElementById('wl-exercise'); const box = document.getElementById('wl-suggest'); if (input) input.value = exercise; if (box) box.style.display = 'none'; };
+  document.addEventListener('click', function(e) { const box = document.getElementById('wl-suggest'); const input = document.getElementById('wl-exercise'); if (box && input && !box.contains(e.target) && e.target !== input) { box.style.display = 'none'; } });
+  </script>
 
-  const today = new Date().toISOString().split('T')[0];
-  const days = ['日','月','火','水','木','金','土'];
-  const grouped = {};
-  wlLogs.forEach(l => { if (!grouped[l.date]) grouped[l.date] = []; grouped[l.date].push(l); });
-
-  container.innerHTML = '';
-  Object.keys(grouped).sort((a,b) => b.localeCompare(a)).forEach(date => {
-    const grp = document.createElement('div');
-    grp.style.marginBottom = '16px';
-
-    const lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:12px;color:var(--text-tertiary);font-weight:700;margin-bottom:8px;padding-left:2px;';
-    if (date === today) {
-      lbl.textContent = '今日';
-    } else {
-      const d = new Date(date + 'T00:00:00');
-      lbl.textContent = (d.getMonth()+1) + '月' + d.getDate() + '日（' + days[d.getDay()] + '）';
-    }
-    grp.appendChild(lbl);
-
-    grouped[date].forEach(l => {
-      const vol = l.sets * l.reps * l.weight;
-      const row = document.createElement('div');
-      row.style.cssText = 'background:#12121a;border:1px solid #1e1e2a;border-radius:14px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
-
-      const info = document.createElement('div');
-      info.style.cssText = 'flex:1;min-width:0;';
-      const name = document.createElement('div');
-      name.style.cssText = 'font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-      name.textContent = l.exercise;
-      const detail = document.createElement('div');
-      detail.style.cssText = 'font-size:12px;color:var(--text-tertiary);margin-top:2px;';
-      detail.textContent = l.sets + 'セット × ' + l.reps + '回 × ' + l.weight + 'kg';
-      info.appendChild(name);
-      info.appendChild(detail);
-
-      const right = document.createElement('div');
-      right.style.cssText = 'display:flex;align-items:center;gap:8px;margin-left:12px;flex-shrink:0;';
-      const volWrap = document.createElement('div');
-      volWrap.style.textAlign = 'right';
-      const volNum = document.createElement('div');
-      volNum.style.cssText = 'font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--accent);line-height:1;';
-      volNum.textContent = vol.toLocaleString();
-      const volUnit = document.createElement('div');
-      volUnit.style.cssText = 'font-size:10px;color:var(--text-tertiary);';
-      volUnit.textContent = 'kg vol';
-      volWrap.appendChild(volNum);
-      volWrap.appendChild(volUnit);
-      const delBtn = document.createElement('button');
-      delBtn.textContent = '×';
-      delBtn.style.cssText = 'background:none;border:none;color:#3a3a4a;font-size:18px;cursor:pointer;padding:4px;';
-      delBtn.onmouseover = function() { this.style.color = '#ff4d6a'; };
-      delBtn.onmouseout = function() { this.style.color = '#3a3a4a'; };
-      const lid = l.id;
-      delBtn.onclick = function() { window.wlDelete(lid); };
-      right.appendChild(volWrap);
-      right.appendChild(delBtn);
-
-      row.appendChild(info);
-      row.appendChild(right);
-      grp.appendChild(row);
-    });
-    container.appendChild(grp);
-  });
-
-  // サジェスト用
-  window.wlLogExercises = [...new Set(wlLogs.map(l => l.exercise))];
-}
-
-function wlMsg(text, color) {
-  const el = document.getElementById('wl-list');
-  if (!el) return;
-  el.innerHTML = '';
-  const p = document.createElement('p');
-  p.style.cssText = 'font-size:13px;text-align:center;padding:30px 0;color:' + color + ';';
-  p.textContent = text;
-  el.appendChild(p);
-}
-
-function wlToast(msg) {
-  let t = document.getElementById('wl-toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'wl-toast';
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a2e;color:#ffffff;padding:12px 24px;border-radius:100px;font-size:13px;font-weight:700;opacity:0;transition:opacity 0.25s,transform 0.25s;pointer-events:none;white-space:nowrap;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.2);';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.opacity = '1';
-  t.style.transform = 'translateX(-50%) translateY(0)';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => {
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(-50%) translateY(10px)';
-  }, 2500);
-}
-
-window.wlShowSuggest = function(val) {
-  const box = document.getElementById('wl-suggest');
-  if (!box) return;
-  const exercises = window.wlLogExercises || [];
-  const filtered = val ? exercises.filter(e => e.includes(val)) : exercises;
-  if (!filtered.length) { box.style.display = 'none'; return; }
-  box.innerHTML = '';
-  filtered.slice(0, 6).forEach(e => {
-    const div = document.createElement('div');
-    div.style.cssText = 'padding:12px 16px;font-size:14px;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s;';
-    div.textContent = e;
-    div.onmouseover = function() { this.style.background = 'var(--accent-soft)'; };
-    div.onmouseout = function() { this.style.background = ''; };
-    div.onclick = function() { window.wlSelectSuggest(e); };
-    box.appendChild(div);
-  });
-  box.style.display = 'block';
-};
-
-window.wlSelectSuggest = function(exercise) {
-  const input = document.getElementById('wl-exercise');
-  const box = document.getElementById('wl-suggest');
-  if (input) input.value = exercise;
-  if (box) box.style.display = 'none';
-};
-
-document.addEventListener('click', function(e) {
-  const box = document.getElementById('wl-suggest');
-  const input = document.getElementById('wl-exercise');
-  if (box && input && !box.contains(e.target) && e.target !== input) {
-    box.style.display = 'none';
-  }
-});
-</script>
 </body>
+</html>
