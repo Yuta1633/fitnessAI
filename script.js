@@ -4287,18 +4287,78 @@ function showAfterCheckin() {
   const checkinGate = document.getElementById('checkin-gate');
   if (checkinGate) checkinGate.style.display = 'none';
   mainContent.style.display = 'block';
+  // 解除ボタンのイベント登録（初回のみ）
+  const unregBtn = document.getElementById('plan-unregister-btn');
+  if (unregBtn && !unregBtn._bound) {
+    unregBtn.addEventListener('click', unsetCurrentPlan);
+    unregBtn._bound = true;
+  }
   // 登録プランをロードしてプランモードを初期化
   currentPlan = localStorage.getItem(userKey('current_plan')) || null;
   console.log('[planMode] currentPlan:', currentPlan);
-  console.log('[planMode] typeof PLANS:', typeof PLANS);
-  console.log('[planMode] PLANS[currentPlan]:', currentPlan && typeof PLANS !== 'undefined' ? PLANS[currentPlan] : 'N/A');
   if (currentPlan && typeof PLANS !== 'undefined' && PLANS[currentPlan]) {
     console.log('[planMode] initPlanMode() 呼び出し');
     initPlanMode();
   } else {
     console.log('[planMode] initPlanMode() スキップ');
+    renderPlanUI();
   }
   loadDashboard();
+}
+
+// ============================================================
+// プラン登録・解除
+// ============================================================
+function setCurrentPlan(planId) {
+  localStorage.setItem(userKey('current_plan'), planId);
+  currentPlan = planId;
+  console.log('[planMode] プラン登録:', planId);
+  renderPlanUI();
+  initPlanMode();
+}
+
+function unsetCurrentPlan() {
+  localStorage.removeItem(userKey('current_plan'));
+  currentPlan = null;
+  console.log('[planMode] プラン解除');
+  renderPlanUI();
+  // goal セクションを再表示
+  showSection(goalSection);
+  hideSection(methodSection);
+  updateStepIndicator(1);
+  selectedGoal = null;
+  const step1 = document.querySelector('.step[data-step="1"]');
+  const stepLine = document.querySelector('.step-line');
+  if (step1) step1.style.removeProperty('display');
+  if (stepLine) stepLine.style.removeProperty('display');
+}
+
+function renderPlanUI() {
+  const badge       = document.getElementById('plan-badge');
+  const badgeLabel  = document.getElementById('plan-badge-label');
+  const selectCard  = document.getElementById('plan-select-card');
+  const optionsEl   = document.getElementById('plan-options');
+  if (!badge || !selectCard || !optionsEl) return;
+
+  if (currentPlan && PLANS[currentPlan]) {
+    // 登録済み：バッジ表示
+    if (badgeLabel) badgeLabel.textContent = `登録中プラン：${PLANS[currentPlan].label}`;
+    badge.style.display = 'flex';
+    selectCard.style.display = 'none';
+  } else {
+    // 未登録：プラン選択カード表示
+    badge.style.display = 'none';
+    optionsEl.innerHTML = Object.entries(PLANS).map(([id, plan]) =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;color:var(--white);">${plan.label}</span>
+        <button data-plan-id="${id}" class="plan-register-btn" style="font-size:11px;font-weight:700;color:#000;background:var(--accent);border:none;border-radius:6px;padding:4px 12px;cursor:pointer;">登録する</button>
+      </div>`
+    ).join('');
+    optionsEl.querySelectorAll('.plan-register-btn').forEach(btn => {
+      btn.addEventListener('click', () => setCurrentPlan(btn.dataset.planId));
+    });
+    selectCard.style.display = 'block';
+  }
 }
 
 // ============================================================
@@ -4321,12 +4381,8 @@ function initPlanMode() {
   const stepLine = document.querySelector('.step-line');
   if (step1) step1.style.display = 'none';
   if (stepLine) stepLine.style.display = 'none';
-  // プランバッジを表示
-  const badge = document.getElementById('plan-badge');
-  if (badge) {
-    badge.textContent = `登録中プラン：${plan.label}`;
-    badge.style.display = 'block';
-  }
+  // バッジ・UI 更新
+  renderPlanUI();
   console.log('[planMode] initPlanMode 完了, selectedGoal:', selectedGoal);
 }
 
