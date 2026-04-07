@@ -1,10 +1,7 @@
-const CACHE_NAME = 'fitai-v47';
+const CACHE_NAME = 'fitai-v49';
 const PRECACHE_URLS = [
   '/',
-  '/style.css',
-  '/script.js',
   '/prompts.js',
-  '/supabase.js',
   '/nutrition-db.js'
 ];
 
@@ -33,7 +30,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API呼び出しはネットワーク優先
+  // 外部オリジン（Supabase・CDN等）は常にネットワーク直通
+  if (url.origin !== self.location.origin) {
+    return; // service worker を素通りさせる
+  }
+
+  // /api/ はネットワーク優先
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() =>
@@ -42,6 +44,12 @@ self.addEventListener('fetch', (event) => {
         })
       )
     );
+    return;
+  }
+
+  // 認証・設定ファイルは常にネットワーク優先（キャッシュしない）
+  if (['/supabase.js', '/script.js', '/index.html'].some(p => url.pathname === p)) {
+    event.respondWith(fetch(request));
     return;
   }
 
