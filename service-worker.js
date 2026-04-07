@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitai-v49';
+const CACHE_NAME = 'fitai-v50';
 const PRECACHE_URLS = [
   '/',
   '/prompts.js',
