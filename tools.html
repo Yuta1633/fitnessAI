@@ -3,179 +3,289 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>無料ツール集｜Fit Project AI</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>無料ツール｜Fit Project AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#08080A;--card:#0F0F14;--card2:#14141A;--border:#1E1E28;--border2:#252530;
-  --text:#F0EDF5;--text2:#C0BCCC;--muted:#5A566A;
-  --mono:'Space Mono',monospace;--sans:'Noto Sans JP',sans-serif;
-  --t1:#FF3B5C;--t2:#8B5CF6;--t3:#06B6D4;--t4:#F97316;
-}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
+:root{
+  --sans:'Inter','Noto Sans JP',sans-serif;
+  --t1:#FF3B5C;--t2:#7C3AED;--t3:#0891B2;--t4:#EA580C;
+}
+html,body{height:100%;font-family:var(--sans);background:#F8F7FC;color:#111;-webkit-font-smoothing:antialiased}
 
-/* TOP BAR */
-.topbar{
+/* ── MENU SCREEN ── */
+#menuScreen{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  opacity:1;transition:opacity .25s;
+}
+#menuScreen.hide{opacity:0;pointer-events:none}
+
+/* header */
+.mhdr{
+  padding:20px 24px 0;
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 16px;background:var(--card);border-bottom:1px solid var(--border);
-  position:fixed;top:0;left:0;right:0;z-index:100;height:52px;
 }
-.topbar-brand{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
-.topbar-lp{
-  display:flex;align-items:center;gap:5px;
-  padding:6px 14px;background:transparent;
-  border:1px solid var(--border2);border-radius:8px;
-  color:var(--text2);font-family:var(--sans);font-size:11px;font-weight:500;
-  cursor:pointer;text-decoration:none;transition:all .2s;
+.mhdr-brand{
+  display:flex;align-items:center;gap:8px;
+  font-size:13px;font-weight:700;letter-spacing:.5px;color:#111;
 }
-.topbar-lp:hover{border-color:var(--accent2,#aaa);color:var(--text)}
-.topbar-lp svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
-
-/* TAB BAR */
-.tabbar{
-  display:flex;gap:0;
-  position:fixed;top:52px;left:0;right:0;z-index:100;
-  background:var(--card);border-bottom:1px solid var(--border);
-  overflow-x:auto;scrollbar-width:none;
-}
-.tabbar::-webkit-scrollbar{display:none}
-.tab{
-  flex:1;min-width:80px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 8px 8px;
-  cursor:pointer;border-bottom:2px solid transparent;
-  transition:all .2s;color:var(--muted);
-  font-size:10px;font-weight:500;line-height:1.4;
-  white-space:nowrap;gap:4px;
-}
-.tab-icon{font-size:16px;line-height:1}
-.tab.t1{--tc:var(--t1)}
-.tab.t2{--tc:var(--t2)}
-.tab.t3{--tc:var(--t3)}
-.tab.t4{--tc:var(--t4)}
-.tab.active{color:var(--tc);border-bottom-color:var(--tc)}
-
-/* IFRAME CONTAINER */
-.frames{
-  position:fixed;top:100px;left:0;right:0;bottom:0;
-}
-.frame-wrap{
-  position:absolute;inset:0;
-  display:none;
-}
-.frame-wrap.active{display:block}
-.frame-wrap iframe{
-  width:100%;height:100%;border:none;
-  background:var(--bg);
-}
-
-/* LOADING OVERLAY */
-.loading{
-  position:absolute;inset:0;
+.mhdr-brand span{
+  display:inline-block;width:28px;height:28px;background:#111;border-radius:8px;
   display:flex;align-items:center;justify-content:center;
-  background:var(--bg);z-index:10;
-  flex-direction:column;gap:14px;
-  transition:opacity .3s;
 }
-.loading.hidden{opacity:0;pointer-events:none}
+.mhdr-brand span svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2}
+.mhdr-lp{
+  font-size:12px;font-weight:500;color:#666;text-decoration:none;
+  border:1px solid #e0dde8;border-radius:20px;padding:6px 14px;
+  transition:all .2s;
+}
+.mhdr-lp:hover{border-color:#111;color:#111}
+
+/* hero */
+.mhero{
+  padding:44px 24px 32px;text-align:center;
+}
+.mhero-eyebrow{
+  display:inline-block;margin-bottom:14px;
+  font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#7C3AED;
+  background:rgba(124,58,237,0.08);border-radius:20px;padding:5px 14px;
+}
+.mhero h1{
+  font-size:clamp(26px,7vw,36px);font-weight:900;line-height:1.2;
+  letter-spacing:-1px;color:#0D0B14;margin-bottom:12px;
+}
+.mhero h1 em{font-style:normal;color:#7C3AED}
+.mhero p{font-size:13px;color:#888;line-height:1.8;max-width:320px;margin:0 auto}
+
+/* cards grid */
+.cards{
+  padding:0 16px 40px;
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  max-width:500px;margin:0 auto;width:100%;
+}
+.tool-card{
+  background:#fff;border-radius:20px;padding:22px 18px;
+  border:1.5px solid #EEEBF6;
+  cursor:pointer;transition:all .22s;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.04);
+}
+.tool-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 32px rgba(0,0,0,0.10);
+  border-color:var(--c);
+}
+.tool-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:var(--c);opacity:0;transition:opacity .2s;
+}
+.tool-card:hover::after{opacity:1}
+.tc-icon{
+  width:44px;height:44px;border-radius:14px;
+  background:color-mix(in srgb, var(--c) 10%, white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+.tc-badge{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--c);opacity:.8;
+}
+.tc-name{font-size:15px;font-weight:800;color:#0D0B14;line-height:1.3;letter-spacing:-.3px}
+.tc-desc{font-size:11px;color:#999;line-height:1.7;flex:1}
+.tc-arrow{
+  align-self:flex-end;
+  width:28px;height:28px;border-radius:50%;
+  background:color-mix(in srgb, var(--c) 10%, white);
+  display:flex;align-items:center;justify-content:center;
+}
+.tc-arrow svg{width:13px;height:13px;stroke:var(--c);fill:none;stroke-width:2.5}
+
+/* footer */
+.mftr{
+  text-align:center;padding:0 24px 32px;
+  font-size:10px;color:#bbb;letter-spacing:1px;
+}
+
+/* ── TOOL SCREEN ── */
+#toolScreen{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  background:#fff;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.32,.72,0,1);
+  z-index:200;
+}
+#toolScreen.open{transform:translateY(0)}
+
+/* tool header bar */
+.thdr{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;
+  background:#fff;
+  border-bottom:1px solid #F0EEF8;
+  flex-shrink:0;height:52px;
+}
+.back-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:20px;
+  background:#F5F3FC;border:none;
+  font-family:var(--sans);font-size:12px;font-weight:600;color:#555;
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+}
+.back-btn:hover{background:#EDE9FA;color:#7C3AED}
+.back-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5}
+.thdr-title{
+  font-size:13px;font-weight:700;color:#111;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.thdr-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--c,#7C3AED);
+  flex-shrink:0;margin-left:auto;margin-right:4px;
+}
+
+/* iframe */
+#toolFrame{
+  flex:1;border:none;background:#08080A;
+}
+
+/* loading */
+#frameLoading{
+  position:absolute;inset:52px 0 0;
+  background:#08080A;
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:14px;
+  transition:opacity .3s;z-index:10;
+}
+#frameLoading.hidden{opacity:0;pointer-events:none}
 .spin{
   width:32px;height:32px;border-radius:50%;
-  border:2px solid var(--border2);
-  border-top-color:var(--tc,#aaa);
+  border:2px solid rgba(255,255,255,.1);
+  border-top-color:var(--sc,#7C3AED);
   animation:spin .7s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading p{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px}
+#frameLoading p{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:2px;font-family:var(--sans)}
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="topbar-brand">Fit Project AI</div>
-  <a class="topbar-lp" href="https://fitprojectai.vercel.app/lp.html" target="_blank">
-    <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-    詳しく見る
-  </a>
+<!-- MENU SCREEN -->
+<div id="menuScreen">
+  <header class="mhdr">
+    <div class="mhdr-brand">
+      <span>
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </span>
+      Fit Project AI
+    </div>
+    <a class="mhdr-lp" href="https://fitprojectai.vercel.app/lp.html" target="_blank">詳しく見る →</a>
+  </header>
+
+  <section class="mhero">
+    <div class="mhero-eyebrow">Free Tools</div>
+    <h1>科学的に<em>正しい</em><br>体づくりを。</h1>
+    <p>ログイン不要・完全無料。<br>使いたいツールを選んでください。</p>
+  </section>
+
+  <div class="cards">
+    <div class="tool-card" style="--c:var(--t1)" onclick="openTool(0)">
+      <div class="tc-icon">🥩</div>
+      <div>
+        <div class="tc-badge">Tool 01</div>
+        <div class="tc-name">プロテイン<br>摂取量計算</div>
+      </div>
+      <div class="tc-desc">体重・目標・活動量から最適なタンパク質量を算出</div>
+      <div class="tc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+
+    <div class="tool-card" style="--c:var(--t2)" onclick="openTool(1)">
+      <div class="tc-icon">🧠</div>
+      <div>
+        <div class="tc-badge">Tool 02</div>
+        <div class="tc-name">続かない<br>原因診断</div>
+      </div>
+      <div class="tc-desc">10問で運動が続かない本当の原因を行動科学で特定</div>
+      <div class="tc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+
+    <div class="tool-card" style="--c:var(--t3)" onclick="openTool(2)">
+      <div class="tc-icon">🕐</div>
+      <div>
+        <div class="tc-badge">Tool 03</div>
+        <div class="tc-name">食事タイミング<br>プランナー</div>
+      </div>
+      <div class="tc-desc">起床・就寝時刻と食事回数から最適な食事時間を設計</div>
+      <div class="tc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+
+    <div class="tool-card" style="--c:var(--t4)" onclick="openTool(3)">
+      <div class="tc-icon">💪</div>
+      <div>
+        <div class="tc-badge">Tool 04</div>
+        <div class="tc-name">トレーニング<br>頻度計算</div>
+      </div>
+      <div class="tc-desc">生活スタイル・目標に合わせた最適な週次トレ頻度を提案</div>
+      <div class="tc-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+    </div>
+  </div>
+
+  <footer class="mftr">FIT PROJECT AI — AI × プロコーチで、続く体づくりを。</footer>
 </div>
 
-<div class="tabbar">
-  <div class="tab t1 active" onclick="switchTab(0)" id="tab0">
-    <span class="tab-icon">🥩</span>
-    プロテイン
+<!-- TOOL SCREEN -->
+<div id="toolScreen">
+  <div class="thdr">
+    <button class="back-btn" onclick="closeTool()">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      ツール一覧
+    </button>
+    <div class="thdr-dot" id="toolDot"></div>
+    <div class="thdr-title" id="toolTitle"></div>
   </div>
-  <div class="tab t2" onclick="switchTab(1)" id="tab1">
-    <span class="tab-icon">🧠</span>
-    原因診断
+  <div id="frameLoading">
+    <div class="spin" id="loadSpin"></div>
+    <p>Loading...</p>
   </div>
-  <div class="tab t3" onclick="switchTab(2)" id="tab2">
-    <span class="tab-icon">🕐</span>
-    食事タイミング
-  </div>
-  <div class="tab t4" onclick="switchTab(3)" id="tab3">
-    <span class="tab-icon">💪</span>
-    トレーニング
-  </div>
-</div>
-
-<div class="frames">
-  <div class="frame-wrap active" id="frame0">
-    <div class="loading" id="loading0" style="--tc:var(--t1)">
-      <div class="spin"></div>
-      <p>Loading...</p>
-    </div>
-    <iframe src="tool1_protein.html" onload="onLoad(0)"></iframe>
-  </div>
-  <div class="frame-wrap" id="frame1">
-    <div class="loading" id="loading1" style="--tc:var(--t2)">
-      <div class="spin"></div>
-      <p>Loading...</p>
-    </div>
-    <iframe id="iframe1" onload="onLoad(1)"></iframe>
-  </div>
-  <div class="frame-wrap" id="frame2">
-    <div class="loading" id="loading2" style="--tc:var(--t3)">
-      <div class="spin"></div>
-      <p>Loading...</p>
-    </div>
-    <iframe id="iframe2" onload="onLoad(2)"></iframe>
-  </div>
-  <div class="frame-wrap" id="frame3">
-    <div class="loading" id="loading3" style="--tc:var(--t4)">
-      <div class="spin"></div>
-      <p>Loading...</p>
-    </div>
-    <iframe id="iframe3" onload="onLoad(3)"></iframe>
-  </div>
+  <iframe id="toolFrame" onload="onFrameLoad()"></iframe>
 </div>
 
 <script>
-const srcs=['tool1_protein.html','tool2_diagnosis.html','tool3_timing.html','tool4_training.html'];
-const loaded=[false,false,false,false];
-let cur=0;
+const tools=[
+  {src:'tool1_protein.html', name:'プロテイン摂取量計算', color:'#FF3B5C'},
+  {src:'tool2_diagnosis.html', name:'続かない原因診断', color:'#7C3AED'},
+  {src:'tool3_timing.html', name:'食事タイミングプランナー', color:'#0891B2'},
+  {src:'tool4_training.html', name:'トレーニング頻度計算', color:'#EA580C'},
+];
 
-function switchTab(i){
-  // tabs
-  document.querySelectorAll('.tab').forEach((t,idx)=>t.classList.toggle('active',idx===i));
-  // frames
-  document.querySelectorAll('.frame-wrap').forEach((f,idx)=>f.classList.toggle('active',idx===i));
-  // lazy load iframe on first visit
-  if(!loaded[i]&&i>0){
-    const iframe=document.getElementById('iframe'+i);
-    if(iframe&&!iframe.src){iframe.src=srcs[i]}
-  }
-  cur=i;
+function openTool(i){
+  const t=tools[i];
+  document.getElementById('toolTitle').textContent=t.name;
+  document.getElementById('toolDot').style.background=t.color;
+  document.getElementById('loadSpin').style.borderTopColor=t.color;
+  document.getElementById('frameLoading').classList.remove('hidden');
+  document.getElementById('toolFrame').src=t.src;
+  document.getElementById('toolScreen').classList.add('open');
+  document.getElementById('menuScreen').classList.add('hide');
+  document.body.style.overflow='hidden';
 }
 
-function onLoad(i){
-  const l=document.getElementById('loading'+i);
-  if(l){l.classList.add('hidden');setTimeout(()=>l.remove(),350)}
-  loaded[i]=true;
+function closeTool(){
+  document.getElementById('toolScreen').classList.remove('open');
+  document.getElementById('menuScreen').classList.remove('hide');
+  document.body.style.overflow='';
+  // reset iframe after animation
+  setTimeout(()=>{document.getElementById('toolFrame').src=''},350);
 }
 
-// listen for back button message from child iframes
+function onFrameLoad(){
+  document.getElementById('frameLoading').classList.add('hidden');
+}
+
+// message from child iframes (back button inside tool)
 window.addEventListener('message',function(e){
-  if(e.data==='closeToolOverlay'){/* already at top level — do nothing */}
+  if(e.data==='closeToolOverlay') closeTool();
 });
 </script>
 </body>
