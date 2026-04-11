@@ -4640,4 +4640,38 @@ document.getElementById('checkin-save-btn')?.addEventListener('click', () => {
   mainContent.style.display = 'block';
   loadDashboard();
   renderCheckinSummary(checkinData);
-});
+});const _origShowAfterCheckin = showAfterCheckin;
+showAfterCheckin = function() {
+  _origShowAfterCheckin();
+  if (typeof window.showInitOnboardingIfNeeded === 'function') {
+    window.showInitOnboardingIfNeeded();
+  }
+};
+
+window.callAIWithPrompt = function(prompt) {
+  const methodMap = { diet: 'nutrition', training: 'training', recovery: 'recovery' };
+  const info = JSON.parse(localStorage.getItem('fpa_init') || '{}');
+  const goalMap = { chest: '2', back: '2', fat: '1' };
+  selectedGoal   = goalMap[info.goal] || '2';
+  selectedMethod = methodMap[window._currentMethod] || 'nutrition';
+  selectedSub    = '特になし';
+  conversationHistory = [{ role: 'user', content: prompt }];
+  const aiSection = document.getElementById('ai-response');
+  if (aiSection) {
+    aiSection.style.display = 'block';
+    document.getElementById('chat-history').innerHTML = '';
+    document.getElementById('loading-indicator').classList.remove('hidden');
+    document.getElementById('chat-input-area').classList.add('hidden');
+    document.getElementById('reset-btn').classList.add('hidden');
+  }
+  callAPI(conversationHistory).then(text => {
+    conversationHistory.push({ role: 'assistant', content: text });
+    document.getElementById('loading-indicator').classList.add('hidden');
+    addMessage('assistant', text);
+    document.getElementById('chat-input-area').classList.remove('hidden');
+    document.getElementById('reset-btn').classList.remove('hidden');
+  }).catch(() => {
+    document.getElementById('loading-indicator').classList.add('hidden');
+    addMessage('assistant', '【エラー】通信に失敗しました。');
+  });
+};
